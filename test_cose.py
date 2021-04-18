@@ -2,6 +2,7 @@ import os
 import zlib
 import random
 import numpy as np
+import json
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import dh
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -16,7 +17,7 @@ from binascii import unhexlify, hexlify
 
 from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message
 from cose.keys import CoseKey, EC2Key, SymmetricKey
-from cose.headers import Algorithm, KID, IV
+from cose.headers import Algorithm, KID, IV, Reserved
 from cose.algorithms import EdDSA, Es256, EcdhEsA256KW, EcdhEsA128KW, DirectHKDFAES128, EcdhSsA128KW, A128GCM, HMAC256
 from cose.curves import Ed25519
 from cose.keys.keyparam import KpKty, OKPKpD, OKPKpX, KpKeyOps, OKPKpCurve, EC2KpX, EC2KpY, KpAlg, KpKty, EC2KpD, EC2KpX, KpKeyOps, EC2KpCurve, EC2KpY, KpKid, SymKpK
@@ -118,21 +119,21 @@ def main():
     #print(d["0000"])
     #print(get_key_by_value(d, reverse, "JoinResponse"))
 
-    PType = get_key_by_value(d, reverse, "DataUnconfirmedUp")
-    Counter = "0"
-    DeviceAdd = hex(random.getrandbits(64))        # 64 bits identifier
-    Ciphertext = "Hello from the device"
-    Header = [PType, Counter, DeviceAdd]
-    Content = [Ciphertext]
+    pType = get_key_by_value(d, reverse, "DataUnconfirmedUp")
+    counter = "0"
+    deviceAdd = hex(random.getrandbits(64))        # 64 bits identifier
+    plaintext = "Hello from the device"
+    header = [pType, counter, deviceAdd]
+    #content = [plaintext]
 
-    concat = Header + Content
-    string = ','.join(concat)
-    print("Payload as string :", string)
+    # concat = header + content
+    # string = ','.join(concat)
+    # print("Payload as string :", string)
 
     msg = Enc0Message(
-        phdr = {Algorithm: A128GCM, IV: b'000102030405060708090a0b0c'},
+        phdr = {Algorithm: A128GCM, IV: b'000102030405060708090a0b0c', Reserved: json.dumps(header)},
         #uhdr = {KID: b'kid1'},
-        payload = string.encode('utf-8')
+        payload = plaintext.encode('utf-8')
     )
 
     cose_key_enc = SymmetricKey(key=key_device, optional_params={'ALG': 'A128GCM'})
@@ -232,7 +233,8 @@ def main():
     cose_key_dec = SymmetricKey(key=key_server, optional_params={'ALG': 'A128GCM'})
 
     decoded3 = CoseMessage.decode(decoded2.payload)
-    #print(decoded2)
+    print(decoded3.phdr)
+    print(decoded3.phdr)
 
     decoded3.key = cose_key_dec
     #print(hexlify(decoded2.payload))
@@ -240,8 +242,10 @@ def main():
     decrypt_decode = decrypt.decode("utf-8")
     print("Data received as string :", decrypt_decode)
 
-    concat_rec = decrypt_decode.split(',')
-    print("Data :", concat_rec)    
+    # concat_rec = decrypt_decode.split(',')
+    # print("Data :", concat_rec)    
+
+    #print("Header :", decoded3.)
 
 
 
