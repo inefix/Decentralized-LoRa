@@ -200,12 +200,13 @@ def main():
             print("Signature is correct")
             payload = jwstoken3.payload
 
+            # decrypt payload
             jwetoken2 = jwe.JWE()
             jwetoken2.deserialize(payload, key=key)
             payload2 = jwetoken2.payload
             print("payload :", payload2)
-            prot = jwetoken2.objects['protected']
-            print("protected header :", prot)
+            #prot = jwetoken2.objects['protected']
+            #print("protected header :", prot)
         else :
             print("Signature is not correct")
 
