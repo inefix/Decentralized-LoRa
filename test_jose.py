@@ -15,7 +15,7 @@ from cryptography.exceptions import InvalidSignature
 #import jwt      # pip install PyJWT
 from jwcrypto import jwk, jwe, jws      # pip install jwcrypto
 from jwcrypto import jwt as jwt
-from jwcrypto.common import json_encode
+from jwcrypto.common import json_encode, json_decode
 #from authlib.jose import JsonWebEncryption
 
 #from binascii import unhexlify, hexlify
@@ -114,7 +114,6 @@ def main():
     # string = ','.join(concat)
     # print("Payload as string :", string)
 
-
     k = {"k": urlsafe_b64encode(key_device).decode("utf-8"), "kty": "oct"}
     key = jwk.JWK(**k)
 
@@ -134,6 +133,9 @@ def main():
     enc = jwetoken.serialize()
     print("enc :", enc)
 
+    # prot = jwetoken.objects['protected']
+    # print(f'protected : {prot}')
+
     # Etoken = jwt.JWT(header={"alg": "A128KW", "enc": "A128CBC-HS256"},
     #                  claims={"info": string})
     # Etoken.make_encrypted_token(key)
@@ -150,8 +152,8 @@ def main():
     jwstoken.add_signature(key_signature, None,
                            json_encode({"alg": "ES256"}),
                            )
-    sig = jwstoken.serialize()
-    print(f'signature : {sig}')
+    packet = jwstoken.serialize()
+    print(f'Packet : {packet}')
 
 
     ############################### Sending the packet ... ########################
@@ -161,41 +163,54 @@ def main():
     ######### Verification of the source by the Gateway ... #######################
     print("\nGateway level :")
 
-    key_verify = jwk.JWK.from_pem(serialized_public)
+    source = get_source(packet)
 
-    jwstoken2 = jws.JWS()
-    jwstoken2.deserialize(sig)
-    if verify_signature(key_verify, jwstoken2):
-        print("Signature is correct")
-        payload = jwstoken2.payload
-        print("Payload at the gateway level :", payload)
-    else :
-        print("Signature is not correct")
+    if source == deviceAdd:
+        key_verify = jwk.JWK.from_pem(serialized_public)
+
+        jwstoken2 = jws.JWS()
+        jwstoken2.deserialize(packet)
+
+        if verify_signature(key_verify, jwstoken2):
+            print("Signature is correct")
+            payload = jwstoken2.payload
+            print("Payload at the gateway level :", payload)
+        else :
+            print("Signature is not correct")
+    else:
+        print("Device not already registred")
 
 
     ############## Reception of the packet on the server .... #################
-    print("\nServer level :")    
+    print("\nServer level :")  
 
-    key_verify2 = jwk.JWK.from_pem(serialized_public)
+    source = get_source(packet)
 
-    k = {"k": urlsafe_b64encode(key_server).decode("utf-8"), "kty": "oct"}
-    key = jwk.JWK(**k)
+    if source == deviceAdd:
 
-    jwstoken3 = jws.JWS()
-    jwstoken3.deserialize(sig)
-    if verify_signature(key_verify2, jwstoken3):
-        print("Signature is correct")
-        payload = jwstoken3.payload
+        jwstoken3 = jws.JWS()
+        jwstoken3.deserialize(packet)  
 
-        jwetoken2 = jwe.JWE()
-        jwetoken2.deserialize(payload, key=key)
-        payload2 = jwetoken2.payload
-        print("payload :", payload2)
-        prot = jwetoken2.objects['protected']
-        print("protected header :", prot)
-    else :
-        print("Signature is not correct")
+        key_verify2 = jwk.JWK.from_pem(serialized_public)
 
+        k = {"k": urlsafe_b64encode(key_server).decode("utf-8"), "kty": "oct"}
+        key = jwk.JWK(**k)
+
+        if verify_signature(key_verify2, jwstoken3):
+            print("Signature is correct")
+            payload = jwstoken3.payload
+
+            jwetoken2 = jwe.JWE()
+            jwetoken2.deserialize(payload, key=key)
+            payload2 = jwetoken2.payload
+            print("payload :", payload2)
+            prot = jwetoken2.objects['protected']
+            print("protected header :", prot)
+        else :
+            print("Signature is not correct")
+
+    else:
+        print("Device not already registred")
 
 
 
@@ -207,6 +222,20 @@ def verify_signature(public_key, token):
     except Exception as e:
         raise e
     return True
+
+
+def get_source(packet):
+    jwstoken = jws.JWS()
+    jwstoken.deserialize(packet)
+    payload = jwstoken.objects['payload']
+    jwetoken = jwe.JWE()
+    jwetoken.deserialize(payload)
+    prot = jwetoken.objects['protected']
+    #print(f'protected header {prot} {type(prot)}')
+    header_decode = json_decode(json_decode(prot)["header"])
+    #print(f'decoded header {header_decode} {type(header_decode)}')
+    source = header_decode[2]
+    return source
 
 
 if __name__ == "__main__":
