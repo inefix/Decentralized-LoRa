@@ -162,7 +162,6 @@ def main():
         EC2KpY : unhexlify(y),
         'D': bytes_key_priv
     }
-
     cose_key = CoseKey.from_dict(key_attribute_dict)
     #print(cose_key)
 
@@ -180,76 +179,72 @@ def main():
     ######### Verification of the source by the Gateway ... #######################
     print("\nGateway level :")
 
-    pub_key_attribute_dict = {
-        'KTY': 'EC2',
-        'CURVE': 'P_256',
-        'ALG': 'ES256',
-        EC2KpX : unhexlify(x_pub),
-        EC2KpY : unhexlify(y_pub)
-    }
+    source = get_source(packet)
 
-    pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
+    if source == deviceAdd :
 
-    decoded = CoseMessage.decode(packet)
-    #print("decoded :", decoded)
-    decoded.key = pub_cose_key
+        pub_key_attribute_dict = {
+            'KTY': 'EC2',
+            'CURVE': 'P_256',
+            'ALG': 'ES256',
+            EC2KpX : unhexlify(x_pub),
+            EC2KpY : unhexlify(y_pub)
+        }
+        pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
 
-    if decoded.verify_signature() :
-        print("Signature is correct")
-    else :
-        print("Signature is not correct")
+        decoded = CoseMessage.decode(packet)
+        decoded.key = pub_cose_key
 
-    print("Payload at the gateway level :", decoded.payload)
+        if decoded.verify_signature() :
+            print("Signature is correct")
+        else :
+            print("Signature is not correct")
 
+        print("Payload at the gateway level :", decoded.payload)
+
+    else:
+        print("Device not already registred")
 
 
     ############## Reception of the packet on the server .... #################
     print("\nServer level :")
 
-    # Checking the signature
+    source = get_source(packet)
 
-    pub_key_attribute_dict2 = {
-        'KTY': 'EC2',
-        'CURVE': 'P_256',
-        'ALG': 'ES256',
-        EC2KpX : unhexlify(x_pub),
-        EC2KpY : unhexlify(y_pub)
-    }
+    if source == deviceAdd:
 
-    pub_cose_key2 = CoseKey.from_dict(pub_key_attribute_dict2)
+        # Checking the signature
+        pub_key_attribute_dict2 = {
+            'KTY': 'EC2',
+            'CURVE': 'P_256',
+            'ALG': 'ES256',
+            EC2KpX : unhexlify(x_pub),
+            EC2KpY : unhexlify(y_pub)
+        }
+        pub_cose_key2 = CoseKey.from_dict(pub_key_attribute_dict2)
 
-    decoded2 = CoseMessage.decode(packet)
-    #print("decoded :", decoded2)
-    decoded2.key = pub_cose_key2
+        decoded2 = CoseMessage.decode(packet)
+        decoded2.key = pub_cose_key2
 
-    if decoded2.verify_signature() :
-        print("Signature is correct")
-    else :
-        print("Signature is not correct")
+        if decoded2.verify_signature() :
+            print("Signature is correct")
+        else :
+            print("Signature is not correct")
 
 
-    # decrypting
-    
-    cose_key_dec = SymmetricKey(key=key_server, optional_params={'ALG': 'A128GCM'})
+        # decrypting 
+        cose_key_dec = SymmetricKey(key=key_server, optional_params={'ALG': 'A128GCM'})
 
-    decoded3 = CoseMessage.decode(decoded2.payload)
-    print(decoded3.phdr)
-    print(decoded3.phdr)
-
-    decoded3.key = cose_key_dec
-    #print(hexlify(decoded2.payload))
-    decrypt = decoded3.decrypt()
-    decrypt_decode = decrypt.decode("utf-8")
-    print("Data received as string :", decrypt_decode)
-
-    # concat_rec = decrypt_decode.split(',')
-    # print("Data :", concat_rec)    
-
-    #print("Header :", decoded3.)
+        decoded3 = CoseMessage.decode(decoded2.payload)
+        decoded3.key = cose_key_dec
+        decrypt = decoded3.decrypt()
+        decrypt_decode = decrypt.decode("utf-8")
+        print("Payload :", decrypt_decode) 
 
 
 
     ############################# COSE MAC0 ####################################
+    print("\nMAC test :")
 
     mac_msg = Mac0Message(
         phdr = {Algorithm: HMAC256},
@@ -289,6 +284,16 @@ def get_key_by_value(d, reverse, value):
                reverse[_v] = _k
                break
     return reverse[value]
+
+
+def get_source(packet):
+    decoded = CoseMessage.decode(packet)
+    decoded = CoseMessage.decode(decoded.payload)
+    #print(f'phdr {decoded.phdr} {type(decoded.phdr)}')
+    header_decode = json.loads(decoded.phdr[Reserved])
+    source = header_decode[2]
+    #print(f'source : {source} {type(source)}')
+    return source
 
 
 if __name__ == "__main__":

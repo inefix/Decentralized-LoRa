@@ -204,7 +204,8 @@ def main():
             jwetoken2 = jwe.JWE()
             jwetoken2.deserialize(payload, key=key)
             payload2 = jwetoken2.payload
-            print("payload :", payload2)
+            payload_decode = payload2.decode("utf-8")
+            print("Payload :", payload_decode)
             #prot = jwetoken2.objects['protected']
             #print("protected header :", prot)
         else :
@@ -212,7 +213,6 @@ def main():
 
     else:
         print("Device not already registred")
-
 
 
 def verify_signature(public_key, token):
