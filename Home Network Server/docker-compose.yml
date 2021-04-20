@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./:/app
+    ports:
+      - 8888:8888
+    command: tail -f
+    #restart: always
+    #command: python run_server.py
