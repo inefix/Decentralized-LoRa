@@ -11,8 +11,6 @@ ADD ./ $APP_HOME/
 RUN apt-get update
 RUN apt-get install nano
 
-#EXPOSE 9999/udp
-
 RUN pip3 install -r requirements.txt
 
-#CMD ["python","-u","server.py"]
+CMD ["python","-u","client.py"]

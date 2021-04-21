@@ -1,14 +1,21 @@
-version: '3'
+version: '2'
 
 services:
-  app:
+  server:
     build:
       context: ./
       dockerfile: ./Dockerfile
     volumes:
       - ./:/app
     ports:
-      - 8888:8888
-    command: tail -f
+      - 9999:9999
+    networks:
+      - udpclient_some-net
+    #command: tail -f
     #restart: always
-    #command: python run_server.py
+    command: python -u server.py
+
+# https://stackoverflow.com/questions/38088279/communication-between-multiple-docker-compose-projects
+networks:
+  udpclient_some-net:
+    external: true
