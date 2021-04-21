@@ -3,9 +3,17 @@
 # https://docs.python.org/3/library/asyncio-protocol.html
 
 import asyncio
+from aiohttp import web
+import aiohttp_cors
 
 add = "0.0.0.0"     # localhost does not work ! https://stackoverflow.com/questions/15734219/simple-python-udp-server-trouble-receiving-packets-from-clients-other-than-loca/15734249
 port = 9999
+
+
+
+def test(request):
+    print("test")
+
 
 class EchoServerProtocol:
     def connection_made(self, transport):
@@ -25,12 +33,31 @@ async def start_datagram_proxy(add, port):
         local_addr=(add, port))
 
 
+
+app = web.Application()
+
+# Configure default CORS settings.
+cors = aiohttp_cors.setup(app, defaults={
+    "*": aiohttp_cors.ResourceOptions(
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*",
+            allow_methods="*",
+        )
+})
+
+cors.add(app.router.add_get('', test))
+
+
+
 def main(add=add, port=port):
     loop = asyncio.get_event_loop()
     print("Starting UDP server...")
     con = start_datagram_proxy(add, port)
     transport, _ = loop.run_until_complete(con)
     print("UDP server is running...")
+    print("Start HTTP server...")
+    loop.run_until_complete(web.run_app(app, port=80))
     try:
         loop.run_forever()
     except KeyboardInterrupt:
