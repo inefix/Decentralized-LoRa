@@ -4,7 +4,7 @@
 
 import asyncio
 
-add = "localhost"
+add = "0.0.0.0"     # localhost does not work ! https://stackoverflow.com/questions/15734219/simple-python-udp-server-trouble-receiving-packets-from-clients-other-than-loca/15734249
 port = 9999
 
 class EchoServerProtocol:
@@ -28,8 +28,8 @@ async def start_datagram_proxy(add, port):
 def main(add=add, port=port):
     loop = asyncio.get_event_loop()
     print("Starting UDP server...")
-    coro = start_datagram_proxy(add, port)
-    transport, _ = loop.run_until_complete(coro)
+    con = start_datagram_proxy(add, port)
+    transport, _ = loop.run_until_complete(con)
     print("UDP server is running...")
     try:
         loop.run_forever()

@@ -1,6 +1,6 @@
 import asyncio
 
-add = "localhost"
+add = "0.0.0.0"
 port = 9999
 
 class EchoClientProtocol:

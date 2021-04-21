@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 
 services:
   server:
@@ -8,7 +8,7 @@ services:
     volumes:
       - ./:/app
     ports:
-      - 9999:9999
+      - 9999:9999/udp
     networks:
       - udpclient_some-net
     #command: tail -f
