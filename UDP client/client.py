@@ -1,7 +1,7 @@
 import asyncio
 
 add = "localhost"
-port = 1680
+port = 9999
 
 class EchoClientProtocol:
     def __init__(self, message, loop):
