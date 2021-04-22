@@ -121,13 +121,28 @@ async def remove_device(request):
     return web.Response(status=204)
 
 
+async def process(message):
+    print("processing : ", message)
+
+    # decode message
+
+    # store decoded message insto db
+
+    # return response to send back
+
+
 class EchoServerProtocol:
     def connection_made(self, transport):
         self.transport = transport
 
     def datagram_received(self, data, addr):
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.datagram_received_async(data, addr))        
+
+    async def datagram_received_async(self, data, addr):
         message = data.decode()
         print('Received %r from %s' % (message, addr))
+        await process(message)
         print('Send %r to %s' % (message, addr))
         self.transport.sendto(data, addr)
 
