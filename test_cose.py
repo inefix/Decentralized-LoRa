@@ -34,6 +34,14 @@ def main():
         backend=default_backend()
     )
 
+    serialized_private_device = priv_device.private_bytes(
+        encoding=serialization.Encoding.PEM,        # DER
+        format=serialization.PrivateFormat.PKCS8,   # TraditionalOpenSSL or PKCS8
+        encryption_algorithm=serialization.NoEncryption()
+    ).decode("utf-8")
+    #print("serialized_private_device :", serialized_private_device)
+    priv_device = serialization.load_pem_private_key(serialized_private_device.encode("utf-8"), password=None)
+
     bytes_key_priv = priv_device.private_numbers().private_value.to_bytes(32, 'big')
     x = format(priv_device.private_numbers().public_numbers.x, '064x')
     y = format(priv_device.private_numbers().public_numbers.y, '064x')
@@ -42,25 +50,38 @@ def main():
     #print("byte_key_priv2 :", bytes_key_priv2)
     #print("x :", x)
 
-    # serialized_private = priv_device.private_bytes(
-    #     encoding=serialization.Encoding.DER,
-    #     format=serialization.PrivateFormat.TraditionalOpenSSL,
-    #     encryption_algorithm=serialization.NoEncryption()
-    # )
-    # print(serialized_private)
-
     pub_device = priv_device.public_key()
-    #bytes_key_pub = pub_device.public_bytes(encoding=serialization.Encoding.DER, format=serialization.PublicFormat.SubjectPublicKeyInfo)
+    serialized_public_device = pub_device.public_bytes(
+        encoding=serialization.Encoding.PEM, 
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    ).decode("utf-8")
+    #print("serialized_public_device :", serialized_public_device)
+    pub_device = serialization.load_pem_public_key (serialized_public_device.encode("utf-8"))
     x_pub = format(pub_device.public_numbers().x, '064x')
     y_pub = format(pub_device.public_numbers().y, '064x')
     #print("x_pub :", x_pub)
+
+    # import private key from pem or x and y and bytes
 
     priv_server = ec.generate_private_key(
         ec.SECP256R1(),
         backend=default_backend()
     )
 
+    serialized_private_server = priv_device.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,       # or PKCS8
+        encryption_algorithm=serialization.NoEncryption()
+    )
+    print("serialized_private_server :", serialized_private_server)
+
     pub_server = priv_server.public_key()
+    serialized_public_server = pub_device.public_bytes(
+        encoding=serialization.Encoding.PEM, 
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    print("serialized_public_server :", serialized_public_server)
+
 
     ############################# ECDH ########################################
 
@@ -122,6 +143,7 @@ def main():
     pType = get_key_by_value(d, reverse, "DataUnconfirmedUp")
     counter = "0"
     deviceAdd = hex(random.getrandbits(64))        # 64 bits identifier
+    print("deviceAdd :", deviceAdd)
     plaintext = "Hello from the device"
     header = [pType, counter, deviceAdd]
     #content = [plaintext]
