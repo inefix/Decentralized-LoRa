@@ -56,7 +56,7 @@ def main():
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     ).decode("utf-8")
     #print("serialized_public_device :", serialized_public_device)
-    pub_device = serialization.load_pem_public_key (serialized_public_device.encode("utf-8"))
+    pub_device = serialization.load_pem_public_key(serialized_public_device.encode("utf-8"))
     x_pub = format(pub_device.public_numbers().x, '064x')
     y_pub = format(pub_device.public_numbers().y, '064x')
     #print("x_pub :", x_pub)
@@ -144,6 +144,7 @@ def main():
     counter = "0"
     deviceAdd = hex(random.getrandbits(64))        # 64 bits identifier
     print("deviceAdd :", deviceAdd)
+    #deviceAdd = "0x37dae2a4323e7028"
     plaintext = "Hello from the device"
     header = [pType, counter, deviceAdd]
     #content = [plaintext]
