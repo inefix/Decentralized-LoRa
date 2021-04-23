@@ -10,7 +10,7 @@ from aiohttp import web
 import aiohttp_cors
 import motor.motor_asyncio
 
-from lora import generate_deviceAdd, generate_key_pair
+from lora import generate_deviceAdd, generate_key_pair, get_source, check_signature, generate_key_sym, decrypt
 
 
 client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@lora.j8ycs.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
@@ -22,8 +22,8 @@ collection_MSG = db['MSG']
 add = "0.0.0.0"     # localhost does not work ! https://stackoverflow.com/questions/15734219/simple-python-udp-server-trouble-receiving-packets-from-clients-other-than-loca/15734249
 port = 9999
 
-# serialized_private_server : b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
-# serialized_public_server : b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
+serialized_private_server = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
+serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
 
 async def test(request):
     # id = "hello"
@@ -31,6 +31,8 @@ async def test(request):
     # print(f'{x} {type(x)}')
     deviceAdd = await generate_deviceAdd()
     privkey, pubkey = await generate_key_pair()
+    deviceAdd = "0x1145f03880d8a975"
+    pubkey = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
     x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey}
     await collection_DEVICE.insert_one(x)
     print("test")
@@ -131,8 +133,19 @@ async def remove_device(request):
     return web.Response(status=204)
 
 
+async def get_pubkey(id):
+    x = {"_id" : id}
+
+    document = await collection_DEVICE.find_one(x)
+
+    if str(type(document)) == "<class 'NoneType'>":
+        return "error"
+
+    return document['pubkey']
+
+
 async def process(message):
-    print("processing : ", message)
+    #print("processing :", message)
 
     # decode message
         # get the source
@@ -143,11 +156,29 @@ async def process(message):
         # check signature using pub key of device
         # generate symetric key
         # decrypt
+        # analyze content
 
+    source = await get_source(message)
+    print("source :", source)
 
-    # store decoded message into db
+    pubkey = await get_pubkey(source)
+    print("pubkey :", pubkey)
+    if pubkey != "error":
 
-    # return response to send back
+        signature = await check_signature(message, pubkey)
+
+        if signature :
+            print("Signature is correct")
+            key = await generate_key_sym(serialized_private_server, pubkey)
+            decrypted = await decrypt(message, key)
+
+        else :
+            print("Signature is not correct")
+        # store decrypted message into db + header
+
+        # return response to send back
+    else: 
+        print("Device not registered")
 
 
 class EchoServerProtocol:
@@ -159,7 +190,8 @@ class EchoServerProtocol:
         loop.create_task(self.datagram_received_async(data, addr))        
 
     async def datagram_received_async(self, data, addr):
-        message = data.decode()
+        #message = data.decode()
+        message = data
         print('Received %r from %s' % (message, addr))
         await process(message)
         print('Send %r to %s' % (message, addr))

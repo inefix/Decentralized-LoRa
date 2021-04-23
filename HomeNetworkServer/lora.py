@@ -52,3 +52,74 @@ async def generate_key_pair():
     print("serialized_public_device :", serialized_public_device)
 
     return serialized_private_device, serialized_public_device
+
+
+async def get_source(packet):
+    decoded = CoseMessage.decode(packet)
+    decoded = CoseMessage.decode(decoded.payload)
+    #print(f'phdr {decoded.phdr} {type(decoded.phdr)}')
+    header_decode = json.loads(decoded.phdr[Reserved])
+    source = header_decode[2]
+    #print(f'source : {source} {type(source)}')
+    return source
+
+
+async def check_signature(packet, pubkey):
+    pubkey = pubkey.encode("utf-8")
+    pubkey = serialization.load_pem_public_key(pubkey)
+    x_pub = format(pubkey.public_numbers().x, '064x')
+    y_pub = format(pubkey.public_numbers().y, '064x')
+
+    pub_key_attribute_dict = {
+            'KTY': 'EC2',
+            'CURVE': 'P_256',
+            'ALG': 'ES256',
+            EC2KpX : unhexlify(x_pub),
+            EC2KpY : unhexlify(y_pub)
+    }
+    pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
+
+    decoded = CoseMessage.decode(packet)
+    decoded.key = pub_cose_key
+
+    if decoded.verify_signature() :
+        #print("Signature is correct")
+        return True
+    else :
+        #print("Signature is not correct")
+        return False
+
+
+async def generate_key_sym(privkey, pubkey):
+    privkey = serialization.load_pem_private_key(privkey, password=None)
+
+    pubkey = pubkey.encode("utf-8")
+    pubkey = serialization.load_pem_public_key(pubkey)
+
+    # ECDH
+    s_key = privkey.exchange(ec.ECDH(), pubkey)
+
+    # HKDF
+    key = HKDF(
+        algorithm=hashes.SHA256(),
+        length=16,      # for AES128
+        salt=None,
+        info=b'handshake data',
+        backend=default_backend()
+    ).derive(s_key)
+
+    return key
+
+
+async def decrypt(packet, key_sym):
+    cose_key_dec = SymmetricKey(key_sym, optional_params={'ALG': 'A128GCM'})
+
+    packet = CoseMessage.decode(packet)
+
+    decoded = CoseMessage.decode(packet.payload)
+    decoded.key = cose_key_dec
+    decrypt = decoded.decrypt()
+    decrypt_decode = decrypt.decode("utf-8")
+    print("Payload :", decrypt_decode) 
+
+    return decrypt_decode
