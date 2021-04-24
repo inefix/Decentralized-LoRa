@@ -10,7 +10,7 @@ from aiohttp import web
 import aiohttp_cors
 import motor.motor_asyncio
 
-from lora import generate_deviceAdd, generate_key_pair, get_source, check_signature, generate_key_sym, decrypt
+from lora import generate_deviceAdd, generate_key_pair, get_header, check_signature, generate_key_sym, decrypt, encrypt, sign
 
 
 client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@lora.j8ycs.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
@@ -25,14 +25,16 @@ port = 9999
 serialized_private_server = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
 serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
 
+serverAdd = "163.172.130.246"
+
 async def test(request):
     # id = "hello"
     # x = {"_id" : id}
     # print(f'{x} {type(x)}')
     deviceAdd = await generate_deviceAdd()
     privkey, pubkey = await generate_key_pair()
-    deviceAdd = "0x1145f03880d8a975"
-    pubkey = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
+    #deviceAdd = "0x1145f03880d8a975"
+    #pubkey = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
     x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey}
     await collection_DEVICE.insert_one(x)
     print("test")
@@ -158,11 +160,16 @@ async def process(message):
         # decrypt
         # analyze content
 
-    source = await get_source(message)
-    print("source :", source)
+    header = await get_header(message)
+    pType = header[0]
+    counter = header[1]
+    deviceAdd = header[2]
+    print("header :", header)
+    print("deviceAdd :", deviceAdd)
 
-    pubkey = await get_pubkey(source)
+    pubkey = await get_pubkey(deviceAdd)
     print("pubkey :", pubkey)
+
     if pubkey != "error":
 
         signature = await check_signature(message, pubkey)
@@ -172,13 +179,27 @@ async def process(message):
             key = await generate_key_sym(serialized_private_server, pubkey)
             decrypted = await decrypt(message, key)
 
+            # store decrypted message into db + header
+            x = {"header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
+            await collection_MSG.insert_one(x)
+
+            #print("pType :", pType)
+
+            # return response to send back
+            if pType == "DataConfirmedUp":
+                header_respond = ["ACKDown", int(counter)+1, serverAdd]
+                payload_respond = "received"
+                encrypted = await encrypt(header_respond, payload_respond, key)
+
+                packet = await sign(encrypted, serialized_private_server)
+
+                return packet
         else :
             print("Signature is not correct")
-        # store decrypted message into db + header
-
-        # return response to send back
+            return b"Signature is not correct"
     else: 
         print("Device not registered")
+        return b"Device not registered"
 
 
 class EchoServerProtocol:
@@ -193,9 +214,10 @@ class EchoServerProtocol:
         #message = data.decode()
         message = data
         print('Received %r from %s' % (message, addr))
-        await process(message)
-        print('Send %r to %s' % (message, addr))
-        self.transport.sendto(data, addr)
+        response = await process(message)
+        #await asyncio.sleep(5)
+        print('Send %r to %s' % (response, addr))
+        self.transport.sendto(response, addr)
 
 
 async def start_datagram_proxy(add, port):
