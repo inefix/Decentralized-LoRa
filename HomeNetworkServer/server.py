@@ -135,22 +135,6 @@ async def remove_device(request):
     return web.Response(status=204)
 
 
-async def generate_device(request):
-    deviceAdd = await generate_deviceAdd()
-    privkey, pubkey = await generate_key_pair()
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey}
-    y = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey}
-
-    document = await collection_DEVICE.find_one(y)
-
-    if str(type(document)) == "<class 'NoneType'>":
-        await collection_DEVICE.insert_one(y)
-        return web.json_response(x)
-    else :
-        return web.json_response({'error': 'Device already created'}, status=404)
-
-
-
 async def get_all_msg(request):
     return web.json_response([
         document async for document in collection_MSG.find()
@@ -230,6 +214,21 @@ async def remove_msg(request):
     await collection_MSG.delete_many(x)
 
     return web.Response(status=204)
+
+
+async def generate_device(request):
+    deviceAdd = await generate_deviceAdd()
+    privkey, pubkey = await generate_key_pair()
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey}
+    y = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey}
+
+    document = await collection_DEVICE.find_one(y)
+
+    if str(type(document)) == "<class 'NoneType'>":
+        await collection_DEVICE.insert_one(y)
+        return web.json_response(x)
+    else :
+        return web.json_response({'error': 'Device already created'}, status=404)
 
 
 async def get_pubkey(id):
