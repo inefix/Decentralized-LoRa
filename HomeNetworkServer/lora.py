@@ -24,6 +24,19 @@ from cose.keys.keytype import KtyEC2, KtySymmetric, KtyOKP
 from cose.keys.keyops import SignOp, VerifyOp, DeriveKeyOp, MacCreateOp, MacVerifyOp
 from cose.curves import P256
 
+d = {
+        "0000": "JoinRequest", 
+        "0001": "JoinResponse",
+        "0010": "JoinAccept",
+        "0011": "DataConfirmedUp",
+        "0100": "DataUnconfirmedUp",
+        "0101": "DataConfirmedDown",
+        "0110": "DataUnconfirmedDown",
+        "0111": "ACKUp",
+        "1000": "ACKDown"
+    }
+reverse = {}
+
 async def generate_deviceAdd():
     deviceAdd = hex(random.getrandbits(64))        # 64 bits identifier
     return deviceAdd
@@ -54,14 +67,15 @@ async def generate_key_pair():
     return serialized_private_device, serialized_public_device
 
 
-async def get_source(packet):
+async def get_header(packet):
     decoded = CoseMessage.decode(packet)
     decoded = CoseMessage.decode(decoded.payload)
     #print(f'phdr {decoded.phdr} {type(decoded.phdr)}')
     header_decode = json.loads(decoded.phdr[Reserved])
-    source = header_decode[2]
+    header_decode[0] = d[header_decode[0]]
+    #source = header_decode[2]
     #print(f'source : {source} {type(source)}')
-    return source
+    return header_decode
 
 
 async def check_signature(packet, pubkey):
@@ -111,8 +125,8 @@ async def generate_key_sym(privkey, pubkey):
     return key
 
 
-async def decrypt(packet, key_sym):
-    cose_key_dec = SymmetricKey(key_sym, optional_params={'ALG': 'A128GCM'})
+async def decrypt(packet, key):
+    cose_key_dec = SymmetricKey(key, optional_params={'ALG': 'A128GCM'})
 
     packet = CoseMessage.decode(packet)
 
@@ -123,3 +137,57 @@ async def decrypt(packet, key_sym):
     print("Payload :", decrypt_decode) 
 
     return decrypt_decode
+
+
+async def encrypt(header, plaintext, key):
+    cose_key_enc = SymmetricKey(key, optional_params={'ALG': 'A128GCM'})
+
+    header[0] = await get_key_by_value(header[0])
+
+    msg = Enc0Message(
+        phdr = {Algorithm: A128GCM, IV: b'000102030405060708090a0b0c', Reserved: json.dumps(header)},
+        payload = plaintext.encode('utf-8')
+    )
+
+    msg.key = cose_key_enc
+    encrypted = msg.encode()
+    #print("Encrypted payload :", encrypted)
+
+    return encrypted
+
+
+async def sign(encrypted, privkey):
+    privkey = serialization.load_pem_private_key(privkey, password=None)
+    bytes_key_priv = privkey.private_numbers().private_value.to_bytes(32, 'big')
+    x = format(privkey.private_numbers().public_numbers.x, '064x')
+    y = format(privkey.private_numbers().public_numbers.y, '064x')
+
+    key_attribute_dict = {
+        'KTY': 'EC2',
+        'CURVE': 'P_256',
+        'ALG': 'ES256',
+        EC2KpX : unhexlify(x),
+        EC2KpY : unhexlify(y),
+        'D': bytes_key_priv
+    }
+    cose_key = CoseKey.from_dict(key_attribute_dict)
+
+    msg = Sign1Message(
+        phdr = {Algorithm: Es256},
+        payload = encrypted
+    )
+
+    msg.key = cose_key
+    packet = msg.encode()
+    #print("Packet :", packet)
+    
+    return packet
+
+
+async def get_key_by_value(value):
+    if value not in reverse:
+        for _k, _v in d.items():
+           if _v == value:
+               reverse[_v] = _k
+               break
+    return reverse[value]
