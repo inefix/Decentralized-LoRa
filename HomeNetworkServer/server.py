@@ -3,7 +3,7 @@
 # https://docs.python.org/3/library/asyncio-protocol.html
 
 import json
-from bson.objectid import ObjectId
+import datetime
 
 import asyncio
 from aiohttp import web
@@ -135,6 +135,113 @@ async def remove_device(request):
     return web.Response(status=204)
 
 
+async def generate_device(request):
+    deviceAdd = await generate_deviceAdd()
+    privkey, pubkey = await generate_key_pair()
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey}
+    y = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey}
+
+    document = await collection_DEVICE.find_one(y)
+
+    if str(type(document)) == "<class 'NoneType'>":
+        await collection_DEVICE.insert_one(y)
+        return web.json_response(x)
+    else :
+        return web.json_response({'error': 'Device already created'}, status=404)
+
+
+
+async def get_all_msg(request):
+    return web.json_response([
+        document async for document in collection_MSG.find()
+    ])
+
+
+# curl -X DELETE http://163.172.130.246/msg
+async def remove_all_msg(request):
+    await collection_MSG.delete_many({})
+    return web.Response(status=204)
+
+
+# curl -X POST -d '{"deviceAdd":"deviceAdd", "pubkey":"pubkey"}' http://163.172.130.246/devices
+# curl -X POST -d '{"deviceAdd":"0x41e9d7694004027a", "pubkey":b"-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEfXcUEiG1lHD41LaUmXdaX5A9BzfU\nNmvTKCDK+RGZuKXoP5Ja8dlU7xcgmudn8BXklXZfre/eQHW/hD69ZGWWAw==\n-----END PUBLIC KEY-----\n"}' http://163.172.130.246/devices
+async def create_msg(request):
+    data = await request.json()
+
+    if 'header' not in data:
+        return web.json_response({'error': '"header" is a required field'})
+    header = data['header']
+    if not isinstance(header, str) or not len(header):
+        return web.json_response({'error': '"header" must be a string with at least one character'})
+    
+    if 'payload' not in data:
+        return web.json_response({'error': '"payload" is a required field'})
+    payload = data['payload']
+    if not isinstance(payload, str) or not len(payload):
+        return web.json_response({'error': '"payload" must be a string with at least one character'})
+    
+    # check unique id
+    id = str(datetime.datetime.now().strftime('%d-%m-%Y %H:%M:%S'))
+    x = {"_id" : id}
+    document = await collection_MSG.find_one(x)
+    if str(type(document)) == "<class 'NoneType'>":
+        data['_id'] = id
+        result = await collection_MSG.insert_one(data)
+        # store new device in smart contract
+        return web.Response(text="Added successfuly", status=204)
+    else :
+        return web.json_response({'error': 'Msg already registred'}, status=404)
+
+
+async def get_one_msg(request):
+    id = str(request.match_info['id'])
+
+    x = {"_id" : id}
+
+    document = await collection_MSG.find_one(x)
+
+    if str(type(document)) == "<class 'NoneType'>":
+        return web.json_response({'error': 'Msg not found'}, status=404)
+
+    return web.json_response(document)
+
+
+# curl -X PATCH -d '{"deviceAdd":"deviceAdd2", "pubkey":"pubkey2"}' http://163.172.130.246/devices/deviceAdd
+async def update_msg(request):
+    id = str(request.match_info['id'])
+
+    data = await request.json()
+
+    x = {"_id" : id}
+
+    document = await collection_MSG.find_one(x)
+
+    if str(type(document)) == "<class 'NoneType'>":
+        return web.json_response({'error': 'Device not found'}, status=404)
+
+    await collection_MSG.update_one({'_id': id}, {'$set': data})
+
+    new_document = await collection_MSG.find_one(x)
+
+    return web.json_response(new_document)
+
+
+# curl -X DELETE http://163.172.130.246/devices/test
+async def remove_msg(request):
+    id = str(request.match_info['id'])
+
+    x = {"_id" : id}
+
+    document = await collection_MSG.find_one(x)
+
+    if str(type(document)) == "<class 'NoneType'>":
+        return web.json_response({'error': 'Device not found'}, status=404)
+
+    await collection_MSG.delete_many(x)
+
+    return web.Response(status=204)
+
+
 async def get_pubkey(id):
     x = {"_id" : id}
 
@@ -180,7 +287,8 @@ async def process(message):
             decrypted = await decrypt(message, key)
 
             # store decrypted message into db + header
-            x = {"header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
+            id = str(datetime.datetime.now().strftime('%d-%m-%Y %H:%M:%S'))
+            x = {"_id" : id, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
             await collection_MSG.insert_one(x)
 
             #print("pType :", pType)
@@ -227,7 +335,6 @@ async def start_datagram_proxy(add, port):
         local_addr=(add, port))
 
 
-
 app = web.Application()
 
 # Configure default CORS settings.
@@ -248,6 +355,17 @@ cors.add(app.router.add_post('/devices', create_device))
 cors.add(app.router.add_get('/devices/{id}', get_one_device))
 cors.add(app.router.add_patch('/devices/{id}', update_device))
 cors.add(app.router.add_delete('/devices/{id}', remove_device))
+
+cors.add(app.router.add_get('/generate', generate_device))
+
+cors.add(app.router.add_get('/msg', get_all_msg))
+cors.add(app.router.add_get('/msg/', get_all_msg))
+cors.add(app.router.add_delete('/msg', remove_all_msg))
+cors.add(app.router.add_post('/msg', create_msg))
+cors.add(app.router.add_get('/msg/{id}', get_one_msg))
+cors.add(app.router.add_patch('/msg/{id}', update_msg))
+cors.add(app.router.add_delete('/msg/{id}', remove_msg))
+
 
 
 
