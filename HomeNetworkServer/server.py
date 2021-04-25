@@ -296,7 +296,7 @@ async def process(message):
             # return response to send back
             if pType == "DataConfirmedUp":
                 header_respond = ["ACKDown", int(counter)+1, serverAdd]
-                payload_respond = "received"
+                payload_respond = "Received"
                 encrypted = await encrypt(header_respond, payload_respond, key)
 
                 packet = await sign(encrypted, serialized_private_server)
