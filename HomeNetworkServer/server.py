@@ -63,16 +63,16 @@ async def create_device(request):
     data = await request.json()
 
     if 'deviceAdd' not in data:
-        return web.json_response({'error': '"deviceAdd" is a required field'})
+        return web.json_response({'error': '"deviceAdd" is a required field'}, status=404)
     deviceAdd = data['deviceAdd']
     if not isinstance(deviceAdd, str) or not len(deviceAdd):
-        return web.json_response({'error': '"deviceAdd" must be a string with at least one character'})
+        return web.json_response({'error': '"deviceAdd" must be a string with at least one character'}, status=404)
     
     if 'pubkey' not in data:
-        return web.json_response({'error': '"pubkey" is a required field'})
+        return web.json_response({'error': '"pubkey" is a required field'}, status=404)
     pubkey = data['pubkey']
     if not isinstance(pubkey, str) or not len(pubkey):
-        return web.json_response({'error': '"pubkey" must be a string with at least one character'})
+        return web.json_response({'error': '"pubkey" must be a string with at least one character'}, status=404)
     
     # check unique id
     x = {"_id" : data['deviceAdd']}
@@ -163,34 +163,24 @@ async def remove_all_msg(request):
     return web.Response(status=204)
 
 
-# curl -X POST -d '{"deviceAdd":"deviceAdd", "pubkey":"pubkey"}' http://163.172.130.246/devices
-# curl -X POST -d '{"deviceAdd":"0x41e9d7694004027a", "pubkey":b"-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEfXcUEiG1lHD41LaUmXdaX5A9BzfU\nNmvTKCDK+RGZuKXoP5Ja8dlU7xcgmudn8BXklXZfre/eQHW/hD69ZGWWAw==\n-----END PUBLIC KEY-----\n"}' http://163.172.130.246/devices
+# curl -X POST -d '{"header": {"pType": "DataConfirmedUp", "counter": "0", "deviceAdd": "0x1145f03880d8a975"}, "payload": "ciao"}' http://163.172.130.246/msg
 async def create_msg(request):
     data = await request.json()
 
     if 'header' not in data:
-        return web.json_response({'error': '"header" is a required field'})
+        return web.json_response({'error': '"header" is a required field'}, status=404)
     header = data['header']
-    if not isinstance(header, str) or not len(header):
-        return web.json_response({'error': '"header" must be a string with at least one character'})
-    
+  
     if 'payload' not in data:
-        return web.json_response({'error': '"payload" is a required field'})
+        return web.json_response({'error': '"payload" is a required field'}, status=404)
     payload = data['payload']
     if not isinstance(payload, str) or not len(payload):
-        return web.json_response({'error': '"payload" must be a string with at least one character'})
+        return web.json_response({'error': '"payload" must be a string with at least one character'}, status=404)
     
-    # check unique id
-    id = str(datetime.datetime.now().strftime('%d-%m-%Y %H:%M:%S'))
-    x = {"_id" : id}
-    document = await collection_MSG.find_one(x)
-    if str(type(document)) == "<class 'NoneType'>":
-        data['_id'] = id
-        result = await collection_MSG.insert_one(data)
-        # store new device in smart contract
-        return web.Response(text="Added successfuly", status=204)
-    else :
-        return web.json_response({'error': 'Msg already registred'}, status=404)
+    id = str(datetime.datetime.now().strftime('%d-%m-%Y.%H:%M:%S'))
+    data['_id'] = id
+    result = await collection_MSG.insert_one(data)
+    return web.Response(text="Added successfuly", status=204)
 
 
 async def get_one_msg(request):
@@ -206,7 +196,7 @@ async def get_one_msg(request):
     return web.json_response(document)
 
 
-# curl -X PATCH -d '{"deviceAdd":"deviceAdd2", "pubkey":"pubkey2"}' http://163.172.130.246/devices/deviceAdd
+# curl -X PATCH -d '{"payload":"salut"}' http://163.172.130.246/msg/25-04-2021.10:47:53
 async def update_msg(request):
     id = str(request.match_info['id'])
 
@@ -226,7 +216,7 @@ async def update_msg(request):
     return web.json_response(new_document)
 
 
-# curl -X DELETE http://163.172.130.246/devices/test
+# curl -X DELETE http://163.172.130.246/msg/25-04-2021.10:47:53
 async def remove_msg(request):
     id = str(request.match_info['id'])
 
@@ -287,7 +277,7 @@ async def process(message):
             decrypted = await decrypt(message, key)
 
             # store decrypted message into db + header
-            id = str(datetime.datetime.now().strftime('%d-%m-%Y %H:%M:%S'))
+            id = str(datetime.datetime.now().strftime('%d-%m-%Y.%H:%M:%S'))
             x = {"_id" : id, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
             await collection_MSG.insert_one(x)
 
