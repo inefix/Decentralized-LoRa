@@ -37,7 +37,7 @@ serialized_public = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQ
 serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
 
 # message = b'\xd2\x84C\xa1\x01&\xa0Xr\xd0\x83XF\xa3\x01\x01\x05X\x1a000102030405060708090a0b0c\x00x#["0100", "0", "0x37dae2a4323e7028"]\xa0X%-b\xc8}l\xc6\x91#\x1bm?\x06\xd2\x13\x13ac\xd8\xa0@\xec\xa2\xc2!\xb0\xd3K)\x9b\xcc\xf1\x95\xaes\x19\xaa\xe7X@\xf4\x11\x1ayj\x1f\'\xf1/\xe8\x8fi6\x0eO\x95\xccE\xff\xb8\xbc7-ff\xf1\xdc\xf5m\xac\xf0qsH\x95\xc5\xc94\xe7\xae@\xab\x8f\x13\xa6u\xd9\xcf\xdc\xa0\xd4\x86\xa9\x88\xa3\xa2\x92\xc4m\xe3\x1a\xf4\xbf\xb0'
-message = "hello"
+message = "Hello"
 
 async def generate_key_sym():
     privkey = serialization.load_pem_private_key(serialized_private, password=None)
@@ -75,7 +75,7 @@ async def encrypt(text, key):
     #print(d["0000"])
     #print(get_key_by_value(d, reverse, "JoinResponse"))
 
-    pType = get_key_by_value(d, reverse, "DataUnconfirmedUp")
+    pType = get_key_by_value(d, reverse, "DataConfirmedUp")
     counter = "0"
     plaintext = text
     header = [pType, counter, deviceAdd]
@@ -127,6 +127,45 @@ async def sign(encrypted):
     return packet
 
 
+async def check_signature(packet, pubkey):
+    pubkey = serialization.load_pem_public_key(serialized_public_server)
+    x_pub = format(pubkey.public_numbers().x, '064x')
+    y_pub = format(pubkey.public_numbers().y, '064x')
+
+    pub_key_attribute_dict = {
+            'KTY': 'EC2',
+            'CURVE': 'P_256',
+            'ALG': 'ES256',
+            EC2KpX : unhexlify(x_pub),
+            EC2KpY : unhexlify(y_pub)
+    }
+    pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
+
+    decoded = CoseMessage.decode(packet)
+    decoded.key = pub_cose_key
+
+    if decoded.verify_signature() :
+        #print("Signature is correct")
+        return True
+    else :
+        #print("Signature is not correct")
+        return False
+
+
+async def decrypt(packet, key):
+    cose_key_dec = SymmetricKey(key, optional_params={'ALG': 'A128GCM'})
+
+    packet = CoseMessage.decode(packet)
+
+    decoded = CoseMessage.decode(packet.payload)
+    decoded.key = cose_key_dec
+    decrypt = decoded.decrypt()
+    decrypt_decode = decrypt.decode("utf-8")
+    #print("Payload :", decrypt_decode) 
+
+    return decrypt_decode
+
+
 class EchoClientProtocol:
     def __init__(self, message, loop):
         self.message = message
@@ -149,12 +188,29 @@ class EchoClientProtocol:
 
         self.transport.sendto(packet)
 
+
     def datagram_received(self, data, addr):
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.datagram_received_async(data, addr))
+        
+    
+    async def datagram_received_async(self, data, addr):
         #print("Received:", data.decode())
         print("Received:", data)
 
+        signature = await check_signature(data, serialized_public_server)
+
+        if signature :
+            print("Signature is correct")
+            key = await generate_key_sym()
+            decrypted = await decrypt(data, key)
+            print("Payload :", decrypted)
+        else :
+            print("Signature is not correct")
+
         print("Close the socket")
         self.transport.close()
+        
 
     def error_received(self, exc):
         print('Error received:', exc)
