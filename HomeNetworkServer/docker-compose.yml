@@ -1,33 +1,39 @@
 version: '3'
 
 services:
-  server:
-    build:
-      context: ./
-      dockerfile: ./Dockerfile
-    volumes:
-      - ./:/app
-    ports:
-      - 9999:9999/udp
-      - 8080:8080
-    networks:
-      - udpclient_some-net
-    #command: tail -f
-    #restart: always
-    command: python -u server.py
+  # server:
+  #   build:
+  #     context: ./
+  #     dockerfile: ./Dockerfile
+  #   volumes:
+  #     - ./:/app
+  #   ports:
+  #     - 9999:9999/udp
+  #     - 8080:8080
+  #   networks:
+  #     - udpclient_some-net
+  #   #command: tail -f
+  #   #restart: always
+  #   command: python -u server.py
 
 
   frontend:
     container_name: frontend
-    build: ./frontend
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
     volumes:
-      - './:/app'
+      - './frontend:/app'
       - '/app/node_modules'
+    # volumes:
+    #   - /app/node_modules
+    #   - ./frontend:/app
     ports:
       - 80:80
-    stdin_open: true
+    #stdin_open: true
     environment:
       - CHOKIDAR_USEPOLLING=true
+    #command: tail -f
     command: npm start
 
 # https://stackoverflow.com/questions/38088279/communication-between-multiple-docker-compose-projects
