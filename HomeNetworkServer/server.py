@@ -367,7 +367,7 @@ def main(add=add, port=port):
     print("UDP server is running...")
 
     print("Start HTTP server...")
-    loop.run_until_complete(web.run_app(app, port=80))
+    loop.run_until_complete(web.run_app(app, port=8080))
 
     try:
         loop.run_forever()
