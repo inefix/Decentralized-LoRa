@@ -16,6 +16,20 @@ services:
     #restart: always
     command: python -u server.py
 
+
+  frontend:
+    container_name: frontend
+    build: ./frontend
+    volumes:
+      - './:/app'
+      - '/app/node_modules'
+    ports:
+      - 80:80
+    stdin_open: true
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    command: npm start
+
 # https://stackoverflow.com/questions/38088279/communication-between-multiple-docker-compose-projects
 networks:
   udpclient_some-net:
