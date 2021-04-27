@@ -1,7 +1,7 @@
 import React from "react";
 import axios from 'axios';
 import './Messages.css';
-import { Button, Card, Modal, Row, Col } from 'react-bootstrap';
+import { Button, Card, Row, Col } from 'react-bootstrap';
 
 
 
@@ -23,20 +23,6 @@ class Messages extends React.Component {
     this.setState({ showHide: !this.state.showHide })
   }
 
-  createDevice(){
-    this.setState({ showHide: !this.state.showHide })
-    
-    const url = 'http://163.172.130.246:8080/generate';
-    axios.get(url).then(response => response.data)
-    .then((data) => {
-      this.setState({ add: data })
-      console.log(this.state.add)
-     })
-    .catch(function (error) {
-      console.log(error);
-    });
-  }
-
   closeAndReload(){
     this.setState({ showHide: !this.state.showHide })
 
@@ -46,10 +32,10 @@ class Messages extends React.Component {
   deleteClick = value => () => {
     console.log(value);
 
-    const items = this.state.messages.filter(item => item.deviceAdd !== value);
+    const items = this.state.messages.filter(item => item._id !== value);
     this.setState({ messages: items });
 
-    const url = 'http://163.172.130.246:8080/devices/' + value;
+    const url = 'http://163.172.130.246:8080/msg/' + value;
     axios.delete(url).then(response => response.data)
     .then((data) => {
 
@@ -81,28 +67,6 @@ class Messages extends React.Component {
           <div className="header">
             <h1>Messages</h1>
             <Button variant="secondary" onClick={this.componentDidMount}>Reload</Button>
-            <Button variant="primary" onClick={() => this.createDevice()}>Add message</Button>
-
-            <Modal 
-              dialogClassName="my-modal"
-              show={this.state.showHide}
-            >
-                    {/* <Modal.Header closeButton onClick={() => this.handleModalShowHide()}> */}
-                    <Modal.Header>
-                      <Modal.Title>{this.state.add.deviceAdd}</Modal.Title>
-                    </Modal.Header>
-                    <Modal.Body>
-                        <h5>Public key :</h5>
-                        <p className="p-test">{this.state.add.pubkey}</p>
-                        <h5>Private key :</h5>
-                        <p>{this.state.add.privkey}</p>
-                    </Modal.Body>
-                    <Modal.Footer>
-                    <Button variant="secondary" onClick={() => this.closeAndReload()}>
-                        Close
-                    </Button>
-                    </Modal.Footer>
-            </Modal>
           </div>
           {this.state.messages.map((message, i) => (
             <Card key={i} className="card">
@@ -118,7 +82,7 @@ class Messages extends React.Component {
               </Col>
               <Col center>
               <Button variant="secondary" onClick={this.componentDidMount}>Modify</Button>
-              <Button variant="danger" onClick={this.deleteClick(message.payload)}>Delete</Button>
+              <Button variant="danger" onClick={this.deleteClick(message._id)}>Delete</Button>
               </Col>
               </Row>
             </Card>
