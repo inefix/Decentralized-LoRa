@@ -1,7 +1,7 @@
 import React from "react";
 import axios from 'axios';
 import './Devices.css';
-import { Button, Card, Modal } from 'react-bootstrap';
+import { Button, Card, Modal, Row, Col } from 'react-bootstrap';
 
 
 
@@ -30,7 +30,6 @@ class Devices extends React.Component {
     axios.get(url).then(response => response.data)
     .then((data) => {
       this.setState({ add: data })
-      
       console.log(this.state.add)
      })
     .catch(function (error) {
@@ -110,14 +109,22 @@ class Devices extends React.Component {
           {this.state.devices.map((device) => (
             <Card key={device.deviceAdd} className="card">
               {/* <Card.Header>{device.deviceAdd}</Card.Header> */}
-              <Card.Body>
-                <Card.Title>{device.deviceAdd}</Card.Title>
-                <Card.Text>
-                  {device.pubkey}
-                </Card.Text>
-                <Button variant="secondary" onClick={this.componentDidMount}>Modify</Button>
-                <Button variant="danger" onClick={this.deleteClick(device.deviceAdd)}>Delete</Button>
-              </Card.Body>
+              <Row>
+                <Col xs={10} className="mycard">
+                <Card.Body>
+                  <Card.Title>{device.deviceAdd}</Card.Title>
+                  <Card.Text>
+                    {device.pubkey}
+                  </Card.Text>
+                </Card.Body>
+                </Col>
+                <Col center>
+                <div className="mydiv">
+                  <Button variant="secondary" onClick={this.componentDidMount}>Modify</Button>
+                  <Button variant="danger" onClick={this.deleteClick(device.deviceAdd)}>Delete</Button>
+                </div>
+                </Col>
+              </Row>
             </Card>
           ))}
           </React.Fragment>

@@ -35,7 +35,8 @@ async def test(request):
     # privkey, pubkey = await generate_key_pair()
     deviceAdd = "0x1145f03880d8a975"
     pubkey = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey}
+    ts = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts}
     await collection_DEVICE.insert_one(x)
     print("test")
     #return web.json_response({'error': 'Todo not found'}, status=404)
@@ -45,7 +46,7 @@ async def test(request):
 
 async def get_all_devices(request):
     return web.json_response([
-        document async for document in collection_DEVICE.find().sort("_id", -1)
+        document async for document in collection_DEVICE.find().sort("ts", -1)
     ])
 
 
@@ -79,6 +80,7 @@ async def create_device(request):
     document = await collection_DEVICE.find_one(x)
     if str(type(document)) == "<class 'NoneType'>":
         data['_id'] = data['deviceAdd']
+        data['ts'] = ts = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
         result = await collection_DEVICE.insert_one(data)
         # store new device in smart contract
         return web.Response(text="Added successfuly", status=204)
@@ -161,7 +163,7 @@ async def create_msg(request):
     if not isinstance(payload, str) or not len(payload):
         return web.json_response({'error': '"payload" must be a string with at least one character'}, status=404)
     
-    id = str(datetime.datetime.now().strftime('%d-%m-%Y.%H:%M:%S'))
+    id = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
     data['_id'] = id
     result = await collection_MSG.insert_one(data)
     return web.Response(text="Added successfuly", status=204)
@@ -219,8 +221,9 @@ async def remove_msg(request):
 async def generate_device(request):
     deviceAdd = await generate_deviceAdd()
     privkey, pubkey = await generate_key_pair()
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey}
-    y = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey}
+    ts = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts}
+    y = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts}
 
     document = await collection_DEVICE.find_one(y)
 
@@ -276,7 +279,7 @@ async def process(message):
             decrypted = await decrypt(message, key)
 
             # store decrypted message into db + header
-            id = str(datetime.datetime.now().strftime('%d-%m-%Y.%H:%M:%S'))
+            id = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
             x = {"_id" : id, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
             await collection_MSG.insert_one(x)
 
