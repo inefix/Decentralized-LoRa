@@ -1,17 +1,53 @@
-import React from "react";
+// import React from "react";
 
-function Footer() {
-  return (
-    <div className="footer">
-      <footer class="py-5 bg-dark fixed-bottom">
-        <div class="container">
-          <p class="m-0 text-center text-white">
-            Copyright &copy; Your Website 2021
-          </p>
-        </div>
-      </footer>
-    </div>
-  );
+// function Footer() {
+//   return (
+//     <div className="footer">
+//       <footer className="py-5 bg-dark fixed-bottom">
+//         <div className="container">
+//           <p className="m-0 text-center text-white">
+//             Copyright &copy; Decentralized LoRa infrastructure using blockchain 2021
+//           </p>
+//         </div>
+//       </footer>
+//     </div>
+//   );
+// }
+
+// export default Footer;
+
+
+var style = {
+  //backgroundColor: "#F8F8F8",
+  backgroundColor: "#343a40",
+  color: "#ffffff",
+  borderTop: "1px solid #E7E7E7",
+  textAlign: "center",
+  padding: "20px",
+  position: "fixed",
+  left: "0",
+  bottom: "0",
+  height: "60px",
+  width: "100%",
 }
 
-export default Footer;
+var phantom = {
+  display: 'block',
+  padding: '60px',
+  height: '60px',
+  width: '100%',
+}
+
+function Footer({ children }) {
+  return (
+      <div>
+          <div style={phantom} />
+          <div style={style}>
+              { children }
+              Copyright &copy; Decentralized LoRa infrastructure using blockchain 2021
+          </div>
+      </div>
+  )
+}
+
+export default Footer

@@ -1,0 +1,34 @@
+.header {
+    margin-top: 50px; 
+    margin-bottom: 50px;
+    display: flex;
+  }
+  
+.header h1 {
+    flex-grow: 1;
+}
+
+.header Button {
+    margin-left: 40px;
+}
+
+.card{
+    margin-top: 15px; 
+}
+
+.card Button {
+    margin-left: 40px;
+}
+
+.my-modal {
+    width: 60vw;
+    max-width: 60vw;
+}
+
+.p-test {
+    margin-bottom: 50px;
+}
+
+.closeButton{
+    outline: none;
+}

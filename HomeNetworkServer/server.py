@@ -31,10 +31,10 @@ async def test(request):
     # id = "hello"
     # x = {"_id" : id}
     # print(f'{x} {type(x)}')
-    deviceAdd = await generate_deviceAdd()
-    privkey, pubkey = await generate_key_pair()
-    #deviceAdd = "0x1145f03880d8a975"
-    #pubkey = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
+    # deviceAdd = await generate_deviceAdd()
+    # privkey, pubkey = await generate_key_pair()
+    deviceAdd = "0x1145f03880d8a975"
+    pubkey = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
     x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey}
     await collection_DEVICE.insert_one(x)
     print("test")
@@ -45,7 +45,7 @@ async def test(request):
 
 async def get_all_devices(request):
     return web.json_response([
-        document async for document in collection_DEVICE.find()
+        document async for document in collection_DEVICE.find().sort("_id", -1)
     ])
 
 
@@ -137,7 +137,7 @@ async def remove_device(request):
 
 async def get_all_msg(request):
     return web.json_response([
-        document async for document in collection_MSG.find()
+        document async for document in collection_MSG.find().sort("_id", -1)
     ])
 
 
@@ -337,6 +337,7 @@ cors = aiohttp_cors.setup(app, defaults={
 })
 
 cors.add(app.router.add_get('', test))
+cors.add(app.router.add_get('/test', test))
 cors.add(app.router.add_get('/devices', get_all_devices))
 cors.add(app.router.add_get('/devices/', get_all_devices))
 cors.add(app.router.add_delete('/devices', remove_all_devices))
