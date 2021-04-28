@@ -1,0 +1,2 @@
+cryptography==3.4.7
+cose==0.9.dev5

@@ -27,8 +27,11 @@ from cose.keys.keytype import KtyEC2, KtySymmetric, KtyOKP
 from cose.keys.keyops import SignOp, VerifyOp, DeriveKeyOp, MacCreateOp, MacVerifyOp
 from cose.curves import P256
 
-add = "163.172.130.246"
-port = 9999
+# add = "163.172.130.246"
+# port = 9999
+
+add = "localhost"
+port = 8888
 
 deviceAdd = "0x1145f03880d8a975"
 serialized_private = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgMSp/hxGyOMubQVr5\nxIUYeVqFjylWXBNRjvyp1di865ChRANCAARkOGbAJWUYFw8k6PsBsjM/1+8ULqrg\nmqjBIrQbkGY9DNTdZDcQOtvOg8dXiPN25nu4q3/Mda7pMyvSCSB3I7Jv\n-----END PRIVATE KEY-----\n'

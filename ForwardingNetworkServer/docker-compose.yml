@@ -1,14 +1,15 @@
 version: '3'
 
 services:
-  app:
+  
+  server:
     build:
       context: ./
       dockerfile: ./Dockerfile
     volumes:
       - ./:/app
     ports:
-      - 8080:8080
-    command: tail -f
+      - 8888:8888/udp
+    #command: tail -f
     #restart: always
-    #command: python run_server.py
+    command: python -u test.py

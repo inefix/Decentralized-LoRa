@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM python:3.7
 
 ENV APP_HOME /app
 
@@ -11,4 +11,8 @@ ADD ./ $APP_HOME/
 RUN apt-get update
 RUN apt-get install nano
 
+#EXPOSE 9999/udp
+
 RUN pip3 install -r requirements.txt
+
+#CMD ["python","-u","server.py"]
