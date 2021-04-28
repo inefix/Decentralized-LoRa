@@ -72,10 +72,10 @@ async def start_datagram_proxy(bind, port, remote_host, remote_port):
 
 def main(bind=local_addr, port=local_port, remote_host=remote_host, remote_port=remote_port):
     loop = asyncio.get_event_loop()
-    print("Starting datagram proxy...")
+    print("Starting UDP proxy server...")
     coro = start_datagram_proxy(bind, port, remote_host, remote_port)
     transport, _ = loop.run_until_complete(coro)
-    print("Datagram proxy is running...")
+    print("UDP proxy server is running...")
     try:
         loop.run_forever()
     except KeyboardInterrupt:
