@@ -27,21 +27,27 @@ serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZ
 
 serverAdd = "163.172.130.246"
 
+async def start(request):
+    print("Server started")
+    return web.json_response({'success': 'Server started'})
+
 async def test(request):
-    # id = "hello"
-    # x = {"_id" : id}
-    # print(f'{x} {type(x)}')
-    # deviceAdd = await generate_deviceAdd()
-    # privkey, pubkey = await generate_key_pair()
+    print("test")
+
     deviceAdd = "0x1145f03880d8a975"
     pubkey = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
     ts = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts}
-    await collection_DEVICE.insert_one(x)
-    print("test")
-    #return web.json_response({'error': 'Todo not found'}, status=404)
-    return web.json_response({'success': 'test'})
-    #return web.Response(text="Hello world !")
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "name": "test"}
+
+    # check unique id
+    y = {"_id" : deviceAdd}
+    document = await collection_DEVICE.find_one(y)
+    if str(type(document)) == "<class 'NoneType'>":
+        await collection_DEVICE.insert_one(x)
+        # store new device in smart contract
+        return web.json_response({'success': 'Added successfuly'})
+    else :
+        return web.json_response({'error': 'Device already registred'}, status=404)
 
 
 async def get_all_devices(request):
@@ -80,10 +86,12 @@ async def create_device(request):
     document = await collection_DEVICE.find_one(x)
     if str(type(document)) == "<class 'NoneType'>":
         data['_id'] = data['deviceAdd']
+        data['name'] = data['deviceAdd']
         data['ts'] = ts = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
         result = await collection_DEVICE.insert_one(data)
         # store new device in smart contract
-        return web.Response(text="Added successfuly", status=204)
+        #return web.Response(text="Added successfuly", status=204)
+        return web.json_response({'success': 'Added successfuly'})
     else :
         return web.json_response({'error': 'Device already registred'}, status=404)
 
@@ -166,7 +174,8 @@ async def create_msg(request):
     id = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
     data['_id'] = id
     result = await collection_MSG.insert_one(data)
-    return web.Response(text="Added successfuly", status=204)
+    #return web.Response(text="Added successfuly", status=204)
+    return web.json_response({'success': 'Added successfuly'})
 
 
 async def get_one_msg(request):
@@ -222,8 +231,8 @@ async def generate_device(request):
     deviceAdd = await generate_deviceAdd()
     privkey, pubkey = await generate_key_pair()
     ts = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts}
-    y = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts}
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts, "name": deviceAdd}
+    y = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "name": deviceAdd}
 
     document = await collection_DEVICE.find_one(y)
 
@@ -339,7 +348,8 @@ cors = aiohttp_cors.setup(app, defaults={
         )
 })
 
-cors.add(app.router.add_get('', test))
+cors.add(app.router.add_get('', start))
+cors.add(app.router.add_get('/', start))
 cors.add(app.router.add_get('/test', test))
 cors.add(app.router.add_get('/devices', get_all_devices))
 cors.add(app.router.add_get('/devices/', get_all_devices))

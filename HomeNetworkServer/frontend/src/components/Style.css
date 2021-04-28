@@ -16,10 +16,10 @@
     margin-top: 15px; 
 }
 
-.mydiv {
-    margin-left: 0px;
-    margin-right: 0px;
-    margin-top: 15px; 
+.mybutton {
+    margin-left: 80px;
+    margin-right: 5px;
+    margin-top: 30px; 
     margin-bottom: 0px
 }
 
@@ -34,4 +34,24 @@
 
 .closeButton{
     outline: none;
+}
+
+.form-test{
+    margin-bottom: 50px;
+}
+
+.mybutton_device{
+    margin-left: 0px;
+    margin-right: 5px;
+    margin-top: 40px; 
+    margin-bottom: 0px
+}
+
+.modal-test{
+    font-weight: bold;
+}
+
+.card-test{
+    font-size: 130%;
+    font-weight: bold;
 }

@@ -1,6 +1,6 @@
 import React from "react";
 import axios from 'axios';
-import './Messages.css';
+import './Style.css';
 import { Button, Card, Row, Col } from 'react-bootstrap';
 
 
@@ -80,9 +80,9 @@ class Messages extends React.Component {
                 </Card.Text>
               </Card.Body>
               </Col>
-              <Col center>
-              <Button variant="secondary" onClick={this.componentDidMount}>Modify</Button>
-              <Button variant="danger" onClick={this.deleteClick(message._id)}>Delete</Button>
+              <Col>
+              {/* <Button variant="secondary" onClick={this.componentDidMount}>Modify</Button> */}
+              <Button className="mybutton" variant="danger" onClick={this.deleteClick(message._id)}>Delete</Button>
               </Col>
               </Row>
             </Card>
