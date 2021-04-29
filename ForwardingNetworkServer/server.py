@@ -3,7 +3,7 @@
 
 import asyncio
 
-local_addr = "0.0.0.0"
+local_addr = "localhost"
 local_port = 8888
 
 remote_host = "163.172.130.246"

@@ -3,8 +3,10 @@ import asyncio
 import os
 import zlib
 import random
-import numpy as np
+#import numpy as np
 import json
+
+# pip3 install cryptography
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import dh
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -13,10 +15,11 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.exceptions import InvalidSignature
-from cbor2 import dumps, loads
+#from cbor2 import dumps, loads
 
 from binascii import unhexlify, hexlify
 
+# pip3 install cose
 from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message
 from cose.keys import CoseKey, EC2Key, SymmetricKey
 from cose.headers import Algorithm, KID, IV, Reserved
@@ -43,9 +46,9 @@ serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZ
 message = "Hello"
 
 async def generate_key_sym():
-    privkey = serialization.load_pem_private_key(serialized_private, password=None)
+    privkey = serialization.load_pem_private_key(serialized_private, password=None, backend=default_backend())
 
-    pubkey = serialization.load_pem_public_key(serialized_public_server)
+    pubkey = serialization.load_pem_public_key(serialized_public_server, backend=default_backend())
 
     # ECDH
     s_key = privkey.exchange(ec.ECDH(), pubkey)
@@ -89,7 +92,7 @@ async def encrypt(text, key):
         payload = plaintext.encode('utf-8')
     )
 
-    cose_key_enc = SymmetricKey(key=key, optional_params={'ALG': 'A128GCM'})
+    cose_key_enc = SymmetricKey(key, optional_params={'ALG': 'A128GCM'})
     #print(cose_key_enc)
 
     msg.key = cose_key_enc
@@ -100,7 +103,7 @@ async def encrypt(text, key):
 
 
 async def sign(encrypted):
-    privkey = serialization.load_pem_private_key(serialized_private, password=None)
+    privkey = serialization.load_pem_private_key(serialized_private, password=None, backend=default_backend())
     bytes_key_priv = privkey.private_numbers().private_value.to_bytes(32, 'big')
     x = format(privkey.private_numbers().public_numbers.x, '064x')
     y = format(privkey.private_numbers().public_numbers.y, '064x')
@@ -131,7 +134,7 @@ async def sign(encrypted):
 
 
 async def check_signature(packet, pubkey):
-    pubkey = serialization.load_pem_public_key(serialized_public_server)
+    pubkey = serialization.load_pem_public_key(serialized_public_server, backend=default_backend())
     x_pub = format(pubkey.public_numbers().x, '064x')
     y_pub = format(pubkey.public_numbers().y, '064x')
 
