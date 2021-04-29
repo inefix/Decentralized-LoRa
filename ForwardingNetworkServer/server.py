@@ -3,8 +3,8 @@
 
 import asyncio
 
-local_addr = "localhost"
-local_port = 8888
+local_addr = "0.0.0.0"
+local_port = 1680
 
 remote_host = "163.172.130.246"
 remote_port = 9999
@@ -20,11 +20,13 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         self.transport = transport
 
     def datagram_received(self, data, addr):
+        #print('Received \x1b[0;30;46m%s\x1b[0m from %s' % (data, addr))
+        print("Received from device :", data)
         if addr in self.remotes:
             self.remotes[addr].transport.sendto(data)
             return
         loop = asyncio.get_event_loop()
-        print("Device addr :", addr)
+        #print("Device addr :", addr)
         self.remotes[addr] = RemoteDatagramProtocol(self, addr, data)
         coro = loop.create_datagram_endpoint(
             lambda: self.remotes[addr], remote_addr=self.remote_address)
@@ -45,7 +47,7 @@ class RemoteDatagramProtocol(asyncio.DatagramProtocol):
 
     async def connection_made_async(self, transport):
         self.transport = transport
-        print("Received from device :", self.data)
+        #print("Received from device :", self.data)
         self.transport.sendto(self.data)
 
     def datagram_received(self, data, _):
