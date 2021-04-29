@@ -33,8 +33,8 @@ async def process(data) :
                 print("Process the data 3")
                 #print(data[len(data)-10])
                 string = str(data)
-                if "data" not in string :
-                    print("No data field")
+                if "data" not in string and "868.500000" not in string :
+                    print("No data field and not the right freq")
                     return b'error'
                 else :
                     print("Process the data 4")
@@ -81,6 +81,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         #print("Received from device :", data)
         processed = await process(data)
         if processed != b'error':
+            data = processed
             # a = bytearray(data)
             # a[3] = 4
             # data = bytes(a)
