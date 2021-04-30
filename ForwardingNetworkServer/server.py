@@ -2,7 +2,7 @@
 # https://gist.github.com/vxgmichel/b2cf8536363275e735c231caef35a5df
 
 import asyncio
-import base64
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 
 local_addr = "0.0.0.0"
 local_port = 1680
@@ -14,31 +14,31 @@ remote_port = 9999
 async def process(data) :
     size = len(data)
     #print(data[3])
-    print(f'{data} {type(data)} {size}')
+    #print(f'data : {data} {type(data)} {size}')
 
     if size < 12 :
-        print(" (too short for GW <-> MAC protocol)\n")
+        #print(" (too short for GW <-> MAC protocol)\n")
         return b'error'
     else :
-        print("Process the data 1")
+        #print("Process the data 1")
         if data[0] != 2 :
-            print("invalid version\n")
+            #print("invalid version\n")
             return b'error'
         else :
-            print("Process the data 2")
+            #print("Process the data 2")
             if data[3] != 0 :
-                print("Not the right gateway command")
+                #print("Not the right gateway command")
                 return b'error'
             else :
-                print("Process the data 3")
+                #print("Process the data 3")
                 #print(data[len(data)-10])
                 string = str(data)
-                if "data" not in string and "868.500000" not in string :
-                    print("No data field and not the right freq")
+                if "data" not in string or "868.500000" not in string or "4/8" not in string :
+                    #print("No data field and not the right freq")
                     return b'error'
                 else :
-                    print("Process the data 4")
-                    #print(string)
+                    #print("Process the data 4")
+                    #print("string :", string)
                     tableau = string.split("{")
                     #print(tableau)
                     tableau[2] = tableau[2][:-2]
@@ -47,18 +47,21 @@ async def process(data) :
                     nice_data = tableau[len(tableau)-1]
                     #print(nice_data)
                     if "data" not in nice_data :
-                        print("No data field")
+                        #print("No data field")
                         return b'error'
                     else :
-                        print("Process the data 5")
+                        print(f'data : {data} {type(data)} {size}')
+                        #print("Process the data 5")
                         nice_data = nice_data.split(":")
                         #print(nice_data[1])
                         final = nice_data[1][1:]
                         final = final[:-1]
-                        print(final)
-                        print(base64.b64decode(final))
+                        print("final :", final)
+                        #processed = base64.b64decode(final)
+                        processed = urlsafe_b64decode(final)
+                        print("processed :", processed)
 
-                        return final
+                        return processed
 
 
 
@@ -77,15 +80,15 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         loop.create_task(self.datagram_received_async(data, addr)) 
 
     async def datagram_received_async(self, data, addr):
-        #print('Received \x1b[0;30;46m%s\x1b[0m from %s' % (data, addr))
         #print("Received from device :", data)
         processed = await process(data)
+        #processed = b'test'
         if processed != b'error':
             data = processed
             # a = bytearray(data)
-            # a[3] = 4
+            # a[3] = 3
             # data = bytes(a)
-            # print(data)
+            # #print(data)
             # self.transport.sendto(data, addr)
             # print("data sent to :", addr)
             if addr in self.remotes:
@@ -114,6 +117,8 @@ class RemoteDatagramProtocol(asyncio.DatagramProtocol):
     async def connection_made_async(self, transport):
         self.transport = transport
         #print("Received from device :", self.data)
+        # send to server
+        #print("type of data sent :", type(self.data))
         self.transport.sendto(self.data)
 
     def datagram_received(self, data, _):
@@ -122,6 +127,7 @@ class RemoteDatagramProtocol(asyncio.DatagramProtocol):
 
     async def datagram_received_async(self, data, _):
         print("Received from server :", data)
+        # send back to device
         self.proxy.transport.sendto(data, self.addr)
 
     def connection_lost(self, exc):
