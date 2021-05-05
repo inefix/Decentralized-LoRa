@@ -141,12 +141,12 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
     async def datagram_received_async(self, data, addr):
         #print("Received from device :", data)
         if data[3] == 0:
-            # ack = data[:4]
-            # a = bytearray(ack)
-            # a[3] = 1
-            # ack = bytes(a)
-            # #print("ack :", ack)
-            # self.transport.sendto(ack, addr)
+            ack = data[:4]
+            a = bytearray(ack)
+            a[3] = 1
+            ack = bytes(a)
+            #print("ack :", ack)
+            self.transport.sendto(ack, addr)
             processed = await process(data)
             #processed = b'test'
             if processed != b'error':
@@ -171,11 +171,11 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         if data[3] == 2:
             print("RESPONSE")
             print(data)
-            # ack = data[:4]
-            # a = bytearray(ack)
-            # a[3] = 4
-            # ack = bytes(a)
-            # self.transport.sendto(ack, addr)
+            ack = data[:4]
+            a = bytearray(ack)
+            a[3] = 4
+            ack = bytes(a)
+            self.transport.sendto(ack, addr)
             response = await generate_response(data)
             print("response :", response)
             self.transport.sendto(response, addr)
