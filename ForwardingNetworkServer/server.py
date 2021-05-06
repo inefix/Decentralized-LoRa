@@ -15,6 +15,8 @@ remote_port = 9999
 token = b'\x1c\xec'
 start = b'\x02\x1c\xec\x03'
 
+counter = 0
+
 
 async def process(data) :
     size = len(data)
@@ -43,6 +45,7 @@ async def process(data) :
                     return b'error'
                 else :
                     #print("Process the data 4")
+                    #print(f'data : {data} {type(data)} {size}')
                     json_obj = json.loads(string)
                     final = json_obj['rxpk'][0]['data']
                     processed = urlsafe_b64decode(final)
@@ -139,6 +142,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         loop.create_task(self.datagram_received_async(data, addr)) 
 
     async def datagram_received_async(self, data, addr):
+        global counter
         #print("Received from device :", data)
         if data[3] == 0:
             ack = data[:4]
@@ -150,6 +154,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
             processed = await process(data)
             #processed = b'test'
             if processed != b'error':
+                counter = 1
                 data = processed
                 #response = await generate_response()
                 #print(f'{response} {type(response)}')
@@ -169,17 +174,19 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
                 asyncio.ensure_future(coro)
 
         if data[3] == 2:
-            print("RESPONSE")
-            print(data)
-            ack = data[:4]
-            a = bytearray(ack)
-            a[3] = 4
-            ack = bytes(a)
-            self.transport.sendto(ack, addr)
-            response = await generate_response(data)
-            print("response :", response)
-            self.transport.sendto(response, addr)
-            print("response sent to :", addr)
+            if counter == 1 :
+                print("RESPONSE")
+                print(data)
+                ack = data[:4]
+                a = bytearray(ack)
+                a[3] = 4
+                ack = bytes(a)
+                self.transport.sendto(ack, addr)
+                response = await generate_response(data)
+                print("response :", response)
+                self.transport.sendto(response, addr)
+                print("response sent to :", addr)
+                counter = 0
 
         
 
