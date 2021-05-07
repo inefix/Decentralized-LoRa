@@ -16,6 +16,7 @@ token = b'\x1c\xec'
 start = b'\x02\x1c\xec\x03'
 
 counter = 0
+time = 0
 
 
 async def process(data) :
@@ -48,6 +49,8 @@ async def process(data) :
                     #print(f'data : {data} {type(data)} {size}')
                     json_obj = json.loads(string)
                     final = json_obj['rxpk'][0]['data']
+                    global time
+                    time = json_obj['rxpk'][0]['tmst']
                     processed = urlsafe_b64decode(final)
                     print("final :", final)
                     print("processed :", processed)
@@ -63,6 +66,8 @@ async def generate_response(data_received):
     #data2 = "YKQmASYAAAABltbdByk="
     #size = 32
     #size2 = 14
+    global time
+    time = time + 5000000
 
     data = "test"
     data = urlsafe_b64encode(data.encode("utf-8"))
@@ -72,8 +77,8 @@ async def generate_response(data_received):
 
     #size = len(data.encode("utf-8"))
     json_obj = {"txpk":{
-        "imme":True,
-        #"tmst":
+        "imme":False,
+        "tmst":time,
         "freq":868.500000,
         "rfch":0,
         "powe":27,
@@ -145,12 +150,14 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         global counter
         #print("Received from device :", data)
         if data[3] == 0:
-            ack = data[:4]
-            a = bytearray(ack)
-            a[3] = 1
-            ack = bytes(a)
-            #print("ack :", ack)
-            self.transport.sendto(ack, addr)
+            #sleep_duration = 4e-3  # 5 ms sleep
+            #await asyncio.sleep(sleep_duration)
+            # ack = data[:4]
+            # a = bytearray(ack)
+            # a[3] = 1
+            # ack = bytes(a)
+            # #print("ack :", ack)
+            # self.transport.sendto(ack, addr)
             processed = await process(data)
             #processed = b'test'
             if processed != b'error':
@@ -177,6 +184,8 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
             if counter == 1 :
                 print("RESPONSE")
                 print(data)
+                #sleep_duration = 4e-3  # 5 ms sleep
+                #await asyncio.sleep(sleep_duration)
                 ack = data[:4]
                 a = bytearray(ack)
                 a[3] = 4
