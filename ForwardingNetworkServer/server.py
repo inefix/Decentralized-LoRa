@@ -152,23 +152,19 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         if data[3] == 0:
             #sleep_duration = 4e-3  # 5 ms sleep
             #await asyncio.sleep(sleep_duration)
-            # ack = data[:4]
-            # a = bytearray(ack)
-            # a[3] = 1
-            # ack = bytes(a)
-            # #print("ack :", ack)
-            # self.transport.sendto(ack, addr)
+            
             processed = await process(data)
             #processed = b'test'
             if processed != b'error':
                 #counter = 1
                 data = processed
 
-                a = bytearray(data)
-                a[3] = 3
-                data = bytes(a)
-                self.transport.sendto(data, addr)
-                #print("data sent to :", addr)
+                ack = data[:4]
+                a = bytearray(ack)
+                a[3] = 1
+                ack = bytes(a)
+                #print("ack :", ack)
+                self.transport.sendto(ack, addr)
 
                 if addr in self.remotes:
                     self.remotes[addr].transport.sendto(data)
