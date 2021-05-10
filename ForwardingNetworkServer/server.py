@@ -161,15 +161,15 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
             processed = await process(data)
             #processed = b'test'
             if processed != b'error':
-                counter = 1
+                #counter = 1
                 data = processed
-                #response = await generate_response()
-                #print(f'{response} {type(response)}')
-                # a = bytearray(data)
-                # a[3] = 3
-                # data = bytes(a)
-                #self.transport.sendto(data, addr)
+
+                a = bytearray(data)
+                a[3] = 3
+                data = bytes(a)
+                self.transport.sendto(data, addr)
                 #print("data sent to :", addr)
+
                 if addr in self.remotes:
                     self.remotes[addr].transport.sendto(data)
                     return
@@ -181,21 +181,21 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
                 asyncio.ensure_future(coro)
 
         if data[3] == 2:
-            if counter == 1 :
-                print("RESPONSE")
-                print(data)
-                #sleep_duration = 4e-3  # 5 ms sleep
-                #await asyncio.sleep(sleep_duration)
-                ack = data[:4]
-                a = bytearray(ack)
-                a[3] = 4
-                ack = bytes(a)
-                self.transport.sendto(ack, addr)
-                response = await generate_response(data)
-                print("response :", response)
-                self.transport.sendto(response, addr)
-                print("response sent to :", addr)
-                counter = 0
+            #if counter == 1 :
+            print("RESPONSE")
+            print(data)
+            #sleep_duration = 4e-3  # 5 ms sleep
+            #await asyncio.sleep(sleep_duration)
+            ack = data[:4]
+            a = bytearray(ack)
+            a[3] = 4
+            ack = bytes(a)
+            self.transport.sendto(ack, addr)
+            response = await generate_response(data)
+            print("response :", response)
+            self.transport.sendto(response, addr)
+            print("response sent to :", addr)
+            counter = 0
 
         
 
