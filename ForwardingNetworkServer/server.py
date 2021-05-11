@@ -189,9 +189,10 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
             #if counter == 1 :
             #print("RESPONSE")
             print("Received from device :", data)
-            
+
             #sleep_duration = 4e-3  # 5 ms sleep
             #await asyncio.sleep(sleep_duration)
+            
             ack = data[:4]
             a = bytearray(ack)
             a[3] = 4
