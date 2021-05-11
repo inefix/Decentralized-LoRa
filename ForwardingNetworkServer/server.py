@@ -12,7 +12,8 @@ local_port = 1700
 remote_host = "163.172.130.246"
 remote_port = 9999
 
-token = b'\x1c\xec'
+#token = b'\x1c\xec'
+token = b'\x00\x00'
 start = b'\x02\x1c\xec\x03'
 
 counter = 0
@@ -69,6 +70,8 @@ async def generate_response(data_received):
     global time
     time = time + 5000000
 
+    global token
+
     data = "test"
     data = urlsafe_b64encode(data.encode("utf-8"))
     data = data.decode("utf-8")
@@ -94,7 +97,8 @@ async def generate_response(data_received):
     string = json.dumps(json_obj)
     #response = start + string.encode("utf-8")
     #response = b'\x02' + b'\x00' + b'\x00' + b'\x03' + string.encode("utf-8")
-    response = b'\x02' + data_received[1:3] + b'\x03' + string.encode("utf-8")
+    #response = b'\x02' + data_received[1:3] + b'\x03' + string.encode("utf-8")
+    response = b'\x02' + token + b'\x03' + string.encode("utf-8")
     return response
 
     # look if both data[3] come from the right sender in order to respond to the right sender
@@ -159,6 +163,9 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
             if processed != b'error':
                 #counter = 1
                 data = processed
+
+                global token
+                token = data[1:3]
 
                 ack = data[:4]
                 a = bytearray(ack)
