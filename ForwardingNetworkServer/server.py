@@ -93,7 +93,8 @@ async def generate_response(data_received):
     # WARNING: [down] mismatch between .size and .data size once converter to binary
     string = json.dumps(json_obj)
     #response = start + string.encode("utf-8")
-    response = b'\x02' + b'\x00' + b'\x00' + b'\x03' + string.encode("utf-8")
+    #response = b'\x02' + b'\x00' + b'\x00' + b'\x03' + string.encode("utf-8")
+    response = b'\x02' + data_received[1:3] + b'\x03' + string.encode("utf-8")
     return response
 
     # look if both data[3] come from the right sender in order to respond to the right sender
@@ -147,8 +148,8 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         loop.create_task(self.datagram_received_async(data, addr)) 
 
     async def datagram_received_async(self, data, addr):
-        global counter
-        #print("Received from device :", data)
+        #global counter
+        print("Received from device :", data)
         if data[3] == 0:
             #sleep_duration = 4e-3  # 5 ms sleep
             #await asyncio.sleep(sleep_duration)
@@ -187,6 +188,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
             a[3] = 4
             ack = bytes(a)
             self.transport.sendto(ack, addr)
+
             response = await generate_response(data)
             print("response :", response)
             self.transport.sendto(response, addr)
