@@ -162,7 +162,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
             if processed != b'error':
                 print("Received from device :", data)
                 #counter = 1
-                
+
                 global token
                 token = data[1:3]
 
@@ -189,6 +189,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
             #if counter == 1 :
             #print("RESPONSE")
             print("Received from device :", data)
+            
             #sleep_duration = 4e-3  # 5 ms sleep
             #await asyncio.sleep(sleep_duration)
             ack = data[:4]
