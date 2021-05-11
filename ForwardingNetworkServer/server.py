@@ -162,8 +162,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
             #processed = b'test'
             if processed != b'error':
                 #counter = 1
-                data = processed
-
+                
                 global token
                 token = data[1:3]
 
@@ -173,6 +172,8 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
                 ack = bytes(a)
                 #print("ack :", ack)
                 self.transport.sendto(ack, addr)
+
+                data = processed
 
                 if addr in self.remotes:
                     self.remotes[addr].transport.sendto(data)
