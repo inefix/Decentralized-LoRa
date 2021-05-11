@@ -153,6 +153,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
 
     async def datagram_received_async(self, data, addr):
         #global counter
+        print("Received from device :", data)
         if data[3] == 0:
             #sleep_duration = 4e-3  # 5 ms sleep
             #await asyncio.sleep(sleep_duration)
@@ -160,7 +161,6 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
             processed = await process(data)
             #processed = b'test'
             if processed != b'error':
-                print("Received from device :", data)
                 #counter = 1
 
                 global token
@@ -192,7 +192,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
 
             #sleep_duration = 4e-3  # 5 ms sleep
             #await asyncio.sleep(sleep_duration)
-            
+
             ack = data[:4]
             a = bytearray(ack)
             a[3] = 4
