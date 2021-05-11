@@ -85,7 +85,7 @@ async def generate_response(data_received):
         "modu":"LORA",
         "datr":"SF9BW125",
         "codr":"4/5",
-        "ipol":False,
+        "ipol":True,
         "size":size_calc,
         "ncrc":True,
         "data":data
