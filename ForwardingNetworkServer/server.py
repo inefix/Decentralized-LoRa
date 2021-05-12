@@ -102,7 +102,7 @@ async def generate_response(data_received):
         "tmst":time,
         "chan":chan,
         "rfch":rfch,
-        "freq":869.25,
+        "freq":867.5,
         "stat":1,
         "powe":27,
         "modu":"LORA",
