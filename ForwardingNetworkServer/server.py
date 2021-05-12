@@ -94,24 +94,38 @@ async def generate_response(data_received):
     size_calc = await size_calculation(data)
     #print("size_calc :", size_calc)
 
-    #size = len(data.encode("utf-8"))
+    # json_obj = {"txpk":{
+    #     "imme":False,
+    #     "tmst":time,
+    #     "chan":chan,
+    #     "rfch":rfch,
+    #     "freq":867.500000,
+    #     "stat":1,
+    #     "powe":27,
+    #     "modu":"LORA",
+    #     "datr":"SF12BW125",
+    #     "codr":"4/8",
+    #     "lsnr":lsnr,
+    #     "rssi":rssi,
+    #     "ipol":True,
+    #     "size":size_calc,
+    #     "ncrc":False,
+    #     "data":data
+    # }}
+
     json_obj = {"txpk":{
         "imme":False,
         "tmst":time,
-        "chan":chan,
         "rfch":rfch,
-        "freq":867.500000,
-        "stat":1,
+        "freq":869.525,
         "powe":27,
         "modu":"LORA",
-        "datr":"SF12BW125",
-        "codr":"4/8",
-        "lsnr":lsnr,
-        "rssi":rssi,
+        "datr":"SF9BW125",
+        "codr":"4/5",
         "ipol":True,
-        "size":size_calc,
-        "ncrc":False,
-        "data":data
+        "size":14,
+        "ncrc":True,
+        "data":YAZeASYAAAABL9lKXgs=
     }}
     # WARNING: [down] mismatch between .size and .data size once converter to binary
     string = json.dumps(json_obj)
