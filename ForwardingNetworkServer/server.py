@@ -18,6 +18,10 @@ start = b'\x02\x1c\xec\x03'
 
 counter = 0
 time = 0
+chan = 0
+rfch = 0
+lsnr = 0
+rssi = 0
 
 
 async def process(data) :
@@ -42,7 +46,7 @@ async def process(data) :
                 #print("Process the data 3")
                 string = data[12:].decode("utf-8")
                 #print(f'{string} {type(string)}')
-                if "data" not in string or "868.500000" not in string or "4/8" not in string :
+                if "data" not in string or "867.500000" not in string or "4/8" not in string :
                     #print("No data field and not the right freq")
                     return b'error'
                 else :
@@ -52,6 +56,14 @@ async def process(data) :
                     final = json_obj['rxpk'][0]['data']
                     global time
                     time = json_obj['rxpk'][0]['tmst']
+                    global chan
+                    chan = json_obj['rxpk'][0]['chan']
+                    global rfch
+                    rfch = json_obj['rxpk'][0]['rfch']
+                    global lsnr
+                    lsnr = json_obj['rxpk'][0]['lsnr']
+                    global rssi
+                    rssi = json_obj['rxpk'][0]['rssi']
                     processed = urlsafe_b64decode(final)
                     print("final :", final)
                     print("processed :", processed)
