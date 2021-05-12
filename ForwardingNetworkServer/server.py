@@ -83,7 +83,7 @@ async def generate_response(data_received):
     #size = 32
     #size2 = 14
     global time
-    time = time + 5000000
+    time = time + 6000000
 
     global token
     global chan
