@@ -125,7 +125,7 @@ async def generate_response(data_received):
         "ipol":True,
         "size":14,
         "ncrc":True,
-        "data":YAZeASYAAAABL9lKXgs=
+        "data":"YAZeASYAAAABL9lKXgs="
     }}
     # WARNING: [down] mismatch between .size and .data size once converter to binary
     string = json.dumps(json_obj)
