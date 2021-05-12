@@ -83,6 +83,10 @@ async def generate_response(data_received):
     time = time + 7000000
 
     global token
+    global chan
+    global rfch
+    global lsnr
+    global rssi
 
     data = "test"
     data = urlsafe_b64encode(data.encode("utf-8"))
@@ -94,16 +98,16 @@ async def generate_response(data_received):
     json_obj = {"txpk":{
         "imme":False,
         "tmst":time,
-        "chan":5,
-        "rfch":0,
+        "chan":chan,
+        "rfch":rfch,
         "freq":867.500000,
         "stat":1,
         "powe":27,
         "modu":"LORA",
         "datr":"SF12BW125",
         "codr":"4/8",
-        "lsnr":-10.8,
-        "rssi":-95,
+        "lsnr":lsnr,
+        "rssi":rssi,
         "ipol":True,
         "size":size_calc,
         "ncrc":False,
