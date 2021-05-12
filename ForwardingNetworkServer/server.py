@@ -9,8 +9,11 @@ from base64 import urlsafe_b64decode, urlsafe_b64encode
 local_addr = "0.0.0.0"
 local_port = 1700
 
-remote_host = "163.172.130.246"
-remote_port = 9999
+# remote_host = "163.172.130.246"
+# remote_port = 9999
+
+remote_host = "router.eu.thethings.network"
+remote_port = 1680
 
 #token = b'\x1c\xec'
 token = b'\x00\x00'
@@ -94,39 +97,39 @@ async def generate_response(data_received):
     size_calc = await size_calculation(data)
     #print("size_calc :", size_calc)
 
-    # json_obj = {"txpk":{
-    #     "imme":False,
-    #     "tmst":time,
-    #     "chan":chan,
-    #     "rfch":rfch,
-    #     "freq":867.500000,
-    #     "stat":1,
-    #     "powe":27,
-    #     "modu":"LORA",
-    #     "datr":"SF12BW125",
-    #     "codr":"4/8",
-    #     "lsnr":lsnr,
-    #     "rssi":rssi,
-    #     "ipol":True,
-    #     "size":size_calc,
-    #     "ncrc":False,
-    #     "data":data
-    # }}
-
     json_obj = {"txpk":{
         "imme":False,
         "tmst":time,
+        "chan":chan,
         "rfch":rfch,
-        "freq":869.525,
+        "freq":867.500000,
+        "stat":1,
         "powe":27,
         "modu":"LORA",
-        "datr":"SF9BW125",
-        "codr":"4/5",
+        "datr":"SF12BW125",
+        "codr":"4/8",
+        "lsnr":lsnr,
+        "rssi":rssi,
         "ipol":True,
-        "size":14,
-        "ncrc":True,
-        "data":"YAZeASYAAAABL9lKXgs="
+        "size":size_calc,
+        "ncrc":False,
+        "data":data
     }}
+
+    # json_obj = {"txpk":{
+    #     "imme":False,
+    #     "tmst":time,
+    #     "rfch":rfch,
+    #     "freq":869.525,
+    #     "powe":27,
+    #     "modu":"LORA",
+    #     "datr":"SF9BW125",
+    #     "codr":"4/5",
+    #     "ipol":True,
+    #     "size":14,
+    #     "ncrc":True,
+    #     "data":"YAZeASYAAAABL9lKXgs="
+    # }}
     # WARNING: [down] mismatch between .size and .data size once converter to binary
     string = json.dumps(json_obj)
     #response = start + string.encode("utf-8")
@@ -187,57 +190,66 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
 
     async def datagram_received_async(self, data, addr):
         #global counter
-        print("Received from device :", data)
-        if data[3] == 0:
-            #sleep_duration = 4e-3  # 5 ms sleep
-            #await asyncio.sleep(sleep_duration)
+        # print("Received from device :", data)
+        # if data[3] == 0:
+        #     #sleep_duration = 4e-3  # 5 ms sleep
+        #     #await asyncio.sleep(sleep_duration)
             
-            processed = await process(data)
-            #processed = b'test'
-            if processed != b'error':
-                #counter = 1
+        #     processed = await process(data)
+        #     #processed = b'test'
+        #     if processed != b'error':
+        #         #counter = 1
 
-                global token
-                token = data[1:3]
+        #         global token
+        #         token = data[1:3]
 
-                ack = data[:4]
-                a = bytearray(ack)
-                a[3] = 1
-                ack = bytes(a)
-                #print("ack :", ack)
-                self.transport.sendto(ack, addr)
+        #         ack = data[:4]
+        #         a = bytearray(ack)
+        #         a[3] = 1
+        #         ack = bytes(a)
+        #         #print("ack :", ack)
+        #         self.transport.sendto(ack, addr)
 
-                data = processed
+        #         data = processed
 
-                if addr in self.remotes:
-                    self.remotes[addr].transport.sendto(data)
-                    return
-                loop = asyncio.get_event_loop()
-                #print("Device addr :", addr)
-                self.remotes[addr] = RemoteDatagramProtocol(self, addr, data)
-                coro = loop.create_datagram_endpoint(
-                    lambda: self.remotes[addr], remote_addr=self.remote_address)
-                asyncio.ensure_future(coro)
+        #         if addr in self.remotes:
+        #             self.remotes[addr].transport.sendto(data)
+        #             return
+        #         loop = asyncio.get_event_loop()
+        #         #print("Device addr :", addr)
+        #         self.remotes[addr] = RemoteDatagramProtocol(self, addr, data)
+        #         coro = loop.create_datagram_endpoint(
+        #             lambda: self.remotes[addr], remote_addr=self.remote_address)
+        #         asyncio.ensure_future(coro)
 
-        if data[3] == 2:
-            #if counter == 1 :
-            #print("RESPONSE")
-            #print("Received from device :", data)
+        # if data[3] == 2:
+        #     #if counter == 1 :
+        #     #print("RESPONSE")
+        #     #print("Received from device :", data)
 
-            #sleep_duration = 4e-3  # 5 ms sleep
-            #await asyncio.sleep(sleep_duration)
+        #     #sleep_duration = 4e-3  # 5 ms sleep
+        #     #await asyncio.sleep(sleep_duration)
 
-            ack = data[:4]
-            a = bytearray(ack)
-            a[3] = 4
-            ack = bytes(a)
-            self.transport.sendto(ack, addr)
+        #     ack = data[:4]
+        #     a = bytearray(ack)
+        #     a[3] = 4
+        #     ack = bytes(a)
+        #     self.transport.sendto(ack, addr)
 
-            response = await generate_response(data)
-            print("response :", response)
-            self.transport.sendto(response, addr)
-            print("response sent to :", addr)
-            counter = 0
+        #     response = await generate_response(data)
+        #     print("response :", response)
+        #     self.transport.sendto(response, addr)
+        #     print("response sent to :", addr)
+        #     counter = 0
+
+        if addr in self.remotes:
+            self.remotes[addr].transport.sendto(data)
+            return
+        loop = asyncio.get_event_loop()
+        self.remotes[addr] = RemoteDatagramProtocol(self, addr, data)
+        coro = loop.create_datagram_endpoint(
+            lambda: self.remotes[addr], remote_addr=self.remote_address)
+        asyncio.ensure_future(coro)
 
         
 
