@@ -190,7 +190,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
 
     async def datagram_received_async(self, data, addr):
         #global counter
-        # print("Received from device :", data)
+        print("Received from device :", data)
         # if data[3] == 0:
         #     #sleep_duration = 4e-3  # 5 ms sleep
         #     #await asyncio.sleep(sleep_duration)
