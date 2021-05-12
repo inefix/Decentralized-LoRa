@@ -98,8 +98,8 @@ async def generate_response(data_received):
     #print("size_calc :", size_calc)
 
     json_obj = {"txpk":{
-        "imme":True,
-        #"tmst":time,
+        "imme":False,
+        "tmst":time,
         "chan":chan,
         "rfch":rfch,
         "freq":869.25,
