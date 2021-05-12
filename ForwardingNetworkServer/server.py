@@ -242,9 +242,9 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         #     print("response sent to :", addr)
         #     counter = 0
 
-        if addr in self.remotes:
-            self.remotes[addr].transport.sendto(data)
-            return
+        # if addr in self.remotes:
+        #     self.remotes[addr].transport.sendto(data)
+        #     return
         loop = asyncio.get_event_loop()
         self.remotes[addr] = RemoteDatagramProtocol(self, addr, data)
         coro = loop.create_datagram_endpoint(
