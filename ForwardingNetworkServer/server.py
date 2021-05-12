@@ -82,15 +82,19 @@ async def generate_response(data_received):
     json_obj = {"txpk":{
         "imme":False,
         "tmst":time,
+        "chan":2,
+        "rfch":1,
         "freq":868.500000,
-        "rfch":0,
+        "stat":1,
         "powe":27,
         "modu":"LORA",
-        "datr":"SF9BW125",
-        "codr":"4/5",
+        "datr":"SF12BW125",
+        "codr":"4/8",
+        "lsnr":-10.5,
+        "rssi":-91,
         "ipol":True,
         "size":size_calc,
-        "ncrc":True,
+        "ncrc":False,
         "data":data
     }}
     # WARNING: [down] mismatch between .size and .data size once converter to binary
