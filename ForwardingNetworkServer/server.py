@@ -13,7 +13,7 @@ local_port = 1700
 # remote_port = 9999
 
 remote_host = "router.eu.thethings.network"
-remote_port = 1680
+remote_port = 1700
 
 #token = b'\x1c\xec'
 token = b'\x00\x00'
@@ -242,9 +242,9 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         #     print("response sent to :", addr)
         #     counter = 0
 
-        # if addr in self.remotes:
-        #     self.remotes[addr].transport.sendto(data)
-        #     return
+        if addr in self.remotes:
+            self.remotes[addr].transport.sendto(data)
+            return
         loop = asyncio.get_event_loop()
         self.remotes[addr] = RemoteDatagramProtocol(self, addr, data)
         coro = loop.create_datagram_endpoint(
