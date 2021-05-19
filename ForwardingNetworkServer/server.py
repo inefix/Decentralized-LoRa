@@ -155,7 +155,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
 
     async def datagram_received_async(self, data, addr):
         global counter
-        #print("Received from device :", data)
+        # print("Received from device :", data)
         if data[3] == 0:
             #sleep_duration = 4e-3  # 5 ms sleep
             #await asyncio.sleep(sleep_duration)
@@ -180,7 +180,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
                     self.remotes[addr].transport.sendto(data)
                     return
                 loop = asyncio.get_event_loop()
-                #print("Device addr :", addr)
+                # print("Device addr :", addr)
                 self.remotes[addr] = RemoteDatagramProtocol(self, addr, data)
                 coro = loop.create_datagram_endpoint(
                     lambda: self.remotes[addr], remote_addr=self.remote_address)
@@ -189,6 +189,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         if data[3] == 2:
             if counter == 1 :
                 counter = 0
+                # print("Device addr :", addr)
                 #print("RESPONSE")
                 #print("Received from device :", data)
 
