@@ -98,21 +98,22 @@ async def generate_response(data_received):
     #print("size_calc :", size_calc)
 
     json_obj = {"txpk":{
-        "imme":False,
-        "tmst":time,
-        "chan":chan,
+        "imme":True,
+        #"tmst":time,
+        #"chan":chan,
         "rfch":rfch,
         "freq":867.5,
-        "stat":1,
-        "powe":27,
+        #"stat":1,
+        "powe":14,
         "modu":"LORA",
         "datr":"SF12BW125",
         "codr":"4/8",
-        "lsnr":lsnr,
-        "rssi":rssi,
-        "ipol":True,
+        "prea":8,
+        #"lsnr":lsnr,
+        #"rssi":rssi,
+        "ipol":False,
         "size":size_calc,
-        "ncrc":False,
+        # "ncrc":True,
         "data":data
     }}
 
@@ -230,11 +231,11 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
             #sleep_duration = 4e-3  # 5 ms sleep
             #await asyncio.sleep(sleep_duration)
 
-            ack = data[:4]
-            a = bytearray(ack)
-            a[3] = 4
-            ack = bytes(a)
-            self.transport.sendto(ack, addr)
+            # ack = data[:4]
+            # a = bytearray(ack)
+            # a[3] = 4
+            # ack = bytes(a)
+            # self.transport.sendto(ack, addr)
 
             response = await generate_response(data)
             print("response :", response)
