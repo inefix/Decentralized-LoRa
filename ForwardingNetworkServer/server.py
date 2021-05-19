@@ -21,10 +21,6 @@ start = b'\x02\x1c\xec\x03'
 
 counter = 0
 time = 0
-chan = 0
-rfch = 0
-lsnr = 0
-rssi = 0
 
 
 async def process(data) :
@@ -57,16 +53,8 @@ async def process(data) :
                     #print(f'data : {data} {type(data)} {size}')
                     json_obj = json.loads(string)
                     final = json_obj['rxpk'][0]['data']
-                    global time
-                    time = json_obj['rxpk'][0]['tmst']
-                    global chan
-                    chan = json_obj['rxpk'][0]['chan']
-                    global rfch
-                    rfch = json_obj['rxpk'][0]['rfch']
-                    global lsnr
-                    lsnr = json_obj['rxpk'][0]['lsnr']
-                    global rssi
-                    rssi = json_obj['rxpk'][0]['rssi']
+                    # global time
+                    # time = json_obj['rxpk'][0]['tmst']
                     processed = urlsafe_b64decode(final)
                     print("final :", final)
                     print("processed :", processed)
@@ -85,12 +73,6 @@ async def generate_response(data_received):
     global time
     time = time + 6000000
 
-    global token
-    global chan
-    global rfch
-    global lsnr
-    global rssi
-
     data = "test"
     data = urlsafe_b64encode(data.encode("utf-8"))
     data = data.decode("utf-8")
@@ -100,43 +82,25 @@ async def generate_response(data_received):
     json_obj = {"txpk":{
         "imme":True,
         #"tmst":time,
-        #"chan":chan,
-        "rfch":rfch,
+        "rfch":0,
         "freq":867.5,
-        #"stat":1,
         "powe":14,
         "modu":"LORA",
         "datr":"SF12BW125",
         "codr":"4/8",
         "prea":8,
-        #"lsnr":lsnr,
-        #"rssi":rssi,
         "ipol":False,
         "size":size_calc,
         # "ncrc":True,
         "data":data
     }}
 
-    # json_obj = {"txpk":{
-    #     "imme":False,
-    #     "tmst":time,
-    #     "rfch":rfch,
-    #     "freq":869.525,
-    #     "powe":27,
-    #     "modu":"LORA",
-    #     "datr":"SF9BW125",
-    #     "codr":"4/5",
-    #     "ipol":True,
-    #     "size":14,
-    #     "ncrc":True,
-    #     "data":"YAZeASYAAAABL9lKXgs="
-    # }}
     # WARNING: [down] mismatch between .size and .data size once converter to binary
     string = json.dumps(json_obj)
     #response = start + string.encode("utf-8")
-    #response = b'\x02' + b'\x00' + b'\x00' + b'\x03' + string.encode("utf-8")
+    response = b'\x02' + b'\x00' + b'\x00' + b'\x03' + string.encode("utf-8")
     #response = b'\x02' + data_received[1:3] + b'\x03' + string.encode("utf-8")
-    response = b'\x02' + token + b'\x03' + string.encode("utf-8")
+    #response = b'\x02' + token + b'\x03' + string.encode("utf-8")
     return response
 
     # look if both data[3] come from the right sender in order to respond to the right sender
@@ -190,8 +154,8 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         loop.create_task(self.datagram_received_async(data, addr)) 
 
     async def datagram_received_async(self, data, addr):
-        #global counter
-        print("Received from device :", data)
+        global counter
+        #print("Received from device :", data)
         if data[3] == 0:
             #sleep_duration = 4e-3  # 5 ms sleep
             #await asyncio.sleep(sleep_duration)
@@ -199,16 +163,15 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
             processed = await process(data)
             #processed = b'test'
             if processed != b'error':
-                #counter = 1
+                counter = 1
 
-                global token
-                token = data[1:3]
+                # global token
+                # token = data[1:3]
 
                 ack = data[:4]
                 a = bytearray(ack)
                 a[3] = 1
                 ack = bytes(a)
-                #print("ack :", ack)
                 self.transport.sendto(ack, addr)
 
                 data = processed
@@ -224,24 +187,21 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
                 asyncio.ensure_future(coro)
 
         if data[3] == 2:
-            #if counter == 1 :
-            #print("RESPONSE")
-            #print("Received from device :", data)
+            if counter == 1 :
+                counter = 0
+                #print("RESPONSE")
+                #print("Received from device :", data)
 
-            #sleep_duration = 4e-3  # 5 ms sleep
-            #await asyncio.sleep(sleep_duration)
+                ack = data[:4]
+                a = bytearray(ack)
+                a[3] = 4
+                ack = bytes(a)
+                self.transport.sendto(ack, addr)
 
-            # ack = data[:4]
-            # a = bytearray(ack)
-            # a[3] = 4
-            # ack = bytes(a)
-            # self.transport.sendto(ack, addr)
-
-            response = await generate_response(data)
-            print("response :", response)
-            self.transport.sendto(response, addr)
-            print("response sent to :", addr)
-            counter = 0
+                response = await generate_response(data)
+                print("response :", response)
+                self.transport.sendto(response, addr)
+                print("response sent to :", addr)
 
         # if addr in self.remotes:
         #     self.remotes[addr].transport.sendto(data)
