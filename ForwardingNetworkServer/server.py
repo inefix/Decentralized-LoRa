@@ -45,7 +45,7 @@ async def process(data) :
                 #print("Process the data 3")
                 string = data[12:].decode("utf-8")
                 #print(f'{string} {type(string)}')
-                if "data" not in string or "867.500000" not in string or "4/5" not in string :
+                if "data" not in string or "867.500000" not in string or "4/7" not in string :
                     #print("No data field and not the right freq")
                     return b'error'
                 else :
@@ -87,7 +87,7 @@ async def generate_response(data_received):
         "powe":14,
         "modu":"LORA",
         "datr":"SF12BW125",
-        "codr":"4/8",
+        "codr":"4/7",
         "prea":8,
         "ipol":False,
         "size":size_calc,
