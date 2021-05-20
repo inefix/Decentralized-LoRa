@@ -4,7 +4,7 @@
 import asyncio
 import json
 import time
-from base64 import urlsafe_b64decode, urlsafe_b64encode
+from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode, b64decode
 
 local_addr = "0.0.0.0"
 local_port = 1700
@@ -21,6 +21,8 @@ start = b'\x02\x1c\xec\x03'
 
 counter = 0
 time = 0
+message = ""
+# message = b'\xd2\x84C\xa1\x01&\xa0X`\xd0\x83XA\xa3\x01\x01\x05X\x1a000102030405060708090a0b0c\x00x\x1e["1000", 1, "163.172.130.246"]\xa0X\x18q\xe5\'C\x15\xecp=\xce\xe9\x03\xb9\r\xccz(v\x9f\xfe\x9c\x0c\xb8f\xaeX@\x1e/ql\xc4T\xde\x80\x83\x1c-\xc4\x83\xefy\x17/\xad\xfd\xeb\x10\xf6\xf9\xec\xda\x8dL?\x00h\xa4H\xb9\xbb!\x9c\xe4\xcc\xa1\xebg\x05?r\xc6\x8b?B,\x95J\xf8\xdb\xbcxHP\xcb=F\x8f\x9d\xbb\xa3'
 
 
 async def process(data) :
@@ -55,7 +57,7 @@ async def process(data) :
                     final = json_obj['rxpk'][0]['data']
                     # global time
                     # time = json_obj['rxpk'][0]['tmst']
-                    processed = urlsafe_b64decode(final)
+                    processed = b64decode(final)
                     print("final :", final)
                     print("processed :", processed)
                     #print(data[3])
@@ -64,7 +66,7 @@ async def process(data) :
             
                 
 
-async def generate_response(data_received):
+async def generate_response(data):
     #x = {"_id" : id, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
     #data = "H3P3N2i9qc4yt7rK7ldqoeCVJGBybzPY5h1Dd7P7p8v"
     #data2 = "YKQmASYAAAABltbdByk="
@@ -73,11 +75,18 @@ async def generate_response(data_received):
     global time
     time = time + 6000000
 
-    data = "test"
-    data = urlsafe_b64encode(data.encode("utf-8"))
+    # data = "ahahhahahahhahahhahahahhahahhahahhahahhahahahahahahahahahahhahah"
+    # data = urlsafe_b64encode(data.encode("utf-8"))
+    # data = data.decode("utf-8")
+    # size_calc = await size_calculation(data)
+    # #print("size_calc :", size_calc)
+
+    # data = b'ahahhahahahhahahhahahahhahahahahahahahahahahhahahahahahhahahahahahahahahhahahahahahahahahhahahahahahahahahahahahahahahahahahahahahahahahahahhahahahahahahahahahahahahahahahahahahahahahahahahahhahhahahahahahahahahahahahahahahhahahahhahahahahahahahhahahahahahhahahahahahahahahahahahahahahahahahahhahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahahaha'
+    #data = b'\xd2\x84C\xa1\x01&\xa0X`\xd0\x83XA\xa3\x01\x01\x05X\x1a000102030405060708090a0b0c\x00x\x1e["1000", 1, "163.172.130.246"]\xa0X\x18q\xe5\'C\x15\xecp=\xce\xe9\x03\xb9\r\xccz(v\x9f\xfe\x9c\x0c\xb8f\xaeX@\x1e/ql\xc4T\xde\x80\x83\x1c-\xc4\x83\xefy\x17/\xad\xfd\xeb\x10\xf6\xf9\xec\xda\x8dL?\x00h\xa4H\xb9\xbb!\x9c\xe4\xcc\xa1\xebg\x05?r\xc6\x8b?B,\x95J\xf8\xdb\xbcxHP\xcb=F\x8f\x9d\xbb\xa3'
+    data = b64encode(data)
     data = data.decode("utf-8")
     size_calc = await size_calculation(data)
-    #print("size_calc :", size_calc)
+    print("size_calc :", size_calc)
 
     json_obj = {"txpk":{
         "imme":True,
@@ -155,6 +164,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
 
     async def datagram_received_async(self, data, addr):
         global counter
+        global message
         # print("Received from device :", data)
         if data[3] == 0:
             #sleep_duration = 4e-3  # 5 ms sleep
@@ -174,20 +184,21 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
                 ack = bytes(a)
                 self.transport.sendto(ack, addr)
 
-                data = processed
-
                 if addr in self.remotes:
-                    self.remotes[addr].transport.sendto(data)
+                    self.remotes[addr].transport.sendto(processed)
                     return
                 loop = asyncio.get_event_loop()
                 # print("Device addr :", addr)
-                self.remotes[addr] = RemoteDatagramProtocol(self, addr, data)
+                self.remotes[addr] = RemoteDatagramProtocol(self, addr, processed)
                 coro = loop.create_datagram_endpoint(
                     lambda: self.remotes[addr], remote_addr=self.remote_address)
                 asyncio.ensure_future(coro)
 
-        if data[3] == 2:
+        if data[3] == 2 :
             if counter == 1 :
+                while message == "" :
+                    await asyncio.sleep(1)
+
                 counter = 0
                 # print("Device addr :", addr)
                 #print("RESPONSE")
@@ -199,10 +210,11 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
                 ack = bytes(a)
                 self.transport.sendto(ack, addr)
 
-                response = await generate_response(data)
+                response = await generate_response(message)
                 print("response :", response)
                 self.transport.sendto(response, addr)
                 print("response sent to :", addr)
+                message = ""
 
         # if addr in self.remotes:
         #     self.remotes[addr].transport.sendto(data)
@@ -241,7 +253,9 @@ class RemoteDatagramProtocol(asyncio.DatagramProtocol):
     async def datagram_received_async(self, data, _):
         print("Received from server :", data)
         # send back to device
-        self.proxy.transport.sendto(data, self.addr)
+        # self.proxy.transport.sendto(data, self.addr)
+        global message
+        message = data
 
     def connection_lost(self, exc):
         #self.proxy.remotes.pop(self.attr)
