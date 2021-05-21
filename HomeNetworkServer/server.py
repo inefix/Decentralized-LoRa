@@ -323,7 +323,14 @@ class EchoServerProtocol:
         #message = data.decode()
         message = data
         print('Received %r from %s' % (message, addr))
-        response = await process(message)
+        if type(message) == bytes :
+            # print("type :", type(message))
+            try :
+                response = await process(message)
+            except Exception as e:
+                response = b'error, corrupted data'
+        else :
+            response = b'error, did not receive bytes'
         #await asyncio.sleep(5)
         print('Send %r to %s' % (response, addr))
         self.transport.sendto(response, addr)
@@ -376,8 +383,8 @@ def main(add=add, port=port):
     loop = asyncio.get_event_loop()
 
     print("Starting UDP server...")
-    con = start_datagram_proxy(add, port)
-    transport, _ = loop.run_until_complete(con)
+    coro = start_datagram_proxy(add, port)
+    transport, _ = loop.run_until_complete(coro)
     print("UDP server is running...")
 
     print("Start HTTP server...")
