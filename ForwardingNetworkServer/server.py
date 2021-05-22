@@ -17,7 +17,7 @@ remote_port = 9999
 
 counter = 0
 time = 0
-message = b'error'
+message = b'error, no server response'
 # message = b'\xd2\x84C\xa1\x01&\xa0X`\xd0\x83XA\xa3\x01\x01\x05X\x1a000102030405060708090a0b0c\x00x\x1e["1000", 1, "163.172.130.246"]\xa0X\x18q\xe5\'C\x15\xecp=\xce\xe9\x03\xb9\r\xccz(v\x9f\xfe\x9c\x0c\xb8f\xaeX@\x1e/ql\xc4T\xde\x80\x83\x1c-\xc4\x83\xefy\x17/\xad\xfd\xeb\x10\xf6\xf9\xec\xda\x8dL?\x00h\xa4H\xb9\xbb!\x9c\xe4\xcc\xa1\xebg\x05?r\xc6\x8b?B,\x95J\xf8\xdb\xbcxHP\xcb=F\x8f\x9d\xbb\xa3'
 
 
@@ -169,7 +169,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         if data[3] == 2 :
             if counter == 1 :
                 c = 0
-                while message == b'error' and c < 10 :
+                while message == b'error, no server response' and c < 10 :
                     await asyncio.sleep(1)
                     c = c + 1
 
@@ -184,7 +184,7 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
                 response = await generate_response(message)
                 print("response :", response)
                 self.transport.sendto(response, addr)
-                message = b'error'
+                message = b'error, no server response'
         
 
 
