@@ -4,6 +4,7 @@
 
 import json
 import datetime
+import time
 
 import asyncio
 from aiohttp import web
@@ -36,8 +37,9 @@ async def test(request):
 
     deviceAdd = "0x1145f03880d8a975"
     pubkey = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
-    ts = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "name": "test"}
+    ts = str(time.time())
+    date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": "test"}
 
     # check unique id
     y = {"_id" : deviceAdd}
@@ -56,7 +58,7 @@ async def get_all_devices(request):
     ])
 
 
-# curl -X DELETE http://163.172.130.246/devices
+# curl -X DELETE http://163.172.130.246:8080/devices
 async def remove_all_devices(request):
     await collection_DEVICE.delete_many({})
     return web.Response(status=204)
@@ -87,7 +89,8 @@ async def create_device(request):
     if str(type(document)) == "<class 'NoneType'>":
         data['_id'] = data['deviceAdd']
         data['name'] = data['deviceAdd']
-        data['ts'] = ts = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+        data['ts'] = str(time.time())
+        data['date'] = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
         result = await collection_DEVICE.insert_one(data)
         # store new device in smart contract
         #return web.Response(text="Added successfuly", status=204)
@@ -171,8 +174,10 @@ async def create_msg(request):
     if not isinstance(payload, str) or not len(payload):
         return web.json_response({'error': '"payload" must be a string with at least one character'}, status=404)
     
-    id = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+    id = str(time.time())
     data['_id'] = id
+    date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+    data['date'] = date
     result = await collection_MSG.insert_one(data)
     #return web.Response(text="Added successfuly", status=204)
     return web.json_response({'success': 'Added successfuly'})
@@ -220,7 +225,7 @@ async def remove_msg(request):
     document = await collection_MSG.find_one(x)
 
     if str(type(document)) == "<class 'NoneType'>":
-        return web.json_response({'error': 'Device not found'}, status=404)
+        return web.json_response({'error': 'Msg not found'}, status=404)
 
     await collection_MSG.delete_many(x)
 
@@ -230,9 +235,10 @@ async def remove_msg(request):
 async def generate_device(request):
     deviceAdd = await generate_deviceAdd()
     privkey, pubkey = await generate_key_pair()
-    ts = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts, "name": deviceAdd}
-    y = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "name": deviceAdd}
+    ts = str(time.time())
+    date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd}
+    y = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": deviceAdd}
 
     document = await collection_DEVICE.find_one(y)
 
@@ -288,8 +294,9 @@ async def process(message):
             decrypted = await decrypt(message, key)
 
             # store decrypted message into db + header
-            id = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-            x = {"_id" : id, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
+            id = str(time.time())
+            date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+            x = {"_id" : id, "date" : date, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
             await collection_MSG.insert_one(x)
 
             #print("pType :", pType)
@@ -323,7 +330,14 @@ class EchoServerProtocol:
         #message = data.decode()
         message = data
         print('Received %r from %s' % (message, addr))
-        response = await process(message)
+        if type(message) == bytes :
+            # print("type :", type(message))
+            try :
+                response = await process(message)
+            except Exception as e:
+                response = b'error, corrupted data'
+        else :
+            response = b'error, did not receive bytes'
         #await asyncio.sleep(5)
         print('Send %r to %s' % (response, addr))
         self.transport.sendto(response, addr)
@@ -376,8 +390,8 @@ def main(add=add, port=port):
     loop = asyncio.get_event_loop()
 
     print("Starting UDP server...")
-    con = start_datagram_proxy(add, port)
-    transport, _ = loop.run_until_complete(con)
+    coro = start_datagram_proxy(add, port)
+    transport, _ = loop.run_until_complete(coro)
     print("UDP server is running...")
 
     print("Start HTTP server...")

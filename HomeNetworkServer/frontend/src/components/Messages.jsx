@@ -70,7 +70,7 @@ class Messages extends React.Component {
           </div>
           {this.state.messages.map((message, i) => (
             <Card key={i} className="card">
-              <Card.Header>{message._id}</Card.Header>
+              <Card.Header>{message.date}</Card.Header>
               <Row>
               <Col xs={10}>
               <Card.Body>
