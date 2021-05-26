@@ -1,0 +1,9 @@
+truffle compile
+truffle develop
+migrate
+
+
+
+truffle compile &&
+truffle test &&
+truffle migrate &&

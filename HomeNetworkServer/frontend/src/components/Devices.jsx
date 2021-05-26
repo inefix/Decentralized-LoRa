@@ -2,7 +2,14 @@ import React from "react";
 import axios from 'axios';
 import './Style.css';
 import { Button, Card, Modal, Row, Col, Form } from 'react-bootstrap';
+// import Web3 from 'web3';
+import { ethers } from 'ethers'
+import { simpleStorageAbi } from './abis';
 
+// const web3 = new Web3(Web3.givenProvider);
+// const contractAddr = '0xc3C5B3159dE1d2f348Ff952a7175648E77Af23c7';
+const contractAddr = '0x82E881FD39991810ae530172D46289dC96b5dBE6';
+// const SimpleContract = new web3.eth.Contract(simpleStorageAbi, contractAddr);
 
 
 class Devices extends React.Component {
@@ -133,9 +140,54 @@ class Devices extends React.Component {
       //console.log(this.state.devices)
      })
     .catch(function (error) {
-      console.log(error);
+      console.log(error); 
     });
   }
+
+  // handleGet = async (e) => {
+  //   e.preventDefault();
+  //   const result = await SimpleContract.methods.get().call();
+  //   // setGetNumber(result);
+  //   console.log(result);
+  // };
+
+  // request access to the user's MetaMask account
+  // async requestAccount() {
+  //   await window.ethereum.request({ method: 'eth_requestAccounts' });
+  // }
+
+  async handleGet() {
+    if (typeof window.ethereum !== 'undefined') {
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const contract = new ethers.Contract(contractAddr, simpleStorageAbi, provider)
+      try {
+        const data = await contract.get()
+        // const data = await contract.publicstoredData()
+        console.log('data: ', data)
+      } catch (err) {
+        console.log("Error: ", err)
+      }
+    }    
+  }
+
+  // call the smart contract, send an update
+  async handleSet() {
+    if (typeof window.ethereum !== 'undefined') {
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner()
+      const contract = new ethers.Contract(contractAddr, simpleStorageAbi, signer)
+      const transaction = await contract.set(2)
+      await transaction.wait()
+    }
+  }
+
+  // async handleGet() {
+  //   // e.preventDefault();
+  //   const result = await SimpleContract.methods.get().call();
+  //   // setGetNumber(result);
+  //   console.log(result);
+  // }
   
   render() {
     return (
@@ -143,6 +195,8 @@ class Devices extends React.Component {
         <div className="col-xs-8">
           <div className="header">
             <h1>Devices</h1>
+            <Button variant="secondary" onClick={this.handleGet}>Get</Button>
+            <Button variant="secondary" onClick={this.handleSet}>Set</Button>
             <Button variant="secondary" onClick={this.componentDidMount}>Reload</Button>
             <Button variant="primary" onClick={() => this.createDevice()}>Add device</Button>
 
