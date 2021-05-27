@@ -26,6 +26,8 @@
 
 
 import React from "react";
+// import Web3 from 'web3';
+// import { simpleStorageAbi } from './components/abis';
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
 import { Navigation, Footer, About, Contact, Devices, Messages } from "./components";
 function App() {
