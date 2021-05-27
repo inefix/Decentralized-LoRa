@@ -5,6 +5,7 @@
 import json
 import datetime
 import time
+import ipaddress
 
 import asyncio
 from aiohttp import web
@@ -13,6 +14,11 @@ import motor.motor_asyncio
 
 from lora import generate_deviceAdd, generate_key_pair, get_header, check_signature, generate_key_sym, decrypt, encrypt, sign
 
+IPADDR = "163.172.130.246"
+IPADDR = int(ipaddress.IPv4Address(IPADDR))
+# print(IPADDR)
+# IPADDR = str(ipaddress.IPv4Address(IPADDR))
+# print(IPADDR)
 
 client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@lora.j8ycs.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
 
@@ -39,7 +45,7 @@ async def test(request):
     pubkey = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
     ts = str(time.time())
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": "test"}
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": "test", "serverAdd": IPADDR, "port": port}
 
     # check unique id
     y = {"_id" : deviceAdd}
@@ -237,14 +243,14 @@ async def generate_device(request):
     privkey, pubkey = await generate_key_pair()
     ts = str(time.time())
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd}
-    y = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": deviceAdd}
+    responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": IPADDR, "port": port}
+    stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": IPADDR, "port": port}
 
-    document = await collection_DEVICE.find_one(y)
+    document = await collection_DEVICE.find_one(stored)
 
     if str(type(document)) == "<class 'NoneType'>":
-        await collection_DEVICE.insert_one(y)
-        return web.json_response(x)
+        await collection_DEVICE.insert_one(stored)
+        return web.json_response(responded)
     else :
         return web.json_response({'error': 'Device already created'}, status=404)
 
