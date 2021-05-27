@@ -5,6 +5,19 @@ import asyncio
 import json
 import time
 from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode, b64decode
+#import aioethereum
+from web3 import Web3
+
+infuria_url = "https://ropsten.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
+web3 = Web3(Web3.HTTPProvider(infuria_url))
+print("Web3 started :", web3.isConnected())
+
+abi = json.loads('[{"constant": false,"inputs": [{"internalType": "uint256","name": "x","type": "uint256"}],"name": "set","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [],"name": "get","outputs": [{"internalType": "uint256","name": "","type": "uint256"}],"payable": false,"stateMutability": "view","type": "function"}]')
+
+contract_addr = "0x82E881FD39991810ae530172D46289dC96b5dBE6"
+
+contract = web3.eth.contract(address=contract_addr, abi=abi)
+
 
 local_addr = "0.0.0.0"
 local_port = 1700
@@ -127,12 +140,13 @@ async def size_calculation_nopad(size):
     return result_len
 
 
-class ProxyDatagramProtocol(asyncio.DatagramProtocol):
+# class ProxyDatagramProtocol(asyncio.DatagramProtocol):
+class ProxyDatagramProtocol():
 
-    def __init__(self, remote_address):
-        self.remote_address = remote_address
-        self.remotes = {}
-        super().__init__()
+    # def __init__(self, remote_address):
+    #     self.remote_address = remote_address
+    #     self.remotes = {}
+    #     super().__init__()
 
     def connection_made(self, transport):
         self.transport = transport
@@ -157,14 +171,24 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
                 ack = bytes(a)
                 self.transport.sendto(ack, addr)
 
-                if addr in self.remotes:
-                    self.remotes[addr].transport.sendto(processed)
-                    return
+                # get the address of the server to send the message to
+                publicstoredData = contract.functions.get().call()
+                print(publicstoredData)
+
+                # if addr in self.remotes:
+                #     self.remotes[addr].transport.sendto(processed)
+                #     return
+                # loop = asyncio.get_event_loop()
+                # self.remotes[addr] = RemoteDatagramProtocol(self, addr, processed)
+                # coro = loop.create_datagram_endpoint(
+                #     lambda: self.remotes[addr], remote_addr=self.remote_address)
+                # asyncio.ensure_future(coro)
                 loop = asyncio.get_event_loop()
-                self.remotes[addr] = RemoteDatagramProtocol(self, addr, processed)
                 coro = loop.create_datagram_endpoint(
-                    lambda: self.remotes[addr], remote_addr=self.remote_address)
+                    lambda: RemoteDatagramProtocol(self, addr, processed),
+                    remote_addr=(remote_host, remote_port))
                 asyncio.ensure_future(coro)
+                
 
         if data[3] == 2 :
             if counter == 1 :
@@ -188,13 +212,20 @@ class ProxyDatagramProtocol(asyncio.DatagramProtocol):
         
 
 
-class RemoteDatagramProtocol(asyncio.DatagramProtocol):
+# class RemoteDatagramProtocol(asyncio.DatagramProtocol):
+class RemoteDatagramProtocol():
 
     def __init__(self, proxy, addr, data):
         self.proxy = proxy
         self.addr = addr
         self.data = data
         super().__init__()
+
+# class RemoteDatagramProtocol:
+#     def __init__(self, message, loop):
+#         self.message = message
+#         self.loop = loop
+#         self.transport = None
 
     def connection_made(self, transport):
         loop = asyncio.get_event_loop()
@@ -224,11 +255,23 @@ class RemoteDatagramProtocol(asyncio.DatagramProtocol):
 
 async def start_datagram_proxy(bind, port, remote_host, remote_port):
     loop = asyncio.get_event_loop()
-    # connect to remote host
-    protocol = ProxyDatagramProtocol((remote_host, remote_port))
-    # launch server
+    # # connect to remote host
+    # protocol = ProxyDatagramProtocol((remote_host, remote_port))
+    # # launch server
+    # return await loop.create_datagram_endpoint(
+    #     lambda: protocol, local_addr=(bind, port))
     return await loop.create_datagram_endpoint(
-        lambda: protocol, local_addr=(bind, port))
+        lambda: ProxyDatagramProtocol(),
+        local_addr=(bind, port))
+
+
+async def go():
+    loop = asyncio.get_event_loop()
+    infuria_url = "https://ropsten.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
+    client = await aioethereum.AsyncIOHTTPClient(
+        host=infuria_url, tls=True, loop=loop)
+    val = await client.web3_clientVersion()
+    print(val)
 
 
 def main(bind=local_addr, port=local_port, remote_host=remote_host, remote_port=remote_port):
@@ -237,6 +280,9 @@ def main(bind=local_addr, port=local_port, remote_host=remote_host, remote_port=
     coro = start_datagram_proxy(bind, port, remote_host, remote_port)
     transport, _ = loop.run_until_complete(coro)
     print("UDP proxy server is running...")
+
+    #loop.run_until_complete(go())
+
     try:
         loop.run_forever()
     except KeyboardInterrupt:
