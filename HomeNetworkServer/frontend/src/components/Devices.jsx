@@ -92,7 +92,7 @@ class Devices extends React.Component {
     });
   }
 
-  closeAndReload(){
+  async closeAndReload(){
     this.setState({ showHide: !this.state.showHide })
 
     //console.log(this.state.val2);
@@ -102,6 +102,7 @@ class Devices extends React.Component {
       axios.patch(url, {"deviceAdd":this.state.add.deviceAdd, "name":this.state.val2}).then(response => response.data)
       .then((data) => {
         this.componentDidMount()
+        this.handleSet(this.state.add.deviceAdd, this.state.add.serverAdd, this.state.add.port)
       })
       .catch(function (error) {
         console.log(error);
@@ -171,13 +172,15 @@ class Devices extends React.Component {
   }
 
   // call the smart contract, send an update
-  async handleSet() {
+  async handleSet(deviceAdd, serverAddr, port) {
+    console.log(serverAddr);
+    console.log(port);
     if (typeof window.ethereum !== 'undefined') {
       await window.ethereum.request({ method: 'eth_requestAccounts' });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner()
       const contract = new ethers.Contract(contractAddr, simpleStorageAbi, signer)
-      const transaction = await contract.set(2)
+      const transaction = await contract.set(deviceAdd)
       await transaction.wait()
     }
   }
