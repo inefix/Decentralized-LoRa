@@ -37,7 +37,7 @@ services:
     depends_on:
       - server
     #command: tail -f
-    command: npm start
+    command: npm start        
 
 # https://stackoverflow.com/questions/38088279/communication-between-multiple-docker-compose-projects
 networks:

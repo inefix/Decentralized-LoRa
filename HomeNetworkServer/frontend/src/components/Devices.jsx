@@ -2,7 +2,14 @@ import React from "react";
 import axios from 'axios';
 import './Style.css';
 import { Button, Card, Modal, Row, Col, Form } from 'react-bootstrap';
+// import Web3 from 'web3';
+import { ethers } from 'ethers'
+import { simpleStorageAbi } from './abis';
 
+// const web3 = new Web3(Web3.givenProvider);
+// const contractAddr = '0xc3C5B3159dE1d2f348Ff952a7175648E77Af23c7';
+const contractAddr = '0xCd862ceF6D5EDd348854e4a280b62d51F7F62a65';
+// const SimpleContract = new web3.eth.Contract(simpleStorageAbi, contractAddr);
 
 
 class Devices extends React.Component {
@@ -85,8 +92,11 @@ class Devices extends React.Component {
     });
   }
 
-  closeAndReload(){
+  async closeAndReload(){
     this.setState({ showHide: !this.state.showHide })
+    console.log(this.state.add.deviceAdd);
+    console.log(this.state.add.serverAdd);
+    console.log(this.state.add.port);
 
     //console.log(this.state.val2);
     if(this.state.val2 !== ""){
@@ -95,6 +105,7 @@ class Devices extends React.Component {
       axios.patch(url, {"deviceAdd":this.state.add.deviceAdd, "name":this.state.val2}).then(response => response.data)
       .then((data) => {
         this.componentDidMount()
+        this.handleSet(this.state.add.deviceAdd, this.state.add.serverAdd, this.state.add.port)
       })
       .catch(function (error) {
         console.log(error);
@@ -102,6 +113,7 @@ class Devices extends React.Component {
       this.setState({ val2: "" })
     } else {
       this.componentDidMount()
+      this.handleSet(this.state.add.deviceAdd, this.state.add.serverAdd, this.state.add.port)
     }
   }
 
@@ -133,9 +145,56 @@ class Devices extends React.Component {
       //console.log(this.state.devices)
      })
     .catch(function (error) {
-      console.log(error);
+      console.log(error); 
     });
   }
+
+  // handleGet = async (e) => {
+  //   e.preventDefault();
+  //   const result = await SimpleContract.methods.get().call();
+  //   // setGetNumber(result);
+  //   console.log(result);
+  // };
+
+  // request access to the user's MetaMask account
+  // async requestAccount() {
+  //   await window.ethereum.request({ method: 'eth_requestAccounts' });
+  // }
+
+  async handleGet() {
+    if (typeof window.ethereum !== 'undefined') {
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const contract = new ethers.Contract(contractAddr, simpleStorageAbi, provider)
+      try {
+        const data = await contract.devices("0xd454ddb830bee4cf");
+        // const data = await contract.publicstoredData()
+        console.log('data: ', data)
+      } catch (err) {
+        console.log("Error: ", err)
+      }
+    }    
+  }
+
+  // call the smart contract, send an update
+  async handleSet(deviceAdd, serverAddr, port) {
+    console.log(serverAddr);
+    console.log(port);
+    if (typeof window.ethereum !== 'undefined') {
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner()
+      const contract = new ethers.Contract(contractAddr, simpleStorageAbi, signer)
+      const transaction = await contract.registerIpv4(deviceAdd, serverAddr, port)
+      await transaction.wait()
+    }
+  }
+
+  // async handleGet() {
+  //   // e.preventDefault();
+  //   const result = await SimpleContract.methods.get().call();
+  //   // setGetNumber(result);
+  //   console.log(result);
+  // }
   
   render() {
     return (
@@ -143,6 +202,8 @@ class Devices extends React.Component {
         <div className="col-xs-8">
           <div className="header">
             <h1>Devices</h1>
+            <Button variant="secondary" onClick={this.handleGet}>Get</Button>
+            {/* <Button variant="secondary" onClick={this.handleSet}>Set</Button> */}
             <Button variant="secondary" onClick={this.componentDidMount}>Reload</Button>
             <Button variant="primary" onClick={() => this.createDevice()}>Add device</Button>
 

@@ -1,0 +1,11 @@
+truffle compile
+truffle develop
+migrate
+
+truffle migrate --network ropsten
+
+
+
+truffle compile &&
+truffle test &&
+truffle migrate &&
