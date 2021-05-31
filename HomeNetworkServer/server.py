@@ -15,7 +15,7 @@ import motor.motor_asyncio
 from lora import generate_deviceAdd, generate_key_pair, get_header, check_signature, generate_key_sym, decrypt, encrypt, sign
 
 ADDR = "163.172.130.246"
-PORT = 9999
+PORT = 9998
 
 if ADDR.count(":") > 1:
     print("IPv6")
@@ -55,7 +55,7 @@ async def test(request):
     pubkey = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
     ts = str(time.time())
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": "test", "serverAdd": ADDR, "PORT": PORT}
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": "test", "serverAdd": ADDR, "port": PORT}
 
     # check unique id
     y = {"_id" : deviceAdd}
@@ -253,8 +253,8 @@ async def generate_device(request):
     privkey, pubkey = await generate_key_pair()
     ts = str(time.time())
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "PORT": PORT}
-    stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "PORT": PORT}
+    responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
+    stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
 
     document = await collection_DEVICE.find_one(stored)
 
@@ -359,11 +359,11 @@ class EchoServerProtocol:
         self.transport.sendto(response, addr)
 
 
-async def start_datagram_proxy(add, PORT):
+async def start_datagram_proxy(add, port):
     loop = asyncio.get_event_loop()
     return await loop.create_datagram_endpoint(
         lambda: EchoServerProtocol(),
-        local_addr=(add, PORT))
+        local_addr=(add, port))
 
 
 app = web.Application()
@@ -402,11 +402,11 @@ cors.add(app.router.add_delete('/msg/{id}', remove_msg))
 
 
 
-def main(add=add, PORT=PORT):
+def main(add=add, port=PORT):
     loop = asyncio.get_event_loop()
 
     print("Starting UDP server...")
-    coro = start_datagram_proxy(add, PORT)
+    coro = start_datagram_proxy(add, port)
     transport, _ = loop.run_until_complete(coro)
     print("UDP server is running...")
 
