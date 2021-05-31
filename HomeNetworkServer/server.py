@@ -14,11 +14,22 @@ import motor.motor_asyncio
 
 from lora import generate_deviceAdd, generate_key_pair, get_header, check_signature, generate_key_sym, decrypt, encrypt, sign
 
-IPADDR = "163.172.130.246"
-IPADDR = int(ipaddress.IPv4Address(IPADDR))
-# print(IPADDR)
-# IPADDR = str(ipaddress.IPv4Address(IPADDR))
-# print(IPADDR)
+ADDR = "163.172.130.246"
+PORT = 9998
+
+if ADDR.count(":") > 1:
+    print("IPv6")
+    ADDR = int(ipaddress.IPv6Address(ADDR))
+    # print(ADDR)
+elif ADDR[0].isdigit() and ADDR[len(ADDR)-1].isdigit() :
+    print("IPv4")
+    ADDR = int(ipaddress.IPv4Address(ADDR))
+    # print(ADDR)
+else :
+    print("domain")
+
+# ADDR = str(ipaddress.IPv4Address(ADDR))
+# print(ADDR)
 
 client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@lora.j8ycs.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
 
@@ -27,7 +38,6 @@ collection_DEVICE = db['DEVICE']
 collection_MSG = db['MSG']
 
 add = "0.0.0.0"     # localhost does not work ! https://stackoverflow.com/questions/15734219/simple-python-udp-server-trouble-receiving-packets-from-clients-other-than-loca/15734249
-port = 9999
 
 serialized_private_server = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
 serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
@@ -45,7 +55,7 @@ async def test(request):
     pubkey = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
     ts = str(time.time())
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": "test", "serverAdd": IPADDR, "port": port}
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": "test", "serverAdd": ADDR, "port": PORT}
 
     # check unique id
     y = {"_id" : deviceAdd}
@@ -243,8 +253,8 @@ async def generate_device(request):
     privkey, pubkey = await generate_key_pair()
     ts = str(time.time())
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": IPADDR, "port": port}
-    stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": IPADDR, "port": port}
+    responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
+    stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
 
     document = await collection_DEVICE.find_one(stored)
 
@@ -392,7 +402,7 @@ cors.add(app.router.add_delete('/msg/{id}', remove_msg))
 
 
 
-def main(add=add, port=port):
+def main(add=add, port=PORT):
     loop = asyncio.get_event_loop()
 
     print("Starting UDP server...")

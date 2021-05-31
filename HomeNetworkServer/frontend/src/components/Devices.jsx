@@ -8,7 +8,7 @@ import { simpleStorageAbi } from './abis';
 
 // const web3 = new Web3(Web3.givenProvider);
 // const contractAddr = '0xc3C5B3159dE1d2f348Ff952a7175648E77Af23c7';
-const contractAddr = '0x82E881FD39991810ae530172D46289dC96b5dBE6';
+const contractAddr = '0xCd862ceF6D5EDd348854e4a280b62d51F7F62a65';
 // const SimpleContract = new web3.eth.Contract(simpleStorageAbi, contractAddr);
 
 
@@ -94,6 +94,9 @@ class Devices extends React.Component {
 
   async closeAndReload(){
     this.setState({ showHide: !this.state.showHide })
+    console.log(this.state.add.deviceAdd);
+    console.log(this.state.add.serverAdd);
+    console.log(this.state.add.port);
 
     //console.log(this.state.val2);
     if(this.state.val2 !== ""){
@@ -110,6 +113,7 @@ class Devices extends React.Component {
       this.setState({ val2: "" })
     } else {
       this.componentDidMount()
+      this.handleSet(this.state.add.deviceAdd, this.state.add.serverAdd, this.state.add.port)
     }
   }
 
@@ -162,7 +166,7 @@ class Devices extends React.Component {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const contract = new ethers.Contract(contractAddr, simpleStorageAbi, provider)
       try {
-        const data = await contract.get()
+        const data = await contract.devices("0xd454ddb830bee4cf");
         // const data = await contract.publicstoredData()
         console.log('data: ', data)
       } catch (err) {
@@ -180,7 +184,7 @@ class Devices extends React.Component {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner()
       const contract = new ethers.Contract(contractAddr, simpleStorageAbi, signer)
-      const transaction = await contract.set(deviceAdd)
+      const transaction = await contract.registerIpv4(deviceAdd, serverAddr, port)
       await transaction.wait()
     }
   }
@@ -199,7 +203,7 @@ class Devices extends React.Component {
           <div className="header">
             <h1>Devices</h1>
             <Button variant="secondary" onClick={this.handleGet}>Get</Button>
-            <Button variant="secondary" onClick={this.handleSet}>Set</Button>
+            {/* <Button variant="secondary" onClick={this.handleSet}>Set</Button> */}
             <Button variant="secondary" onClick={this.componentDidMount}>Reload</Button>
             <Button variant="primary" onClick={() => this.createDevice()}>Add device</Button>
 
