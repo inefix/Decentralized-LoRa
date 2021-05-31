@@ -12,10 +12,11 @@ stored = f.read()
 print(stored)
 f.close()
 
-if stored[0] != 'false' :
+if json.loads(stored)['pybytes_autostart'] != False :
     f = open("/flash/pybytes_config.json", "w")
     f.write(json.dumps(my_config_dict))
     f.close()
+    print("Please restart your device to ensure that pybytes did not autostart")
 
 
 # initialise LoRa in LORA mode
