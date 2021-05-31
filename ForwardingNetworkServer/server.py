@@ -85,20 +85,36 @@ contract_addr_ens = "0x42D63ae25990889E35F215bC95884039Ba354115"
 contract_ens = web3.eth.contract(address=contract_addr_ens, abi=abi_ens)
 
 eth_addr = "test.loramac.eth"
-# if .eth 
+namehash = ens.namehash(eth_addr).hex()
+url = contract_ens.functions.text(namehash, "url").call()
+print(url)
+
+
+# if .eth
 if eth_addr[-4:] == ".eth":
     print("eth add")
-    namehash = ens.namehash(eth_addr).hex()
-    url = contract_ens.functions.text(namehash, "url").call()
-    print(url)
-    # pass it on the url parser
+    # get ip
 else :
-    print("not eth add")
-    # resolve DNS to get ip
-    address = socket.gethostbyname(eth_addr)
-    print(address)
-    # give generic port
-    port = 9999
+    add = eth_addr.split(":")
+    if add[0][-4:] == ".eth":
+        print("eth add")
+        port = add[len(add)-1]
+        port = int(port)
+        print(port)
+        # get ip
+    else :
+        address = add[0]
+        if len(add) > 1:
+            port = add[len(add)-1]
+            port = int(port)
+        else :
+            port = 9999
+        print(address)
+        print(port)
+        print("not eth add")
+        # resolve DNS to get ip
+        # address = socket.gethostbyname(address)
+        print(address)
 
 
 local_addr = "0.0.0.0"
