@@ -15,7 +15,7 @@ import motor.motor_asyncio
 from lora import generate_deviceAdd, generate_key_pair, get_header, check_signature, generate_key_sym, decrypt, encrypt, sign
 
 ADDR = "163.172.130.246"
-PORT = 9998
+PORT = 9999
 
 if ADDR.count(":") > 1:
     print("IPv6")
@@ -24,7 +24,7 @@ if ADDR.count(":") > 1:
 elif ADDR[0].isdigit() and ADDR[len(ADDR)-1].isdigit() :
     print("IPv4")
     ADDR = int(ipaddress.IPv4Address(ADDR))
-    # print(ADDR)
+    print(ADDR)
 else :
     print("domain")
 
