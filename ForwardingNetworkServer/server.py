@@ -9,74 +9,17 @@ from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode, b64decode
 from web3 import Web3
 from ens import ENS # in web3 package
 import socket
-
-
-ip4 = "https://111.111.111.111:65535"
-# ip4 = "111.111.111.111:65535"
-# print(len(ip4))
-
-ip6 = "https://[0:0:0:0:0:0:0:1]:123"
-# ip6 = "[0:0:0:0:0:0:0:1]:123"
-# print(len(ip6))
-
-add = ip6.split(":")
-print(add)
-print(len(add))
-
-if len(add) < 4 :
-    print("ipv4")
-    if len(add) > 2 and "http" in add[0] :
-        # contain "http://" or "https://"
-        add.pop(0)
-        add[0] = add[0].replace("/", "")
-    elif len(add) < 2 :
-        add = "invalid"
-        print("invalid IPv4 address")
-    elif len(add) == 2 and "http" in add[0] :
-        add = "invalid"
-        print("invalid IPv4 address")
-
-    if add != "invalid" :
-        address = add[0]
-        port = add[len(add)-1]
-        port = int(port)
-        print(address)
-        print(port)
-
-else :
-    print("ipv6")
-    if len(add) > 9 and "http" in add[0] :
-        # contain "http://" or "https://"
-        add.pop(0)
-        add[0] = add[0].replace("/", "")
-        add[0] = add[0].replace("[", "")
-        add[len(add)-2] = add[len(add)-2].replace("]", "")
-    elif len(add) < 9 :
-        add = "invalid"
-        print("invalid IPv6 address")
-    elif len(add) == 9 and "http" in add[0] :
-        add = "invalid"
-        print("invalid IPv6 address")
-    elif len(add) == 9 and "http" not in add[0] :
-        add[0] = add[0].replace("[", "")
-        add[len(add)-2] = add[len(add)-2].replace("]", "")
-
-    if add != "invalid" :
-        print(add)
-        address = ':'.join(add[:-1])
-        port = add[len(add)-1]
-        port = int(port)
-        print(address)
-        print(port)
-
-
+import ipaddress
+from lora import get_header
 
 infuria_url = "https://ropsten.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
 web3 = Web3(Web3.HTTPProvider(infuria_url))
 print("Web3 started :", web3.isConnected())
 
-abi_lora = json.loads('[{"constant": false,"inputs": [{"internalType": "uint256","name": "x","type": "uint256"}],"name": "set","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [],"name": "get","outputs": [{"internalType": "uint256","name": "","type": "uint256"}],"payable": false,"stateMutability": "view","type": "function"}]')
-contract_addr_lora = "0x82E881FD39991810ae530172D46289dC96b5dBE6"
+# abi_lora = json.loads('[{"constant": false,"inputs": [{"internalType": "uint256","name": "x","type": "uint256"}],"name": "set","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [],"name": "get","outputs": [{"internalType": "uint256","name": "","type": "uint256"}],"payable": false,"stateMutability": "view","type": "function"}]')
+# contract_addr_lora = "0x82E881FD39991810ae530172D46289dC96b5dBE6"
+abi_lora = json.loads('[{"inputs": [{"internalType": "uint64","name": "","type": "uint64"}],"name": "devices","outputs": [{"internalType": "uint32","name": "ipv4Addr","type": "uint32"},{"internalType": "uint128","name": "ipv6Addr","type": "uint128"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "ipv4Port","type": "uint16"},{"internalType": "uint16","name": "ipv6Port","type": "uint16"},{"internalType": "uint16","name": "domainPort","type": "uint16"},{"internalType": "address","name": "owner","type": "address"}],"stateMutability": "view","type": "function","constant": true},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint32","name": "server","type": "uint32"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerIpv4","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint128","name": "server","type": "uint128"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerIpv6","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerDomain","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint32","name": "server","type": "uint32"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateIpv4","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint128","name": "server","type": "uint128"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateIpv6","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateDomain","outputs": [],"stateMutability": "nonpayable","type": "function"}]')
+contract_addr_lora = "0xCd862ceF6D5EDd348854e4a280b62d51F7F62a65"
 contract_lora = web3.eth.contract(address=contract_addr_lora, abi=abi_lora)
 
 ens = ENS.fromWeb3(web3)
@@ -84,44 +27,11 @@ abi_ens = json.loads('[{"inputs":[{"internalType":"contract ENS","name":"_ens","
 contract_addr_ens = "0x42D63ae25990889E35F215bC95884039Ba354115"
 contract_ens = web3.eth.contract(address=contract_addr_ens, abi=abi_ens)
 
-eth_addr = "test.loramac.eth"
-namehash = ens.namehash(eth_addr).hex()
-url = contract_ens.functions.text(namehash, "url").call()
-print(url)
-
-
-# if .eth
-if eth_addr[-4:] == ".eth":
-    print("eth add")
-    # get ip
-else :
-    add = eth_addr.split(":")
-    if add[0][-4:] == ".eth":
-        print("eth add")
-        port = add[len(add)-1]
-        port = int(port)
-        print(port)
-        # get ip
-    else :
-        address = add[0]
-        if len(add) > 1:
-            port = add[len(add)-1]
-            port = int(port)
-        else :
-            port = 9999
-        print(address)
-        print(port)
-        print("not eth add")
-        # resolve DNS to get ip
-        # address = socket.gethostbyname(address)
-        print(address)
-
-
 local_addr = "0.0.0.0"
 local_port = 1700
 
-remote_host = "163.172.130.246"
-remote_port = 9999
+# remote_host = "163.172.130.246"
+# remote_port = 9999
 
 # remote_host = "router.eu.thethings.network"
 # remote_port = 1700
@@ -130,6 +40,91 @@ counter = 0
 time = 0
 message = b'error, no server response'
 # message = b'\xd2\x84C\xa1\x01&\xa0X`\xd0\x83XA\xa3\x01\x01\x05X\x1a000102030405060708090a0b0c\x00x\x1e["1000", 1, "163.172.130.246"]\xa0X\x18q\xe5\'C\x15\xecp=\xce\xe9\x03\xb9\r\xccz(v\x9f\xfe\x9c\x0c\xb8f\xaeX@\x1e/ql\xc4T\xde\x80\x83\x1c-\xc4\x83\xefy\x17/\xad\xfd\xeb\x10\xf6\xf9\xec\xda\x8dL?\x00h\xa4H\xb9\xbb!\x9c\xe4\xcc\xa1\xebg\x05?r\xc6\x8b?B,\x95J\xf8\xdb\xbcxHP\xcb=F\x8f\x9d\xbb\xa3'
+
+
+async def url_process(url) :
+    # ip4 = "https://111.111.111.111:65535"
+    # ip4 = "111.111.111.111:65535"
+    # print(len(ip4))
+
+    # ip6 = "https://[0:0:0:0:0:0:0:1]:123"
+    # ip6 = "[0:0:0:0:0:0:0:1]:123"
+    # print(len(ip6))
+
+    add = url.split(":")
+    # print(add)
+    # print(len(add))
+
+    # if IPv4
+    if len(add) < 4 :
+        # print("ipv4")
+        # port + http
+        if len(add) > 2 and "http" in add[0] :
+            # contain "http://" or "https://"
+            add.pop(0)
+            add[0] = add[0].replace("/", "")
+        # only address --> no port
+        elif len(add) == 1 :
+            address = add[0]
+            address = address.replace("/", "")
+            address = address.replace(" ", "")
+            port = 0
+            return address, port
+        # address + http
+        elif len(add) == 2 and "http" in add[0] :
+            address = add[len(add)-1]
+            address = address.replace("/", "")
+            address = address.replace(" ", "")
+            port = 0
+            return address, port
+
+        address = add[0]
+        address = address.replace("/", "")
+        address = address.replace(" ", "")
+        port = add[len(add)-1]
+        port = int(port)
+        # print(address)
+        # print(port)
+        return address, port
+
+    # if IPv6
+    else :
+        # print("ipv6")
+        # port + http
+        if len(add) > 9 and "http" in add[0] :
+            # contain "http://" or "https://"
+            add.pop(0)
+            add[0] = add[0].replace("/", "")
+            add[0] = add[0].replace("[", "")
+            add[len(add)-2] = add[len(add)-2].replace("]", "")
+        # only address
+        elif len(add) == 8 :
+            address = ':'.join(add)
+            address = address.replace("/", "")
+            address = address.replace(" ", "")
+            port = 0
+            return address, port
+        # address + http
+        elif len(add) == 9 and "http" in add[0] :
+            address = ':'.join(add[1:])
+            address = address.replace("/", "")
+            address = address.replace(" ", "")
+            port = 0
+            return address, port
+        # address + port
+        elif len(add) == 9 and "http" not in add[0] :
+            add[0] = add[0].replace("[", "")
+            add[len(add)-2] = add[len(add)-2].replace("]", "")
+
+        # print(add)
+        address = ':'.join(add[:-1])
+        address = address.replace("/", "")
+        address = address.replace(" ", "")
+        port = add[len(add)-1]
+        port = int(port)
+        # print(address)
+        # print(port)
+        return address, port
 
 
 async def process(data) :
@@ -238,13 +233,7 @@ async def size_calculation_nopad(size):
     return result_len
 
 
-# class ProxyDatagramProtocol(asyncio.DatagramProtocol):
 class ProxyDatagramProtocol():
-
-    # def __init__(self, remote_address):
-    #     self.remote_address = remote_address
-    #     self.remotes = {}
-    #     super().__init__()
 
     def connection_made(self, transport):
         self.transport = transport
@@ -269,25 +258,83 @@ class ProxyDatagramProtocol():
                 ack = bytes(a)
                 self.transport.sendto(ack, addr)
 
-                # get the address of the server to send the message to
-                publicstoredData = contract_lora.functions.get().call()
-                print(publicstoredData)
-                
-                # if ens --> get url
-                
+                # get source of message
+                header = await get_header(processed)
+                pType = header[0]
+                counter_header = header[1]
+                deviceAdd = header[2]
+                print("header :", header)
+                print("deviceAdd :", deviceAdd)
 
-                # if ip4, convert
+                # get address from blockchain
+                device = contract_lora.functions.devices(int(deviceAdd, 0)).call()
+                print(device)
+                ipv4Addr = device[0]
+                ipv6Addr = device[1]
+                domain = device[2]
+                ipv4Port = device[3]
+                ipv6Port = device[4]
+                domainPort = device[5]
 
-                # if ip6, convert
+                # domain = "ip6.loramac.eth"
+                # domainPort = 30
 
-                # if addr in self.remotes:
-                #     self.remotes[addr].transport.sendto(processed)
-                #     return
-                # loop = asyncio.get_event_loop()
-                # self.remotes[addr] = RemoteDatagramProtocol(self, addr, processed)
-                # coro = loop.create_datagram_endpoint(
-                #     lambda: self.remotes[addr], remote_addr=self.remote_address)
-                # asyncio.ensure_future(coro)
+                # analyze address
+                if domain != "":
+                    print("domain")
+                    # if .eth and no port in address
+                    if domain[-4:] == ".eth":
+                        print("eth add")
+                        # get ip
+                        namehash = ens.namehash(domain).hex()
+                        url = contract_ens.functions.text(namehash, "url").call()
+                        print(url)
+                        remote_host, remote_port = await url_process(url) 
+                        if remote_port == 0 :
+                            remote_port = domainPort
+                    else :
+                        add = domain.split(":")
+                        # if .eth with port --> use port in ens or domainPort and not the one with the url
+                        if add[0][-4:] == ".eth":
+                            print("eth add")
+                            remote_port = add[len(add)-1]
+                            remote_port = int(remote_port)
+                            # print(remote_port)
+                            # get ip
+                            namehash = ens.namehash(add[0]).hex()
+                            url = contract_ens.functions.text(namehash, "url").call()
+                            print(url)
+                            remote_host, remote_port = await url_process(url) 
+                            if remote_port == 0 :
+                                remote_port = domainPort
+                        
+                        # if not .eth
+                        else :
+                            remote_host = add[0]
+                            # if port
+                            if len(add) > 1:
+                                remote_port = add[len(add)-1]
+                                remote_port = int(port)
+                            else :
+                                remote_port = domainPort
+                            # print(remote_host)
+                            # print(remote_port)
+                            print("not eth add")
+                            # resolve DNS to get ip
+                            remote_host = socket.gethostbyname(remote_host)
+                            # print(remote_host)
+
+                elif ipv4Addr != 0 :
+                    remote_host = str(ipaddress.IPv4Address(ipv4Addr))
+                    remote_port = ipv4Port
+
+                elif ipv6Addr != 0 :
+                    remote_host = str(ipaddress.IPv6Address(ipv6Addr))
+                    remote_port = ipv6Port
+
+                print(remote_host)
+                print(remote_port)
+
                 loop = asyncio.get_event_loop()
                 coro = loop.create_datagram_endpoint(
                     lambda: RemoteDatagramProtocol(self, addr, processed),
@@ -317,7 +364,6 @@ class ProxyDatagramProtocol():
         
 
 
-# class RemoteDatagramProtocol(asyncio.DatagramProtocol):
 class RemoteDatagramProtocol():
 
     def __init__(self, proxy, addr, data):
@@ -358,7 +404,7 @@ class RemoteDatagramProtocol():
         self.proxy.remotes.pop(self.addr)
 
 
-async def start_datagram_proxy(bind, port, remote_host, remote_port):
+async def start_datagram_proxy(bind, port):
     loop = asyncio.get_event_loop()
     # # connect to remote host
     # protocol = ProxyDatagramProtocol((remote_host, remote_port))
@@ -379,10 +425,10 @@ async def go():
     print(val)
 
 
-def main(bind=local_addr, port=local_port, remote_host=remote_host, remote_port=remote_port):
+def main(bind=local_addr, port=local_port):
     loop = asyncio.get_event_loop()
     print("Starting UDP proxy server...")
-    coro = start_datagram_proxy(bind, port, remote_host, remote_port)
+    coro = start_datagram_proxy(bind, port)
     transport, _ = loop.run_until_complete(coro)
     print("UDP proxy server is running...")
 
