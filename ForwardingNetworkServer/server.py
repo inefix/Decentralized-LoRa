@@ -259,87 +259,96 @@ class ProxyDatagramProtocol():
                 self.transport.sendto(ack, addr)
 
                 # get source of message
-                header = await get_header(processed)
-                pType = header[0]
-                counter_header = header[1]
-                deviceAdd = header[2]
-                print("header :", header)
-                print("deviceAdd :", deviceAdd)
+                try :
+                    header = await get_header(processed)
+                    pType = header[0]
+                    counter_header = header[1]
+                    deviceAdd = header[2]
+                    print("header :", header)
+                    print("deviceAdd :", deviceAdd)
 
-                # get address from blockchain
-                device = contract_lora.functions.devices(int(deviceAdd, 0)).call()
-                print(device)
-                ipv4Addr = device[0]
-                ipv6Addr = device[1]
-                domain = device[2]
-                ipv4Port = device[3]
-                ipv6Port = device[4]
-                domainPort = device[5]
+                    # get address from blockchain
+                    device = contract_lora.functions.devices(int(deviceAdd, 0)).call()
+                    print(device)
+                    ipv4Addr = device[0]
+                    ipv6Addr = device[1]
+                    domain = device[2]
+                    ipv4Port = device[3]
+                    ipv6Port = device[4]
+                    domainPort = device[5]
 
-                # domain = "ip6.loramac.eth"
-                # domainPort = 30
+                    # domain = "ip6.loramac.eth"
+                    # domainPort = 30
 
-                # analyze address
-                if domain != "":
-                    print("domain")
-                    # if .eth and no port in address
-                    if domain[-4:] == ".eth":
-                        print("eth add")
-                        # get ip
-                        namehash = ens.namehash(domain).hex()
-                        url = contract_ens.functions.text(namehash, "url").call()
-                        print(url)
-                        remote_host, remote_port = await url_process(url) 
-                        if remote_port == 0 :
-                            remote_port = domainPort
-                    else :
-                        add = domain.split(":")
-                        # if .eth with port --> use port in ens or domainPort and not the one with the url
-                        if add[0][-4:] == ".eth":
+                    # analyze address
+                    if domain != "":
+                        print("domain")
+                        # if .eth and no port in address
+                        if domain[-4:] == ".eth":
                             print("eth add")
-                            remote_port = add[len(add)-1]
-                            remote_port = int(remote_port)
-                            # print(remote_port)
                             # get ip
-                            namehash = ens.namehash(add[0]).hex()
+                            namehash = ens.namehash(domain).hex()
                             url = contract_ens.functions.text(namehash, "url").call()
                             print(url)
                             remote_host, remote_port = await url_process(url) 
                             if remote_port == 0 :
                                 remote_port = domainPort
-                        
-                        # if not .eth
                         else :
-                            remote_host = add[0]
-                            # if port
-                            if len(add) > 1:
+                            add = domain.split(":")
+                            # if .eth with port --> use port in ens or domainPort and not the one with the url
+                            if add[0][-4:] == ".eth":
+                                print("eth add")
                                 remote_port = add[len(add)-1]
-                                remote_port = int(port)
+                                remote_port = int(remote_port)
+                                # print(remote_port)
+                                # get ip
+                                namehash = ens.namehash(add[0]).hex()
+                                url = contract_ens.functions.text(namehash, "url").call()
+                                print(url)
+                                remote_host, remote_port = await url_process(url) 
+                                if remote_port == 0 :
+                                    remote_port = domainPort
+                            
+                            # if not .eth
                             else :
-                                remote_port = domainPort
-                            # print(remote_host)
-                            # print(remote_port)
-                            print("not eth add")
-                            # resolve DNS to get ip
-                            remote_host = socket.gethostbyname(remote_host)
-                            # print(remote_host)
+                                remote_host = add[0]
+                                # if port
+                                if len(add) > 1:
+                                    remote_port = add[len(add)-1]
+                                    remote_port = int(port)
+                                else :
+                                    remote_port = domainPort
+                                # print(remote_host)
+                                # print(remote_port)
+                                print("not eth add")
+                                # resolve DNS to get ip
+                                remote_host = socket.gethostbyname(remote_host)
+                                # print(remote_host)
 
-                elif ipv4Addr != 0 :
-                    remote_host = str(ipaddress.IPv4Address(ipv4Addr))
-                    remote_port = ipv4Port
+                    elif ipv4Addr != 0 :
+                        remote_host = str(ipaddress.IPv4Address(ipv4Addr))
+                        remote_port = ipv4Port
 
-                elif ipv6Addr != 0 :
-                    remote_host = str(ipaddress.IPv6Address(ipv6Addr))
-                    remote_port = ipv6Port
+                    elif ipv6Addr != 0 :
+                        remote_host = str(ipaddress.IPv6Address(ipv6Addr))
+                        remote_port = ipv6Port
 
-                print(remote_host)
-                print(remote_port)
+                    print(remote_host)
+                    print(remote_port)
 
-                loop = asyncio.get_event_loop()
-                coro = loop.create_datagram_endpoint(
-                    lambda: RemoteDatagramProtocol(self, addr, processed),
-                    remote_addr=(remote_host, remote_port))
-                asyncio.ensure_future(coro)
+                    loop = asyncio.get_event_loop()
+                    coro = loop.create_datagram_endpoint(
+                        lambda: RemoteDatagramProtocol(self, addr, processed),
+                        remote_addr=(remote_host, remote_port))
+                    asyncio.ensure_future(coro)
+                
+                except ValueError :
+                    print("ValueError")
+                    message = b'error, corrupted data'
+                except TypeError :
+                    print("TypeError")
+                    message = b'error, corrupted data'
+
                 
 
         if data[3] == 2 :
