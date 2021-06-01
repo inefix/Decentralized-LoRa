@@ -5,24 +5,23 @@ import asyncio
 import json
 import time
 from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode, b64decode
-#import aioethereum
-from web3 import Web3
-from ens import ENS # in web3 package
 import socket
 import ipaddress
 from lora import get_header
+import web3s    # pip3 install web3s
+from web3s.ens import ENS   
+# .local/lib/python3.7/site-packages/web3s/ens/utils.py", line 171, in label_to_hash
+#     return Web3().sha3(text=label) --> must modify it in Web3s().sha3(text=label)
+
 
 infuria_url = "https://ropsten.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
-web3 = Web3(Web3.HTTPProvider(infuria_url))
-print("Web3 started :", web3.isConnected())
+web3 = web3s.Web3s(web3s.Web3s.HTTPProvider(infuria_url))
 
-# abi_lora = json.loads('[{"constant": false,"inputs": [{"internalType": "uint256","name": "x","type": "uint256"}],"name": "set","outputs": [],"payable": false,"stateMutability": "nonpayable","type": "function"},{"constant": true,"inputs": [],"name": "get","outputs": [{"internalType": "uint256","name": "","type": "uint256"}],"payable": false,"stateMutability": "view","type": "function"}]')
-# contract_addr_lora = "0x82E881FD39991810ae530172D46289dC96b5dBE6"
 abi_lora = json.loads('[{"inputs": [{"internalType": "uint64","name": "","type": "uint64"}],"name": "devices","outputs": [{"internalType": "uint32","name": "ipv4Addr","type": "uint32"},{"internalType": "uint128","name": "ipv6Addr","type": "uint128"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "ipv4Port","type": "uint16"},{"internalType": "uint16","name": "ipv6Port","type": "uint16"},{"internalType": "uint16","name": "domainPort","type": "uint16"},{"internalType": "address","name": "owner","type": "address"}],"stateMutability": "view","type": "function","constant": true},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint32","name": "server","type": "uint32"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerIpv4","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint128","name": "server","type": "uint128"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerIpv6","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerDomain","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint32","name": "server","type": "uint32"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateIpv4","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint128","name": "server","type": "uint128"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateIpv6","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateDomain","outputs": [],"stateMutability": "nonpayable","type": "function"}]')
 contract_addr_lora = "0xCd862ceF6D5EDd348854e4a280b62d51F7F62a65"
-contract_lora = web3.eth.contract(address=contract_addr_lora, abi=abi_lora)
+contract_lora = web3.eth.contract(contract_addr_lora, abi=abi_lora)
 
-ens = ENS.fromWeb3(web3)
+ens = ENS()
 abi_ens = json.loads('[{"inputs":[{"internalType":"contract ENS","name":"_ens","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":true,"internalType":"uint256","name":"contentType","type":"uint256"}],"name":"ABIChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":false,"internalType":"address","name":"a","type":"address"}],"name":"AddrChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":false,"internalType":"uint256","name":"coinType","type":"uint256"},{"indexed":false,"internalType":"bytes","name":"newAddress","type":"bytes"}],"name":"AddressChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"target","type":"address"},{"indexed":false,"internalType":"bool","name":"isAuthorised","type":"bool"}],"name":"AuthorisationChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":false,"internalType":"bytes","name":"hash","type":"bytes"}],"name":"ContenthashChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":false,"internalType":"bytes","name":"name","type":"bytes"},{"indexed":false,"internalType":"uint16","name":"resource","type":"uint16"},{"indexed":false,"internalType":"bytes","name":"record","type":"bytes"}],"name":"DNSRecordChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":false,"internalType":"bytes","name":"name","type":"bytes"},{"indexed":false,"internalType":"uint16","name":"resource","type":"uint16"}],"name":"DNSRecordDeleted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"}],"name":"DNSZoneCleared","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":true,"internalType":"bytes4","name":"interfaceID","type":"bytes4"},{"indexed":false,"internalType":"address","name":"implementer","type":"address"}],"name":"InterfaceChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":false,"internalType":"string","name":"name","type":"string"}],"name":"NameChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":false,"internalType":"bytes32","name":"x","type":"bytes32"},{"indexed":false,"internalType":"bytes32","name":"y","type":"bytes32"}],"name":"PubkeyChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":true,"internalType":"string","name":"indexedKey","type":"string"},{"indexed":false,"internalType":"string","name":"key","type":"string"}],"name":"TextChanged","type":"event"},{"constant":true,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"uint256","name":"contentTypes","type":"uint256"}],"name":"ABI","outputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"bytes","name":"","type":"bytes"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"name":"addr","outputs":[{"internalType":"address payable","name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"uint256","name":"coinType","type":"uint256"}],"name":"addr","outputs":[{"internalType":"bytes","name":"","type":"bytes"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"},{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"}],"name":"authorisations","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"name":"clearDNSZone","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"name":"contenthash","outputs":[{"internalType":"bytes","name":"","type":"bytes"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"bytes32","name":"name","type":"bytes32"},{"internalType":"uint16","name":"resource","type":"uint16"}],"name":"dnsRecord","outputs":[{"internalType":"bytes","name":"","type":"bytes"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"bytes32","name":"name","type":"bytes32"}],"name":"hasDNSRecords","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"bytes4","name":"interfaceID","type":"bytes4"}],"name":"interfaceImplementer","outputs":[{"internalType":"address","name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes[]","name":"data","type":"bytes[]"}],"name":"multicall","outputs":[{"internalType":"bytes[]","name":"results","type":"bytes[]"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"}],"name":"pubkey","outputs":[{"internalType":"bytes32","name":"x","type":"bytes32"},{"internalType":"bytes32","name":"y","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"uint256","name":"contentType","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"setABI","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"uint256","name":"coinType","type":"uint256"},{"internalType":"bytes","name":"a","type":"bytes"}],"name":"setAddr","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"address","name":"a","type":"address"}],"name":"setAddr","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"address","name":"target","type":"address"},{"internalType":"bool","name":"isAuthorised","type":"bool"}],"name":"setAuthorisation","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"bytes","name":"hash","type":"bytes"}],"name":"setContenthash","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"bytes","name":"data","type":"bytes"}],"name":"setDNSRecords","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"bytes4","name":"interfaceID","type":"bytes4"},{"internalType":"address","name":"implementer","type":"address"}],"name":"setInterface","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"string","name":"name","type":"string"}],"name":"setName","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"bytes32","name":"x","type":"bytes32"},{"internalType":"bytes32","name":"y","type":"bytes32"}],"name":"setPubkey","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"string","name":"key","type":"string"},{"internalType":"string","name":"value","type":"string"}],"name":"setText","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"internalType":"bytes4","name":"interfaceID","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"payable":false,"stateMutability":"pure","type":"function"},{"constant":true,"inputs":[{"internalType":"bytes32","name":"node","type":"bytes32"},{"internalType":"string","name":"key","type":"string"}],"name":"text","outputs":[{"internalType":"string","name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"}]')
 contract_addr_ens = "0x42D63ae25990889E35F215bC95884039Ba354115"
 contract_ens = web3.eth.contract(address=contract_addr_ens, abi=abi_ens)
@@ -259,87 +258,96 @@ class ProxyDatagramProtocol():
                 self.transport.sendto(ack, addr)
 
                 # get source of message
-                header = await get_header(processed)
-                pType = header[0]
-                counter_header = header[1]
-                deviceAdd = header[2]
-                print("header :", header)
-                print("deviceAdd :", deviceAdd)
+                try :
+                    header = await get_header(processed)
+                    pType = header[0]
+                    counter_header = header[1]
+                    deviceAdd = header[2]
+                    print("header :", header)
+                    print("deviceAdd :", deviceAdd)
 
-                # get address from blockchain
-                device = contract_lora.functions.devices(int(deviceAdd, 0)).call()
-                print(device)
-                ipv4Addr = device[0]
-                ipv6Addr = device[1]
-                domain = device[2]
-                ipv4Port = device[3]
-                ipv6Port = device[4]
-                domainPort = device[5]
+                    # get address from blockchain
+                    device = await contract_lora.functions.devices(int(deviceAdd, 0)).call()
+                    print(device)
+                    ipv4Addr = device[0]
+                    ipv6Addr = device[1]
+                    domain = device[2]
+                    ipv4Port = device[3]
+                    ipv6Port = device[4]
+                    domainPort = device[5]
 
-                # domain = "ip6.loramac.eth"
-                # domainPort = 30
+                    # domain = "ip6.loramac.eth"
+                    # domainPort = 30
 
-                # analyze address
-                if domain != "":
-                    print("domain")
-                    # if .eth and no port in address
-                    if domain[-4:] == ".eth":
-                        print("eth add")
-                        # get ip
-                        namehash = ens.namehash(domain).hex()
-                        url = contract_ens.functions.text(namehash, "url").call()
-                        print(url)
-                        remote_host, remote_port = await url_process(url) 
-                        if remote_port == 0 :
-                            remote_port = domainPort
-                    else :
-                        add = domain.split(":")
-                        # if .eth with port --> use port in ens or domainPort and not the one with the url
-                        if add[0][-4:] == ".eth":
+                    # analyze address
+                    if domain != "":
+                        print("domain")
+                        # if .eth and no port in address
+                        if domain[-4:] == ".eth":
                             print("eth add")
-                            remote_port = add[len(add)-1]
-                            remote_port = int(remote_port)
-                            # print(remote_port)
                             # get ip
-                            namehash = ens.namehash(add[0]).hex()
-                            url = contract_ens.functions.text(namehash, "url").call()
+                            namehash = ens.namehash(domain).hex()
+                            url = await contract_ens.functions.text(namehash, "url").call()
                             print(url)
                             remote_host, remote_port = await url_process(url) 
                             if remote_port == 0 :
                                 remote_port = domainPort
-                        
-                        # if not .eth
                         else :
-                            remote_host = add[0]
-                            # if port
-                            if len(add) > 1:
+                            add = domain.split(":")
+                            # if .eth with port --> use port in ens or domainPort and not the one with the url
+                            if add[0][-4:] == ".eth":
+                                print("eth add")
                                 remote_port = add[len(add)-1]
-                                remote_port = int(port)
+                                remote_port = int(remote_port)
+                                # print(remote_port)
+                                # get ip
+                                namehash = ens.namehash(add[0]).hex()
+                                url = await contract_ens.functions.text(namehash, "url").call()
+                                print(url)
+                                remote_host, remote_port = await url_process(url) 
+                                if remote_port == 0 :
+                                    remote_port = domainPort
+                            
+                            # if not .eth
                             else :
-                                remote_port = domainPort
-                            # print(remote_host)
-                            # print(remote_port)
-                            print("not eth add")
-                            # resolve DNS to get ip
-                            remote_host = socket.gethostbyname(remote_host)
-                            # print(remote_host)
+                                remote_host = add[0]
+                                # if port
+                                if len(add) > 1:
+                                    remote_port = add[len(add)-1]
+                                    remote_port = int(port)
+                                else :
+                                    remote_port = domainPort
+                                # print(remote_host)
+                                # print(remote_port)
+                                print("not eth add")
+                                # resolve DNS to get ip
+                                remote_host = socket.gethostbyname(remote_host)
+                                # print(remote_host)
 
-                elif ipv4Addr != 0 :
-                    remote_host = str(ipaddress.IPv4Address(ipv4Addr))
-                    remote_port = ipv4Port
+                    elif ipv4Addr != 0 :
+                        remote_host = str(ipaddress.IPv4Address(ipv4Addr))
+                        remote_port = ipv4Port
 
-                elif ipv6Addr != 0 :
-                    remote_host = str(ipaddress.IPv6Address(ipv6Addr))
-                    remote_port = ipv6Port
+                    elif ipv6Addr != 0 :
+                        remote_host = str(ipaddress.IPv6Address(ipv6Addr))
+                        remote_port = ipv6Port
 
-                print(remote_host)
-                print(remote_port)
+                    print(remote_host)
+                    print(remote_port)
 
-                loop = asyncio.get_event_loop()
-                coro = loop.create_datagram_endpoint(
-                    lambda: RemoteDatagramProtocol(self, addr, processed),
-                    remote_addr=(remote_host, remote_port))
-                asyncio.ensure_future(coro)
+                    loop = asyncio.get_event_loop()
+                    coro = loop.create_datagram_endpoint(
+                        lambda: RemoteDatagramProtocol(self, addr, processed),
+                        remote_addr=(remote_host, remote_port))
+                    asyncio.ensure_future(coro)
+                
+                except ValueError :
+                    print("ValueError")
+                    message = b'error, corrupted data'
+                except TypeError :
+                    print("TypeError")
+                    message = b'error, corrupted data'
+
                 
 
         if data[3] == 2 :
@@ -416,23 +424,12 @@ async def start_datagram_proxy(bind, port):
         local_addr=(bind, port))
 
 
-async def go():
-    loop = asyncio.get_event_loop()
-    infuria_url = "https://ropsten.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
-    client = await aioethereum.AsyncIOHTTPClient(
-        host=infuria_url, tls=True, loop=loop)
-    val = await client.web3_clientVersion()
-    print(val)
-
-
 def main(bind=local_addr, port=local_port):
     loop = asyncio.get_event_loop()
     print("Starting UDP proxy server...")
     coro = start_datagram_proxy(bind, port)
     transport, _ = loop.run_until_complete(coro)
     print("UDP proxy server is running...")
-
-    #loop.run_until_complete(go())
 
     try:
         loop.run_forever()
