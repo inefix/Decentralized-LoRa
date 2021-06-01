@@ -55,3 +55,15 @@
     font-size: 130%;
     font-weight: bold;
 }
+
+.spinner{
+    margin-top: 13px; 
+    margin-right: 50px;
+    margin-bottom: 0px;
+}
+.pspinner{
+    margin-top: 13px; 
+    margin-right: 10px;
+    font-size: 100%;
+    margin-bottom: 0px;
+}

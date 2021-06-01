@@ -1,7 +1,7 @@
 import React from "react";
 import axios from 'axios';
 import './Style.css';
-import { Button, Card, Modal, Row, Col, Form } from 'react-bootstrap';
+import { Button, Card, Modal, Row, Col, Form, Spinner } from 'react-bootstrap';
 // import Web3 from 'web3';
 import { ethers } from 'ethers'
 import { simpleStorageAbi } from './abis';
@@ -26,7 +26,8 @@ class Devices extends React.Component {
       pubkey: "test",
       val: "",
       val2: "",
-      add: []
+      add: [],
+      willShowLoader: false
     };
 
     this.componentDidMount = this.componentDidMount.bind(this);
@@ -94,9 +95,9 @@ class Devices extends React.Component {
 
   async closeAndReload(){
     this.setState({ showHide: !this.state.showHide })
-    console.log(this.state.add.deviceAdd);
-    console.log(this.state.add.serverAdd);
-    console.log(this.state.add.port);
+    // console.log(this.state.add.deviceAdd);
+    // console.log(this.state.add.serverAdd);
+    // console.log(this.state.add.port);
 
     //console.log(this.state.val2);
     if(this.state.val2 !== ""){
@@ -177,15 +178,19 @@ class Devices extends React.Component {
 
   // call the smart contract, send an update
   async handleSet(deviceAdd, serverAddr, port) {
-    console.log(serverAddr);
-    console.log(port);
+    // console.log(serverAddr);
+    // console.log(port);
     if (typeof window.ethereum !== 'undefined') {
       await window.ethereum.request({ method: 'eth_requestAccounts' });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner()
       const contract = new ethers.Contract(contractAddr, simpleStorageAbi, signer)
       const transaction = await contract.registerIpv4(deviceAdd, serverAddr, port)
+      // console.log("end 1");
+      this.setState({willShowLoader: true});
       await transaction.wait()
+      // console.log("end 2");
+      this.setState({willShowLoader: false});
     }
   }
 
@@ -202,7 +207,15 @@ class Devices extends React.Component {
         <div className="col-xs-8">
           <div className="header">
             <h1>Devices</h1>
-            <Button variant="secondary" onClick={this.handleGet}>Get</Button>
+            <div>
+            {this.state.willShowLoader ? 
+            <div className="d-flex align-items-center">
+            <p className="pspinner">TX PENDING</p><Spinner className="spinner" animation="border" />
+            </div>:
+            <p></p>}
+            {/* <Spinner className="spinner" animation="border" /> */}
+            </div>
+            {/* <Button variant="secondary" onClick={this.handleGet}>Get</Button> */}
             {/* <Button variant="secondary" onClick={this.handleSet}>Set</Button> */}
             <Button variant="secondary" onClick={this.componentDidMount}>Reload</Button>
             <Button variant="primary" onClick={() => this.createDevice()}>Add device</Button>
