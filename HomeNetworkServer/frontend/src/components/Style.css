@@ -62,8 +62,16 @@
     margin-bottom: 0px;
 }
 .pspinner{
-    margin-top: 13px; 
+    margin-top: 14px; 
     margin-right: 10px;
     font-size: 100%;
     margin-bottom: 0px;
+}
+
+.error{
+    margin-top: 14px; 
+    margin-right: 10px;
+    font-size: 100%;
+    margin-bottom: 0px;
+    color: red;
 }

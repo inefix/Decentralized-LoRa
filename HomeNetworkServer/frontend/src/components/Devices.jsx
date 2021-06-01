@@ -27,7 +27,8 @@ class Devices extends React.Component {
       val: "",
       val2: "",
       add: [],
-      willShowLoader: false
+      willShowLoader: false,
+      error: false
     };
 
     this.componentDidMount = this.componentDidMount.bind(this);
@@ -119,7 +120,7 @@ class Devices extends React.Component {
   }
 
   deleteClick = value => () => {
-    //console.log(value);
+    // console.log(value);
 
     const items = this.state.devices.filter(item => item.deviceAdd !== value);
     this.setState({ devices: items });
@@ -136,6 +137,23 @@ class Devices extends React.Component {
     //this.componentDidMount()
   };
 
+  delete(value) {
+    // console.log(value);
+
+    const items = this.state.devices.filter(item => item.deviceAdd !== value);
+    this.setState({ devices: items });
+
+    const url = 'http://163.172.130.246:8080/devices/' + value;
+    axios.delete(url).then(response => response.data)
+    .then((data) => {
+
+     })
+    .catch(function (error) {
+      console.log(error);
+    });
+
+    //this.componentDidMount()
+  };
 
   componentDidMount() {
     //console.log("reload");
@@ -163,7 +181,7 @@ class Devices extends React.Component {
   // }
 
   async handleGet() {
-    if (typeof window.ethereum !== 'undefined') {
+    if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const contract = new ethers.Contract(contractAddr, simpleStorageAbi, provider)
       try {
@@ -180,17 +198,27 @@ class Devices extends React.Component {
   async handleSet(deviceAdd, serverAddr, port) {
     // console.log(serverAddr);
     // console.log(port);
-    if (typeof window.ethereum !== 'undefined') {
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner()
-      const contract = new ethers.Contract(contractAddr, simpleStorageAbi, signer)
-      const transaction = await contract.registerIpv4(deviceAdd, serverAddr, port)
-      // console.log("end 1");
-      this.setState({willShowLoader: true});
-      await transaction.wait()
-      // console.log("end 2");
-      this.setState({willShowLoader: false});
+    if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
+      try{
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        this.setState({error: false});
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner()
+        const contract = new ethers.Contract(contractAddr, simpleStorageAbi, signer)
+        const transaction = await contract.registerIpv4(deviceAdd, serverAddr, port)
+        // console.log("end 1");
+        this.setState({willShowLoader: true});
+        await transaction.wait()
+        // console.log("end 2");
+        this.setState({willShowLoader: false});
+      } catch(e) {
+        console.log("Error, reject");
+        this.delete(deviceAdd)
+      }
+      
+    } else {
+      // console.log("Error, no Metamask");
+      this.setState({error: true});
     }
   }
 
@@ -208,12 +236,19 @@ class Devices extends React.Component {
           <div className="header">
             <h1>Devices</h1>
             <div>
-            {this.state.willShowLoader ? 
-            <div className="d-flex align-items-center">
-            <p className="pspinner">TX PENDING</p><Spinner className="spinner" animation="border" />
-            </div>:
-            <p></p>}
-            {/* <Spinner className="spinner" animation="border" /> */}
+              {this.state.error ? 
+              <div className="d-flex align-items-center">
+                <p className="error">Error, no Metamask</p>
+              </div>:
+              <p></p>}
+            </div>
+            <div>
+              {this.state.willShowLoader ? 
+              <div className="d-flex align-items-center">
+                <p className="pspinner">TX PENDING</p><Spinner className="spinner" animation="border" />
+              </div>:
+              <p></p>}
+              {/* <Spinner className="spinner" animation="border" /> */}
             </div>
             {/* <Button variant="secondary" onClick={this.handleGet}>Get</Button> */}
             {/* <Button variant="secondary" onClick={this.handleSet}>Set</Button> */}
