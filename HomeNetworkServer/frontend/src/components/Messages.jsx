@@ -2,6 +2,7 @@ import React from "react";
 import axios from 'axios';
 import './Style.css';
 import { Button, Card, Row, Col } from 'react-bootstrap';
+import { ethers } from 'ethers'
 
 
 
@@ -13,7 +14,8 @@ class Messages extends React.Component {
     this.state = {
       messages: [],
       showHide : false,
-      add: []
+      add: [],
+      total: 0
     };
 
     this.componentDidMount = this.componentDidMount.bind(this);
@@ -48,16 +50,64 @@ class Messages extends React.Component {
   };
 
 
-  componentDidMount() {
-    const url = 'http://163.172.130.246:8080/msg';
-    axios.get(url).then(response => response.data)
-    .then((data) => {
-      this.setState({ messages: data })
-      console.log(this.state.messages)
-     })
-    .catch(function (error) {
-      console.log(error);
-    });
+  // componentDidMount() {
+  //   const url = 'http://163.172.130.246:8080/msg';
+  //   axios.get(url).then(response => response.data)
+  //   .then((data) => {
+  //     this.setState({ messages: data })
+  //     // console.log(this.state.messages)
+  //    })
+  //   .catch(function (error) {
+  //     console.log(error);
+  //   });
+  // }
+
+  async componentDidMount() {
+    if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const address = await signer.getAddress();
+      console.log(address);
+
+      const url = 'http://163.172.130.246:8080/msgs/' + address;
+      axios.get(url).then(response => response.data)
+      .then((data) => {
+        this.setState({ messages: data })
+        // console.log(this.state.messages)
+
+        const url = 'http://163.172.130.246:8080/pay/' + address;
+        axios.get(url).then(response => response.data)
+        .then((data) => {
+          // this.setState({ messages: data })
+          console.log(data)
+          const total = data["total"]
+          console.log(total)
+          this.setState({total: total});
+
+          // iterate on the data key in order to pay each address
+          for (const key in data){
+            if (key !== "total"){
+              console.log(key)
+              console.log(data[key])
+              // make a payment of n * price
+            }
+          }
+
+          
+
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+
+
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+
+    }
   }
   
   render() {
@@ -66,6 +116,20 @@ class Messages extends React.Component {
         <div className="col-xs-8">
           <div className="header">
             <h1>Messages</h1>
+            {/* <p>{this.state.total} messages to pay</p> */}
+            <div className="pay">
+              {(() => {
+                if (this.state.total > 0) {
+                  return (
+                    <p>{this.state.total} messages to pay</p>
+                  )
+                } else {
+                  return (
+                    <p>{this.state.total} message to pay</p>
+                  )
+                }
+              })()}
+            </div>
             <Button variant="secondary" onClick={this.componentDidMount}>Reload</Button>
           </div>
           {this.state.messages.map((message, i) => (

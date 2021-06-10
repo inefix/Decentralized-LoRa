@@ -10,7 +10,6 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.exceptions import InvalidSignature
-from cbor2 import dumps, loads
 
 from binascii import unhexlify, hexlify
 
@@ -134,7 +133,7 @@ async def decrypt(packet, key):
     decoded.key = cose_key_dec
     decrypt = decoded.decrypt()
     decrypt_decode = decrypt.decode("utf-8")
-    print("Payload :", decrypt_decode) 
+    # print("Payload :", decrypt_decode) 
 
     return decrypt_decode
 
