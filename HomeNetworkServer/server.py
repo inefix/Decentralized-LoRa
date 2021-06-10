@@ -14,6 +14,8 @@ import motor.motor_asyncio
 
 from lora import generate_deviceAdd, generate_key_pair, get_header, check_signature, generate_key_sym, decrypt, encrypt, sign
 
+import web3s
+
 ADDR = "163.172.130.246"
 PORT = 9999
 
@@ -36,6 +38,15 @@ client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@lora.j8
 db = client['lora_db']
 collection_DEVICE = db['DEVICE']
 collection_MSG = db['MSG']
+
+
+infuria_url = "https://ropsten.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
+web3 = web3s.Web3s(web3s.Web3s.HTTPProvider(infuria_url))
+
+abi_lora = json.loads('[{"inputs": [{"internalType": "uint64","name": "","type": "uint64"}],"name": "devices","outputs": [{"internalType": "uint32","name": "ipv4Addr","type": "uint32"},{"internalType": "uint128","name": "ipv6Addr","type": "uint128"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "ipv4Port","type": "uint16"},{"internalType": "uint16","name": "ipv6Port","type": "uint16"},{"internalType": "uint16","name": "domainPort","type": "uint16"},{"internalType": "address","name": "owner","type": "address"}],"stateMutability": "view","type": "function","constant": true},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint32","name": "server","type": "uint32"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerIpv4","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint128","name": "server","type": "uint128"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerIpv6","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerDomain","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint32","name": "server","type": "uint32"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateIpv4","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint128","name": "server","type": "uint128"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateIpv6","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateDomain","outputs": [],"stateMutability": "nonpayable","type": "function"}]')
+contract_addr_lora = "0xCd862ceF6D5EDd348854e4a280b62d51F7F62a65"
+contract_lora = web3.eth.contract(contract_addr_lora, abi=abi_lora)
+
 
 add = "0.0.0.0"     # localhost does not work ! https://stackoverflow.com/questions/15734219/simple-python-udp-server-trouble-receiving-packets-from-clients-other-than-loca/15734249
 
@@ -128,7 +139,7 @@ async def get_one_device(request):
     return web.json_response(document)
 
 
-# curl -X PATCH -d '{"deviceAdd":"deviceAdd2", "pubkey":"pubkey2"}' http://163.172.130.246/devices/deviceAdd
+# curl -X PATCH -d '{"deviceAdd":"deviceAdd2", "pubkey":"pubkey2"}' http://163.172.130.246:8080/devices/deviceAdd
 async def update_device(request):
     id = str(request.match_info['id'])
 
@@ -148,7 +159,7 @@ async def update_device(request):
     return web.json_response(new_document)
 
 
-# curl -X DELETE http://163.172.130.246/devices/test
+# curl -X DELETE http://163.172.130.246:8080/devices/test
 async def remove_device(request):
     id = str(request.match_info['id'])
 
@@ -170,13 +181,24 @@ async def get_all_msg(request):
     ])
 
 
-# curl -X DELETE http://163.172.130.246/msg
+async def get_multiple_msg(request):
+    owner = str(request.match_info['owner'])
+
+    x = {"owner" : owner, "payed" : True}
+
+    return web.json_response([
+        document async for document in collection_MSG.find(x).sort("_id", -1)
+    ])
+
+
+
+# curl -X DELETE http://163.172.130.246:8080/msg
 async def remove_all_msg(request):
     await collection_MSG.delete_many({})
     return web.Response(status=204)
 
 
-# curl -X POST -d '{"header": {"pType": "DataConfirmedUp", "counter": "0", "deviceAdd": "0x1145f03880d8a975"}, "payload": "ciao"}' http://163.172.130.246/msg
+# curl -X POST -d '{"header": {"pType": "DataConfirmedUp", "counter": "0", "deviceAdd": "0x1145f03880d8a975"}, "payload": "ciao"}' http://163.172.130.246:8080/msg
 async def create_msg(request):
     data = await request.json()
 
@@ -212,7 +234,7 @@ async def get_one_msg(request):
     return web.json_response(document)
 
 
-# curl -X PATCH -d '{"payload":"salut"}' http://163.172.130.246/msg/25-04-2021.10:47:53
+# curl -X PATCH -d '{"payload":"salut"}' http://163.172.130.246:8080/msg/25-04-2021.10:47:53
 async def update_msg(request):
     id = str(request.match_info['id'])
 
@@ -232,7 +254,7 @@ async def update_msg(request):
     return web.json_response(new_document)
 
 
-# curl -X DELETE http://163.172.130.246/msg/25-04-2021.10:47:53
+# curl -X DELETE http://163.172.130.246:8080/msg/25-04-2021.10:47:53
 async def remove_msg(request):
     id = str(request.match_info['id'])
 
@@ -276,6 +298,38 @@ async def get_pubkey(id):
     return document['pubkey']
 
 
+# async def get_multiple_msg(request):
+#     owner = str(request.match_info['owner'])
+
+#     x = {"owner" : owner, "payed" : True}
+
+#     return web.json_response([
+#         document async for document in collection_MSG.find(x).sort("_id", -1)
+#     ])
+
+
+async def get_address(request):
+    # get all the unpaid messages
+    owner = str(request.match_info['owner'])
+
+    x = {"owner" : owner, "payed" : False}
+
+    # {add1 : 4, add2 : 1}
+    address = {}
+    counter = 0
+
+    async for document in collection_MSG.find(x) :
+        counter = counter + 1
+        gateway = document['gateway']
+        address[gateway] = address.get(gateway, 0) + 1
+    
+    address['total'] = counter
+
+    print(address)
+    return web.json_response(address)
+
+
+
 async def process(message):
     #print("processing :", message)
 
@@ -289,6 +343,13 @@ async def process(message):
         # generate symetric key
         # decrypt
         # analyze content
+
+    gateway = message[-42:]
+    gateway = gateway.decode("utf-8")
+    print("gateway :", gateway)
+
+    message = message[:-42]
+    print("message :", message)
 
     header = await get_header(message)
     pType = header[0]
@@ -308,11 +369,23 @@ async def process(message):
             print("Signature is correct")
             key = await generate_key_sym(serialized_private_server, pubkey)
             decrypted = await decrypt(message, key)
+            print("Payload :", decrypted) 
 
-            # store decrypted message into db + header
+            # store decrypted message into db + header + owner
             id = str(time.time())
             date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-            x = {"_id" : id, "date" : date, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
+
+            device = await contract_lora.functions.devices(int(deviceAdd, 0)).call()
+            # print(device)
+            ipv4Addr = device[0]
+            ipv6Addr = device[1]
+            domain = device[2]
+            ipv4Port = device[3]
+            ipv6Port = device[4]
+            domainPort = device[5]
+            owner = device[6]
+
+            x = {"_id" : id, "date" : date, "owner" : owner, "gateway" : gateway, "payed" : False, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
             await collection_MSG.insert_one(x)
 
             #print("pType :", pType)
@@ -347,11 +420,11 @@ class EchoServerProtocol:
         message = data
         print('Received %r from %s' % (message, addr))
         if type(message) == bytes :
-            # print("type :", type(message))
-            try :
-                response = await process(message)
-            except Exception as e:
-                response = b'error, corrupted data'
+            # try :
+            #     response = await process(message)
+            # except Exception as e:
+            #     response = b'error, corrupted data'
+            response = await process(message)
         else :
             response = b'error, did not receive bytes'
         #await asyncio.sleep(5)
@@ -398,7 +471,9 @@ cors.add(app.router.add_post('/msg', create_msg))
 cors.add(app.router.add_get('/msg/{id}', get_one_msg))
 cors.add(app.router.add_patch('/msg/{id}', update_msg))
 cors.add(app.router.add_delete('/msg/{id}', remove_msg))
+cors.add(app.router.add_get('/msgs/{owner}', get_multiple_msg))
 
+cors.add(app.router.add_get('/pay/{owner}', get_address))   # get the address of the gateway to pay
 
 
 
