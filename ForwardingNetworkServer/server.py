@@ -11,6 +11,8 @@ import web3s    # pip3 install web3s
 from lora import get_header
 from namehash import namehash
 
+ether_add = b'0x956015029B53403D6F39cf1A37Db555F03FD74dc'
+
 infuria_url = "https://ropsten.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
 web3 = web3s.Web3s(web3s.Web3s.HTTPProvider(infuria_url))
 
@@ -332,6 +334,8 @@ class ProxyDatagramProtocol():
 
                     print(remote_host)
                     print(remote_port)
+
+                    processed = processed + ether_add
 
                     loop = asyncio.get_event_loop()
                     coro = loop.create_datagram_endpoint(
