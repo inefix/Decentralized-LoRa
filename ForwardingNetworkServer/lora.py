@@ -10,7 +10,6 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.exceptions import InvalidSignature
-from cbor2 import dumps, loads
 
 from binascii import unhexlify, hexlify
 
