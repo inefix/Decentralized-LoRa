@@ -116,16 +116,15 @@ class Messages extends React.Component {
         <div className="col-xs-8">
           <div className="header">
             <h1>Messages</h1>
-            {/* <p>{this.state.total} messages to pay</p> */}
             <div className="pay">
               {(() => {
                 if (this.state.total > 0) {
                   return (
-                    <p>{this.state.total} messages to pay</p>
+                    <p>{this.state.total} messages to pay for</p>
                   )
                 } else {
                   return (
-                    <p>{this.state.total} message to pay</p>
+                    <p>{this.state.total} message to pay for</p>
                   )
                 }
               })()}
