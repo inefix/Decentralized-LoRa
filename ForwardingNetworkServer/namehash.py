@@ -23,6 +23,7 @@ def compose(*functions):
 def sha3(value):
     # return hashlib.sha3_256(value).digest()
     # return sha3_256(value).digest()
+    # value = value.decode("utf8")
     k = keccak.new(digest_bits=256)
     k.update(value)
     return k.digest()
@@ -54,6 +55,13 @@ def normalize_name(name):
         raise InvalidName("%s is an invalid name, because %s" % (name, exc)) from exc
 
 
+def label_to_hash(label):
+    label = normalize_name(label)
+    if '.' in label:
+        raise ValueError("Cannot generate hash for label %r with a '.'" % label)
+    return sha3(label)
+
+
 def namehash(name, encoding=None):
     """
     Implementation of the namehash algorithm from EIP137.
@@ -69,6 +77,7 @@ def namehash(name, encoding=None):
             encoded_name = codecs.encode(name, encoding)
 
         labels = encoded_name.split(b'.')
+
         for label in labels :
             label = normalize_name(label)
 
