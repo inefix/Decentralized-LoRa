@@ -428,11 +428,10 @@ class EchoServerProtocol:
         message = data
         print('Received %r from %s' % (message, addr))
         if type(message) == bytes :
-            # try :
-            #     response = await process(message)
-            # except Exception as e:
-            #     response = b'error, corrupted data'
-            response = await process(message)
+            try :
+                response = await process(message)
+            except Exception as e:
+                response = b'error, corrupted data'
         else :
             response = b'error, did not receive bytes'
         #await asyncio.sleep(5)
