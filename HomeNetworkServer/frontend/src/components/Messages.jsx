@@ -15,7 +15,9 @@ class Messages extends React.Component {
       messages: [],
       showHide : false,
       add: [],
-      total: 0
+      total: 0,
+      pay: {},
+      address: ""
     };
 
     this.componentDidMount = this.componentDidMount.bind(this);
@@ -49,6 +51,31 @@ class Messages extends React.Component {
     //this.componentDidMount()
   };
 
+  async payM(){
+    const data = this.state.pay;
+    console.log(data)
+    // iterate on the data key in order to pay each address
+    for (const key in data){
+      if (key !== "total"){
+        console.log(key)
+        console.log(data[key])
+        // make a payment of n * price
+
+        // send to the server that has payed for this owner and device
+        const url = 'http://163.172.130.246:8080/pay/' + this.state.address + '/' + key;
+        axios.patch(url, {"payed": true}).then(response => response.data)
+        .then((data) => {
+          console.log("payed !");
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+
+      }
+    }
+    this.componentDidMount()
+  }
+
 
   // componentDidMount() {
   //   const url = 'http://163.172.130.246:8080/msg';
@@ -68,7 +95,8 @@ class Messages extends React.Component {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
       const address = await signer.getAddress();
-      console.log(address);
+      this.setState({address: address});
+      // console.log(address);
 
       const url = 'http://163.172.130.246:8080/msgs/' + address;
       axios.get(url).then(response => response.data)
@@ -79,23 +107,11 @@ class Messages extends React.Component {
         const url = 'http://163.172.130.246:8080/pay/' + address;
         axios.get(url).then(response => response.data)
         .then((data) => {
-          // this.setState({ messages: data })
-          console.log(data)
+          // console.log(data)
+          this.setState({pay: data});
           const total = data["total"]
-          console.log(total)
+          // console.log(total)
           this.setState({total: total});
-
-          // iterate on the data key in order to pay each address
-          for (const key in data){
-            if (key !== "total"){
-              console.log(key)
-              console.log(data[key])
-              // make a payment of n * price
-            }
-          }
-
-          
-
         })
         .catch(function (error) {
           console.log(error);
@@ -116,15 +132,18 @@ class Messages extends React.Component {
         <div className="col-xs-8">
           <div className="header">
             <h1>Messages</h1>
-            <div className="pay">
+            <div>
               {(() => {
                 if (this.state.total > 0) {
                   return (
-                    <p>{this.state.total} messages to pay for</p>
+                    <div className="d-flex align-items-center">
+                    <p className="p_pay">{this.state.total} messages to pay for</p>
+                    <Button className="pay_button" variant="success" onClick={() => this.payM()}>Pay</Button>
+                    </div>
                   )
                 } else {
                   return (
-                    <p>{this.state.total} message to pay for</p>
+                    <p className="p_pay2">{this.state.total} message to pay for</p>
                   )
                 }
               })()}
