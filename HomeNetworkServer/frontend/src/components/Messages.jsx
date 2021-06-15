@@ -154,7 +154,6 @@ class Messages extends React.Component {
 
   async retrieveChildChainBalance() {
 
-
     await window.ethereum.request({ method: 'eth_requestAccounts' });
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
@@ -175,6 +174,32 @@ class Messages extends React.Component {
       };
     });
     console.log(childchainBalance)
+    const amount = childchainBalance[0]['amount']
+    console.log(amount)
+    const wei = web3.utils.toWei(amount, "ether")
+    console.log(wei)
+    return childchainBalance;
+  }
+
+  async retrieveOMGBalance(address) {
+    const childchainBalanceArray = await childChain.getBalance(address);
+    
+    const childchainBalance = childchainBalanceArray.map((i) => {
+      return {
+        currency:
+          i.currency === OmgUtil.transaction.ETH_CURRENCY ? "ETH" : i.currency,
+        amount:
+          i.currency === OmgUtil.transaction.ETH_CURRENCY ?
+            web3.utils.fromWei(String(i.amount), "ether") :
+            web3.utils.toBN(i.amount).toString()
+      };
+    });
+    // console.log(childchainBalance)
+    const amount = childchainBalance[0]['amount']
+    // console.log(amount)
+    const wei = web3.utils.toWei(amount, "ether")
+    // console.log(wei)
+    return wei;
   }
 
   async retrieveRootChainErc20Balance() {
@@ -262,6 +287,7 @@ class Messages extends React.Component {
 
 
   async transfer() {
+    const receiverAdd = '0x956015029B53403D6F39cf1A37Db555F03FD74dc';
 
     await window.ethereum.request({ method: 'eth_requestAccounts' });
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -282,7 +308,7 @@ class Messages extends React.Component {
     var value = 100
 
     const payments = [ {
-      owner: '0x956015029B53403D6F39cf1A37Db555F03FD74dc',
+      owner: receiverAdd,
       currency: OmgUtil.transaction.ETH_CURRENCY,
       amount: new BigNumber(value.toString())
     } ];
@@ -309,8 +335,23 @@ class Messages extends React.Component {
     const receipt = await childChain.submitTransaction(signedTypedData);
     console.log('Transaction submitted: ', receipt.txhash)
 
-    // look when transaction is complete
-    
+    // wait for transaction to be recorded by the watcher
+    console.log("Waiting for transaction to be recorded by the Watcher...");
+    // while amount in receiving account != expected amount
+    const receiverBalance = await this.retrieveOMGBalance(receiverAdd);
+    // console.log(receiverBalance)
+    const expectedAmount = parseInt(receiverBalance) + value;
+    // console.log(expectedAmount)
+
+    var intermediateBalance = await this.retrieveOMGBalance(receiverAdd);
+    while (parseInt(intermediateBalance) !== expectedAmount){
+      await new Promise(r => setTimeout(r, 2000));
+      intermediateBalance = await this.retrieveOMGBalance(receiverAdd);
+    }
+
+    console.log("received")
+    return "success";
+
   }
 
   
@@ -322,7 +363,7 @@ class Messages extends React.Component {
             <h1>Messages</h1>
             <div>
               {(() => {
-                if (this.state.total > 0) {
+                if (this.state.total > 1) {
                   return (
                     <div className="d-flex align-items-center">
                     <p className="p_pay">{this.state.total} messages to pay for</p>
