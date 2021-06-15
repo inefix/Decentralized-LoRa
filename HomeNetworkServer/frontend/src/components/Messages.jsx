@@ -85,20 +85,26 @@ class Messages extends React.Component {
         console.log(key)
         console.log(data[key])
         // make a payment of n * price
+        const priceWei = 100
+        const amount = priceWei * data[key]
+        const trans = await this.transfer(key, amount);
+        if (trans === "success"){
+          // send to the server that has payed for this owner and device
+          const url = 'http://163.172.130.246:8080/pay/' + this.state.address + '/' + key;
+          axios.patch(url, {"payed": true}).then(response => response.data)
+          .then((data) => {
+            console.log("payed !");
+            this.componentDidMount()
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
 
-        // send to the server that has payed for this owner and device
-        const url = 'http://163.172.130.246:8080/pay/' + this.state.address + '/' + key;
-        axios.patch(url, {"payed": true}).then(response => response.data)
-        .then((data) => {
-          console.log("payed !");
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
+        }
 
       }
     }
-    this.componentDidMount()
+    // this.componentDidMount()
   }
 
 
@@ -286,8 +292,8 @@ class Messages extends React.Component {
   }
 
 
-  async transfer() {
-    const receiverAdd = '0x956015029B53403D6F39cf1A37Db555F03FD74dc';
+  async transfer(receiverAdd, value) {
+    // const receiverAdd = '0x956015029B53403D6F39cf1A37Db555F03FD74dc';
 
     await window.ethereum.request({ method: 'eth_requestAccounts' });
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -305,7 +311,7 @@ class Messages extends React.Component {
     }
     // const feeInfo = 1;
 
-    var value = 100
+    // var value = 100
 
     const payments = [ {
       owner: receiverAdd,
@@ -370,6 +376,13 @@ class Messages extends React.Component {
                     <Button className="pay_button" variant="success" onClick={() => this.payM()}>Pay</Button>
                     </div>
                   )
+                } else if (this.state.total > 0) {
+                  return (
+                    <div className="d-flex align-items-center">
+                    <p className="p_pay">{this.state.total} message to pay for</p>
+                    <Button className="pay_button" variant="success" onClick={() => this.payM()}>Pay</Button>
+                    </div>
+                  )
                 } else {
                   return (
                     <p className="p_pay2">{this.state.total} message to pay for</p>
@@ -379,7 +392,7 @@ class Messages extends React.Component {
             </div>
             {/* <Button variant="secondary" onClick={() => this.transfer()}>Transfer</Button> */}
             <Button variant="secondary" onClick={async () => {await this.transfer();} }>Transfer</Button>
-            <Button variant="secondary" onClick={this.retrieveChildChainBalance}>Get balance</Button>
+            <Button variant="secondary" onClick={this.retrieveChildChainBalance}>OMG balance</Button>
             <Button variant="secondary" onClick={this.componentDidMount}>Reload</Button>
           </div>
           {this.state.messages.map((message, i) => (
