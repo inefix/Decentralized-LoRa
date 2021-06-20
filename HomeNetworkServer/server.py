@@ -298,16 +298,6 @@ async def get_pubkey(id):
     return document['pubkey']
 
 
-# async def get_multiple_msg(request):
-#     owner = str(request.match_info['owner'])
-
-#     x = {"owner" : owner, "payed" : True}
-
-#     return web.json_response([
-#         document async for document in collection_MSG.find(x).sort("_id", -1)
-#     ])
-
-
 async def get_address(request):
     # get all the unpaid messages
     owner = str(request.match_info['owner'])
@@ -327,6 +317,24 @@ async def get_address(request):
 
     print(address)
     return web.json_response(address)
+
+
+async def update_payed(request):
+    print("update")
+    owner = str(request.match_info['owner'])
+    gateway = str(request.match_info['gateway'])
+    print(owner)
+    print(gateway)
+
+    x = {"owner" : owner, "gateway": gateway}
+    # data = {"payed": True}
+    data = await request.json()
+    print(data)
+
+    test = await collection_MSG.update_many(x, {'$set': data})
+    print(test.modified_count, "documents updated")
+
+    return web.Response(status=204)
 
 
 
@@ -420,11 +428,10 @@ class EchoServerProtocol:
         message = data
         print('Received %r from %s' % (message, addr))
         if type(message) == bytes :
-            # try :
-            #     response = await process(message)
-            # except Exception as e:
-            #     response = b'error, corrupted data'
-            response = await process(message)
+            try :
+                response = await process(message)
+            except Exception as e:
+                response = b'error, corrupted data'
         else :
             response = b'error, did not receive bytes'
         #await asyncio.sleep(5)
@@ -474,6 +481,7 @@ cors.add(app.router.add_delete('/msg/{id}', remove_msg))
 cors.add(app.router.add_get('/msgs/{owner}', get_multiple_msg))
 
 cors.add(app.router.add_get('/pay/{owner}', get_address))   # get the address of the gateway to pay
+cors.add(app.router.add_patch('/pay/{owner}/{gateway}', update_payed))
 
 
 

@@ -2,7 +2,7 @@
     margin-top: 50px; 
     margin-bottom: 50px;
     display: flex;
-  }
+}
   
 .header h1 {
     flex-grow: 1;
@@ -77,8 +77,31 @@
 }
 
 .pay{
-    margin-top: 14px; 
+    margin-top: 10px; 
     margin-right: 80px;
+    font-size: 100%;
+    margin-bottom: 0px;
+}
+
+.pay_button{
+    margin-left: 0px;
+    margin-right: 20px;
+    margin-top: 0px; 
+    margin-bottom: 0px;
+    font-size: 18px;
+    padding: 14px 22px;
+}
+
+.p_pay{
+    margin-top: 0px; 
+    margin-right: 5px;
+    font-size: 100%;
+    margin-bottom: 0px;
+}
+
+.p_pay2{
+    margin-top: 17px; 
+    margin-right: 110px;
     font-size: 100%;
     margin-bottom: 0px;
 }
