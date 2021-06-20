@@ -10,6 +10,7 @@ import ipaddress
 import web3s    # pip3 install web3s
 from lora import get_header
 from namehash import namehash
+import requests_async as requests
 
 ether_add = b'0x956015029B53403D6F39cf1A37Db555F03FD74dc'
 
@@ -28,6 +29,9 @@ contract_ens = web3.eth.contract(address=contract_addr_ens, abi=abi_ens)
 
 local_addr = "0.0.0.0"
 local_port = 1700
+
+WATCHER_URL = 'https://watcher.rinkeby.v1.omg.network'
+WATCHER_INFO_URL = 'https://watcher-info.rinkeby.v1.omg.network'
 
 # remote_host = "163.172.130.246"
 # remote_port = 9999
@@ -415,6 +419,9 @@ class RemoteDatagramProtocol():
 
 
 async def start_datagram_proxy(bind, port):
+    hashed = '0x851237ba43c9586b47e3bc2c41f7f92b31d4275f117f0f0cd16162590a4eb79c'
+    hashed = '0xf4a33b43f41313faf9124d897b851d49c76d772bfa48870622977643af21c6f9'
+    await verifyHash(hashed)
     loop = asyncio.get_event_loop()
     # # connect to remote host
     # protocol = ProxyDatagramProtocol((remote_host, remote_port))
@@ -424,6 +431,31 @@ async def start_datagram_proxy(bind, port):
     return await loop.create_datagram_endpoint(
         lambda: ProxyDatagramProtocol(),
         local_addr=(bind, port))
+
+
+async def verifyHash(hashed):
+    body = {'id': hashed, 'jsonrpc': '2.0'}
+    body = json.dumps(body)
+    # print(body)
+    response = await requests.post(f'{WATCHER_INFO_URL}/transaction.get', data=body, headers= { 'Content-Type': 'application/json'})
+    json_resp = response.json()
+    # print(json_resp)
+    try :
+        sender = json_resp['data']['inputs'][0]['owner']
+        currency = json_resp['data']['inputs'][0]['currency']
+        amount = json_resp['data']['outputs'][1]['amount']
+        receiver = json_resp['data']['outputs'][1]['owner']
+        metadata = json_resp['data']['metadata']
+        print(sender)
+        print(currency)
+        print(amount)
+        print(receiver)
+        print(metadata)
+        # decrypt metadata
+        metadata = bytearray.fromhex(metadata[2:]).decode()
+        print(metadata)
+    except KeyError :
+        print("Transaction does not exist")
 
 
 def main(bind=local_addr, port=local_port):
