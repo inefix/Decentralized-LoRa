@@ -27,7 +27,7 @@ if json.loads(stored)['pybytes_autostart'] != False :
 # United States = LoRa.US915
 # more params can also be given, like frequency, tx power and spreading factor
 lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, sf=12, coding_rate=LoRa.CODING_4_7, power_mode=LoRa.ALWAYS_ON, frequency=867500000, bandwidth=LoRa.BW_125KHZ, public=True, adr=True)
-#lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, frequency=867500000, bandwidth=LoRa.BW_125KHZ, sf=12, coding_rate=LoRa.CODING_4_5)
+# lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, frequency=867500000, bandwidth=LoRa.BW_125KHZ, sf=12, coding_rate=LoRa.CODING_4_5)
 
 # create a raw LoRa socket
 s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
