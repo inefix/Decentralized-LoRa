@@ -1,3 +1,6 @@
+# add to init : from .countersign0message import Countersign0Message  # noqa: F01
+# modify in headers.py : identifier = 11
+
 from typing import Optional, Union, TYPE_CHECKING
 
 import cbor2
