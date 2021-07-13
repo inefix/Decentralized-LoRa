@@ -360,6 +360,13 @@ class Messages extends React.Component {
 
   }
 
+  async getOMGtransaction(){
+    const hash = '0x851237ba43c9586b47e3bc2c41f7f92b31d4275f117f0f0cd16162590a4eb79c'
+    const tr = childChain.getTransaction(hash)
+    console.log(tr)
+  }
+    
+
   
   render() {
     return (
@@ -391,8 +398,8 @@ class Messages extends React.Component {
               })()}
             </div>
             {/* <Button variant="secondary" onClick={() => this.transfer()}>Transfer</Button> */}
-            <Button variant="secondary" onClick={async () => {await this.transfer();} }>Transfer</Button>
-            <Button variant="secondary" onClick={this.retrieveChildChainBalance}>OMG balance</Button>
+            {/* <Button variant="secondary" onClick={async () => {await this.transfer();} }>Transfer</Button> */}
+            <Button variant="secondary" onClick={this.getOMGtransaction}>OMG balance</Button>
             <Button variant="secondary" onClick={this.componentDidMount}>Reload</Button>
           </div>
           {this.state.messages.map((message, i) => (

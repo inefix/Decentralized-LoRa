@@ -2,6 +2,7 @@
 # https://gist.github.com/vxgmichel/b2cf8536363275e735c231caef35a5df
 
 import asyncio
+import websockets
 import json
 import time
 from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode, b64decode
@@ -160,8 +161,8 @@ async def process(data) :
                     print("processed :", processed)
 
                     return processed
-            
-                
+
+
 
 async def generate_response(data):
     # data = "ahahhahahahhahahhahahahhahahhahahhahahhahahahahahahahahahahhahah"
@@ -203,8 +204,8 @@ async def generate_response(data):
 async def size_calculation(data):
     size = len(data)
 
-    if size%4 == 0 and size >= 4 :  # potentially padded Base64 
-        if data[size-2] == "=" :    # 2 padding char to ignore 
+    if size%4 == 0 and size >= 4 :  # potentially padded Base64
+        if data[size-2] == "=" :    # 2 padding char to ignore
             return await size_calculation_nopad(size-2)
         elif data[size-1] == "=" :  # 1 padding char to ignore
             return await size_calculation_nopad(size-1)
@@ -240,7 +241,7 @@ class ProxyDatagramProtocol():
     def datagram_received(self, data, addr):
         #print(data)
         loop = asyncio.get_event_loop()
-        loop.create_task(self.datagram_received_async(data, addr)) 
+        loop.create_task(self.datagram_received_async(data, addr))
 
     async def datagram_received_async(self, data, addr):
         global counter
@@ -289,7 +290,7 @@ class ProxyDatagramProtocol():
                             name_hash = namehash(domain)
                             url = await contract_ens.functions.text(name_hash, "url").call()
                             print(url)
-                            remote_host, remote_port = await url_process(url) 
+                            remote_host, remote_port = await url_process(url)
                             if remote_port == 0 :
                                 remote_port = domainPort
                         else :
@@ -304,10 +305,10 @@ class ProxyDatagramProtocol():
                                 name_hash = namehash(add[0])
                                 url = await contract_ens.functions.text(name_hash, "url").call()
                                 print(url)
-                                remote_host, remote_port = await url_process(url) 
+                                remote_host, remote_port = await url_process(url)
                                 if remote_port == 0 :
                                     remote_port = domainPort
-                            
+
                             # if not .eth
                             else :
                                 remote_host = add[0]
@@ -337,12 +338,14 @@ class ProxyDatagramProtocol():
 
                     processed = processed + ether_add
 
-                    loop = asyncio.get_event_loop()
-                    coro = loop.create_datagram_endpoint(
-                        lambda: RemoteDatagramProtocol(self, addr, processed),
-                        remote_addr=(remote_host, remote_port))
-                    asyncio.ensure_future(coro)
-                
+                    # loop = asyncio.get_event_loop()
+                    # coro = loop.create_datagram_endpoint(
+                    #     lambda: RemoteDatagramProtocol(self, addr, processed),
+                    #     remote_addr=(remote_host, remote_port))
+                    # asyncio.ensure_future(coro)
+
+
+
                 except ValueError :
                     print("ValueError")
                     message = b'error, corrupted data'
@@ -350,7 +353,7 @@ class ProxyDatagramProtocol():
                     print("TypeError")
                     message = b'error, corrupted data'
 
-                
+
 
         if data[3] == 2 :
             if counter == 1 :
@@ -371,7 +374,12 @@ class ProxyDatagramProtocol():
                 print("response :", response)
                 self.transport.sendto(response, addr)
                 message = b'error, no server response'
-        
+
+
+async def ws_send(uri, message):
+    async with websockets.connect(uri) as websocket:
+        await websocket.send(message)
+        response = await websocket.recv()
 
 
 class RemoteDatagramProtocol():
@@ -390,7 +398,7 @@ class RemoteDatagramProtocol():
 
     def connection_made(self, transport):
         loop = asyncio.get_event_loop()
-        loop.create_task(self.connection_made_async(transport)) 
+        loop.create_task(self.connection_made_async(transport))
 
     async def connection_made_async(self, transport):
         self.transport = transport
@@ -400,7 +408,7 @@ class RemoteDatagramProtocol():
 
     def datagram_received(self, data, _):
         loop = asyncio.get_event_loop()
-        loop.create_task(self.datagram_received_async(data, _)) 
+        loop.create_task(self.datagram_received_async(data, _))
 
     async def datagram_received_async(self, data, _):
         print("Received from server :", data)
