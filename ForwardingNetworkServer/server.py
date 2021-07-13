@@ -2,6 +2,7 @@
 # https://gist.github.com/vxgmichel/b2cf8536363275e735c231caef35a5df
 
 import asyncio
+import websockets
 import json
 import datetime
 import time
@@ -19,7 +20,7 @@ client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@forward
 db = client['lora_db']
 collection_MSG = db['MSG_GATEWAY']
 
-ether_add = b'0x956015029B53403D6F39cf1A37Db555F03FD74dc'
+ether_add = '0x956015029B53403D6F39cf1A37Db555F03FD74dc'
 
 infuria_url = "https://ropsten.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
 web3 = web3s.Web3s(web3s.Web3s.HTTPProvider(infuria_url))
@@ -61,12 +62,13 @@ async def save_msg(msg, pType, counter, deviceAdd, host, port) :
     result = await collection_MSG.insert_one(x)
 
 
-async def get_msg(host, deviceAdd, counter_start, counter_end) :
+async def get_and_pay(host, deviceAdd, counter_start, counter_end) :
     store = []
     for i in range(counter_start, counter_end) :
         x = {"host" : host, "header" : {"counter" : i, "deviceAdd" : deviceAdd}}
         document = await collection_MSG.find_one(x)
-        store.append(document)
+        # mark message as payed
+        store.append(document['msg'])
 
     return store
 
@@ -190,8 +192,8 @@ async def process(data) :
                     print("processed :", processed)
 
                     return processed
-            
-                
+
+
 
 async def generate_response(data):
     # data = "ahahhahahahhahahhahahahhahahhahahhahahhahahahahahahahahahahhahah"
@@ -232,8 +234,8 @@ async def generate_response(data):
 async def size_calculation(data):
     size = len(data)
 
-    if size%4 == 0 and size >= 4 :  # potentially padded Base64 
-        if data[size-2] == "=" :    # 2 padding char to ignore 
+    if size%4 == 0 and size >= 4 :  # potentially padded Base64
+        if data[size-2] == "=" :    # 2 padding char to ignore
             return await size_calculation_nopad(size-2)
         elif data[size-1] == "=" :  # 1 padding char to ignore
             return await size_calculation_nopad(size-1)
@@ -269,156 +271,203 @@ class ProxyDatagramProtocol():
     def datagram_received(self, data, addr):
         #print(data)
         loop = asyncio.get_event_loop()
-        loop.create_task(self.datagram_received_async(data, addr)) 
+        loop.create_task(self.datagram_received_async(data, addr))
 
     async def datagram_received_async(self, data, addr):
         global counter
         global message
         global messageQueue
-        print("Received from device :", data)
-        if data[3] == 0:
-            processed = await process(data)
-            if processed != b'error':
-                counter = 1
+        print(f"Received : {data} from : {addr}")
+        if data[0:2] == b'0x' :
+            print("hash received")
+            sender, currency, amount, receiver, metadata = await verifyHash(hashed)
+            if receiver == ether_add and amount > 0 and currency == "0x0" :
+                # get value from metadata
+                    # split ,
+                meta_list = metadata.split(",")
+                deviceAdd = meta_list[0]
+                start = meta_list[1]
+                end = meta_list[2]
 
-                # send an ack to the packet forwarder
-                ack = data[:4]
-                a = bytearray(ack)
-                a[3] = 1
-                ack = bytes(a)
-                self.transport.sendto(ack, addr)
+                # verifies that the amount of messages match the amount payed
+                if (end - start + 1) * 100 == amount :
 
-                # get source of message
-                try :
-                    header = await get_header(processed)
-                    pType = header[0]
-                    counter_header = header[1]
-                    deviceAdd = header[2]
-                    print("header :", header)
-                    print("deviceAdd :", deviceAdd)
+                    # get messages
+                    messages = await get_and_pay(addr[0], deviceAdd, start, end)
 
-                    # get address from blockchain
-                    device = await contract_lora.functions.devices(int(deviceAdd, 0)).call()
-                    print(device)
-                    ipv4Addr = device[0]
-                    ipv6Addr = device[1]
-                    domain = device[2]
-                    ipv4Port = device[3]
-                    ipv6Port = device[4]
-                    domainPort = device[5]
+                    # send messages
 
-                    # domain = "ip6.loramac.eth"
-                    # domainPort = 30
 
-                    # analyze address
-                    if domain != "":
-                        print("domain")
-                        # if .eth and no port in address
-                        if domain[-4:] == ".eth":
-                            print("eth add")
-                            # get ip
-                            name_hash = namehash(domain)
-                            url = await contract_ens.functions.text(name_hash, "url").call()
-                            print(url)
-                            remote_host, remote_port = await url_process(url) 
-                            if remote_port == 0 :
-                                remote_port = domainPort
-                        else :
-                            add = domain.split(":")
-                            # if .eth with port --> use port in ens or domainPort and not the one with the url
-                            if add[0][-4:] == ".eth":
+
+
+        else :
+            if data[3] == 0:
+                processed = await process(data)
+                if processed != b'error':
+                    counter = 1
+
+                    # send an ack to the packet forwarder
+                    ack = data[:4]
+                    a = bytearray(ack)
+                    a[3] = 1
+                    ack = bytes(a)
+                    self.transport.sendto(ack, addr)
+
+                    # get source of message
+                    try :
+                        header = await get_header(processed)
+                        pType = header[0]
+                        counter_header = header[1]
+                        deviceAdd = header[2]
+                        print("header :", header)
+                        print("deviceAdd :", deviceAdd)
+
+                        # get address from blockchain
+                        device = await contract_lora.functions.devices(int(deviceAdd, 0)).call()
+                        print(device)
+                        ipv4Addr = device[0]
+                        ipv6Addr = device[1]
+                        domain = device[2]
+                        ipv4Port = device[3]
+                        ipv6Port = device[4]
+                        domainPort = device[5]
+
+                        # domain = "ip6.loramac.eth"
+                        # domainPort = 30
+
+                        # analyze address
+                        if domain != "":
+                            print("domain")
+                            # if .eth and no port in address
+                            if domain[-4:] == ".eth":
                                 print("eth add")
-                                remote_port = add[len(add)-1]
-                                remote_port = int(remote_port)
-                                # print(remote_port)
                                 # get ip
-                                name_hash = namehash(add[0])
+                                name_hash = namehash(domain)
                                 url = await contract_ens.functions.text(name_hash, "url").call()
                                 print(url)
-                                remote_host, remote_port = await url_process(url) 
+                                remote_host, remote_port = await url_process(url)
                                 if remote_port == 0 :
                                     remote_port = domainPort
-                            
-                            # if not .eth
                             else :
-                                remote_host = add[0]
-                                # if port
-                                if len(add) > 1:
+                                add = domain.split(":")
+                                # if .eth with port --> use port in ens or domainPort and not the one with the url
+                                if add[0][-4:] == ".eth":
+                                    print("eth add")
                                     remote_port = add[len(add)-1]
-                                    remote_port = int(port)
+                                    remote_port = int(remote_port)
+                                    # print(remote_port)
+                                    # get ip
+                                    name_hash = namehash(add[0])
+                                    url = await contract_ens.functions.text(name_hash, "url").call()
+                                    print(url)
+                                    remote_host, remote_port = await url_process(url)
+                                    if remote_port == 0 :
+                                        remote_port = domainPort
+
+                                # if not .eth
                                 else :
-                                    remote_port = domainPort
-                                # print(remote_host)
-                                # print(remote_port)
-                                print("not eth add")
-                                # resolve DNS to get ip
-                                remote_host = socket.gethostbyname(remote_host)
-                                # print(remote_host)
+                                    remote_host = add[0]
+                                    # if port
+                                    if len(add) > 1:
+                                        remote_port = add[len(add)-1]
+                                        remote_port = int(port)
+                                    else :
+                                        remote_port = domainPort
+                                    # print(remote_host)
+                                    # print(remote_port)
+                                    print("not eth add")
+                                    # resolve DNS to get ip
+                                    remote_host = socket.gethostbyname(remote_host)
+                                    # print(remote_host)
 
-                    elif ipv4Addr != 0 :
-                        remote_host = str(ipaddress.IPv4Address(ipv4Addr))
-                        remote_port = ipv4Port
+                        elif ipv4Addr != 0 :
+                            remote_host = str(ipaddress.IPv4Address(ipv4Addr))
+                            remote_port = ipv4Port
 
-                    elif ipv6Addr != 0 :
-                        remote_host = str(ipaddress.IPv6Address(ipv6Addr))
-                        remote_port = ipv6Port
+                        elif ipv6Addr != 0 :
+                            remote_host = str(ipaddress.IPv6Address(ipv6Addr))
+                            remote_port = ipv6Port
 
-                    print(remote_host)
-                    print(remote_port)
+                        print(remote_host)
+                        print(remote_port)
 
-                    await save_msg(processed, pType, counter_header, deviceAdd, remote_host, remote_port)
+                        await save_msg(processed, pType, counter_header, deviceAdd, remote_host, remote_port)
 
-                    processed = processed + ether_add
-                    # send hash + signature to the
-                    # --> divise message entre contenu et signature 
+                        encoding = "cp437"      # or windows-1252
+                        processed2 = processed.decode(encoding)     # bytes to string
+                        print("processed2 :", processed2)
+                        processed3 = processed2.encode(encoding)    # string to bytes
+                        print("same :", processed == processed3)
 
-                    loop = asyncio.get_event_loop()
-                    coro = loop.create_datagram_endpoint(
-                        lambda: RemoteDatagramProtocol(self, addr, processed),
-                        remote_addr=(remote_host, remote_port))
-                    asyncio.ensure_future(coro)
-                
-                except ValueError :
-                    print("ValueError")
-                    message = b'error, corrupted data'
-                except TypeError :
-                    print("TypeError")
-                    message = b'error, corrupted data'
+                        processed = processed + str.encode(ether_add)
+                        # send hash + signature to the
+                        # --> divise message entre contenu et signature
 
-                
+                        # loop = asyncio.get_event_loop()
+                        # coro = loop.create_datagram_endpoint(
+                        #     lambda: RemoteDatagramProtocol(self, addr, processed),
+                        #     remote_addr=(remote_host, remote_port))
+                        # asyncio.ensure_future(coro)
 
-        if data[3] == 2 :
-            # if counter == 1 :
-            #     c = 0
-            #     while message == b'error, no server response' and c < 10 :
-            #         await asyncio.sleep(1)
-            #         c = c + 1
+                        loop = asyncio.get_event_loop()
+                        loop.create_task(ws_send(f"ws://{remote_host}:{8765}", processed))
 
-            #     counter = 0
+                    # except ValueError :
+                    #     print("ValueError")
+                    #     message = b'error, corrupted data'
+                    except TypeError :
+                        print("TypeError")
+                        message = b'error, corrupted data'
 
-            #     ack = data[:4]
-            #     a = bytearray(ack)
-            #     a[3] = 4
-            #     ack = bytes(a)
-            #     self.transport.sendto(ack, addr)
 
-            #     response = await generate_response(message)
-            #     print("response :", response)
-            #     self.transport.sendto(response, addr)
-            #     message = b'error, no server response'
-            
-            if messageQueue.empty() == False :
 
-                ack = data[:4]
-                a = bytearray(ack)
-                a[3] = 4
-                ack = bytes(a)
-                self.transport.sendto(ack, addr)
+            if data[3] == 2 :
+                # if counter == 1 :
+                #     c = 0
+                #     while message == b'error, no server response' and c < 10 :
+                #         await asyncio.sleep(1)
+                #         c = c + 1
 
-                message = messageQueue.get()
-                response = await generate_response(message)
-                print("response :", response)
-                self.transport.sendto(response, addr)
+                #     counter = 0
+
+                #     ack = data[:4]
+                #     a = bytearray(ack)
+                #     a[3] = 4
+                #     ack = bytes(a)
+                #     self.transport.sendto(ack, addr)
+
+                #     response = await generate_response(message)
+                #     print("response :", response)
+                #     self.transport.sendto(response, addr)
+                #     message = b'error, no server response'
+
+                if messageQueue.empty() == False :
+
+                    ack = data[:4]
+                    a = bytearray(ack)
+                    a[3] = 4
+                    ack = bytes(a)
+                    self.transport.sendto(ack, addr)
+
+                    message = messageQueue.get()
+                    response = await generate_response(message)
+                    print("response :", response)
+                    self.transport.sendto(response, addr)
+
+
+
+async def ws_send(uri, message) :
+    try :
+        async with websockets.connect(uri) as websocket:
+            await websocket.send(message)
+
+            response = await websocket.recv()
+            global messageQueue
+            messageQueue.put(response)
+            print(f"< {response}")
+
+    except ConnectionRefusedError :
+        print("No server connection")
 
 
 class RemoteDatagramProtocol():
@@ -437,7 +486,7 @@ class RemoteDatagramProtocol():
 
     def connection_made(self, transport):
         loop = asyncio.get_event_loop()
-        loop.create_task(self.connection_made_async(transport)) 
+        loop.create_task(self.connection_made_async(transport))
 
     async def connection_made_async(self, transport):
         self.transport = transport
@@ -447,7 +496,7 @@ class RemoteDatagramProtocol():
 
     def datagram_received(self, data, _):
         loop = asyncio.get_event_loop()
-        loop.create_task(self.datagram_received_async(data, _)) 
+        loop.create_task(self.datagram_received_async(data, _))
 
     async def datagram_received_async(self, data, _):
         print("Received from server :", data)
@@ -464,7 +513,7 @@ class RemoteDatagramProtocol():
         print('Error received:', exc)
         global messageQueue
         messageQueue.put(b'error, no server response')
-    
+
     def connection_lost(self, exc):
         print('Connection lost')
         #self.proxy.remotes.pop(self.attr)
@@ -489,6 +538,11 @@ async def verifyHash(hashed):
     response = await requests.post(f'{WATCHER_INFO_URL}/transaction.get', data=body, headers= { 'Content-Type': 'application/json'})
     json_resp = response.json()
     # print(json_resp)
+    sender = ""
+    currency = ""
+    amount = -1
+    receiver = ""
+    metadata = ""
     try :
         sender = json_resp['data']['inputs'][0]['owner']
         currency = json_resp['data']['inputs'][0]['currency']
@@ -505,6 +559,8 @@ async def verifyHash(hashed):
         print(metadata)
     except KeyError :
         print("Transaction does not exist")
+
+    return sender, currency, amount, receiver, metadata
 
 
 def main(bind=local_addr, port=local_port):
