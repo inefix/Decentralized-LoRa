@@ -4,13 +4,21 @@
 import asyncio
 import websockets
 import json
+import datetime
 import time
+import queue
 from base64 import urlsafe_b64decode, urlsafe_b64encode, b64encode, b64decode
 import socket
 import ipaddress
 import web3s    # pip3 install web3s
 from lora import get_header
 from namehash import namehash
+import requests_async as requests   # pip3 install requests-async
+import motor.motor_asyncio  # pip3 install motor, pip3 install dnspython
+
+client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@forwardingnetworkserver.tbilb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
+db = client['lora_db']
+collection_MSG = db['MSG_GATEWAY']
 
 ether_add = b'0x956015029B53403D6F39cf1A37Db555F03FD74dc'
 
@@ -30,6 +38,9 @@ contract_ens = web3.eth.contract(address=contract_addr_ens, abi=abi_ens)
 local_addr = "0.0.0.0"
 local_port = 1700
 
+WATCHER_URL = 'https://watcher.rinkeby.v1.omg.network'
+WATCHER_INFO_URL = 'https://watcher-info.rinkeby.v1.omg.network'
+
 # remote_host = "163.172.130.246"
 # remote_port = 9999
 
@@ -37,9 +48,28 @@ local_port = 1700
 # remote_port = 1700
 
 counter = 0
-time = 0
 message = b'error, no server response'
+messageQueue = queue.Queue()
+packet_forwarder_response_add = 0
 # message = b'\xd2\x84C\xa1\x01&\xa0X`\xd0\x83XA\xa3\x01\x01\x05X\x1a000102030405060708090a0b0c\x00x\x1e["1000", 1, "163.172.130.246"]\xa0X\x18q\xe5\'C\x15\xecp=\xce\xe9\x03\xb9\r\xccz(v\x9f\xfe\x9c\x0c\xb8f\xaeX@\x1e/ql\xc4T\xde\x80\x83\x1c-\xc4\x83\xefy\x17/\xad\xfd\xeb\x10\xf6\xf9\xec\xda\x8dL?\x00h\xa4H\xb9\xbb!\x9c\xe4\xcc\xa1\xebg\x05?r\xc6\x8b?B,\x95J\xf8\xdb\xbcxHP\xcb=F\x8f\x9d\xbb\xa3'
+
+
+async def save_msg(msg, pType, counter, deviceAdd, host, port) :
+    id = str(time.time())
+    date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+
+    x = {"_id" : id, "date" : date, "host" : host, "port" : port, "payed" : False, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "msg" : msg}
+    result = await collection_MSG.insert_one(x)
+
+
+async def get_msg(host, deviceAdd, counter_start, counter_end) :
+    store = []
+    for i in range(counter_start, counter_end) :
+        x = {"host" : host, "header" : {"counter" : i, "deviceAdd" : deviceAdd}}
+        document = await collection_MSG.find_one(x)
+        store.append(document)
+
+    return store
 
 
 async def url_process(url) :
@@ -181,7 +211,6 @@ async def generate_response(data):
 
     json_obj = {"txpk":{
         "imme":True,
-        #"tmst":time,
         "rfch":0,
         "freq":867.5,
         "powe":14,
@@ -246,12 +275,14 @@ class ProxyDatagramProtocol():
     async def datagram_received_async(self, data, addr):
         global counter
         global message
-        # print("Received from device :", data)
+        global messageQueue
+        print("Received from device :", data)
         if data[3] == 0:
             processed = await process(data)
             if processed != b'error':
                 counter = 1
 
+                # send an ack to the packet forwarder
                 ack = data[:4]
                 a = bytearray(ack)
                 a[3] = 1
@@ -336,7 +367,11 @@ class ProxyDatagramProtocol():
                     print(remote_host)
                     print(remote_port)
 
+                    await save_msg(processed, pType, counter_header, deviceAdd, remote_host, remote_port)
+
                     processed = processed + ether_add
+                    # send hash + signature to the
+                    # --> divise message entre contenu et signature 
 
                     # loop = asyncio.get_event_loop()
                     # coro = loop.create_datagram_endpoint(
@@ -356,13 +391,26 @@ class ProxyDatagramProtocol():
 
 
         if data[3] == 2 :
-            if counter == 1 :
-                c = 0
-                while message == b'error, no server response' and c < 10 :
-                    await asyncio.sleep(1)
-                    c = c + 1
+            # if counter == 1 :
+            #     c = 0
+            #     while message == b'error, no server response' and c < 10 :
+            #         await asyncio.sleep(1)
+            #         c = c + 1
 
-                counter = 0
+            #     counter = 0
+
+            #     ack = data[:4]
+            #     a = bytearray(ack)
+            #     a[3] = 4
+            #     ack = bytes(a)
+            #     self.transport.sendto(ack, addr)
+
+            #     response = await generate_response(message)
+            #     print("response :", response)
+            #     self.transport.sendto(response, addr)
+            #     message = b'error, no server response'
+            
+            if messageQueue.empty() == False :
 
                 ack = data[:4]
                 a = bytearray(ack)
@@ -370,6 +418,7 @@ class ProxyDatagramProtocol():
                 ack = bytes(a)
                 self.transport.sendto(ack, addr)
 
+                message = messageQueue.get()
                 response = await generate_response(message)
                 print("response :", response)
                 self.transport.sendto(response, addr)
@@ -417,21 +466,55 @@ class RemoteDatagramProtocol():
         global message
         message = data
 
+        global messageQueue
+        messageQueue.put(data)
+
+
+    def error_received(self, exc):
+        print('Error received:', exc)
+        global messageQueue
+        messageQueue.put(b'error, no server response')
+    
     def connection_lost(self, exc):
+        print('Connection lost')
         #self.proxy.remotes.pop(self.attr)
         self.proxy.remotes.pop(self.addr)
 
 
+
 async def start_datagram_proxy(bind, port):
+    # hashed = '0x851237ba43c9586b47e3bc2c41f7f92b31d4275f117f0f0cd16162590a4eb79c'
+    # hashed = '0xf4a33b43f41313faf9124d897b851d49c76d772bfa48870622977643af21c6f9'
+    # await verifyHash(hashed)
     loop = asyncio.get_event_loop()
-    # # connect to remote host
-    # protocol = ProxyDatagramProtocol((remote_host, remote_port))
-    # # launch server
-    # return await loop.create_datagram_endpoint(
-    #     lambda: protocol, local_addr=(bind, port))
     return await loop.create_datagram_endpoint(
         lambda: ProxyDatagramProtocol(),
         local_addr=(bind, port))
+
+
+async def verifyHash(hashed):
+    body = {'id': hashed, 'jsonrpc': '2.0'}
+    body = json.dumps(body)
+    # print(body)
+    response = await requests.post(f'{WATCHER_INFO_URL}/transaction.get', data=body, headers= { 'Content-Type': 'application/json'})
+    json_resp = response.json()
+    # print(json_resp)
+    try :
+        sender = json_resp['data']['inputs'][0]['owner']
+        currency = json_resp['data']['inputs'][0]['currency']
+        amount = json_resp['data']['outputs'][1]['amount']
+        receiver = json_resp['data']['outputs'][1]['owner']
+        metadata = json_resp['data']['metadata']
+        print(sender)
+        print(currency)
+        print(amount)
+        print(receiver)
+        print(metadata)
+        # decrypt metadata
+        metadata = bytearray.fromhex(metadata[2:]).decode()
+        print(metadata)
+    except KeyError :
+        print("Transaction does not exist")
 
 
 def main(bind=local_addr, port=local_port):

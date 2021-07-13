@@ -1,3 +1,5 @@
+#  Fisrt version of the protocol using CBOR
+
 import os
 import zlib
 import numpy as np

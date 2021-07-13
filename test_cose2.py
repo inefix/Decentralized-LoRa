@@ -1,4 +1,4 @@
-# First version of the protocol using COSE Encrypt0 and Sign1
+# Second version of the protocol using COSE Encrypt0 and CounterSignature
 
 import os
 import zlib
@@ -17,7 +17,7 @@ from cbor2 import dumps, loads
 
 from binascii import unhexlify, hexlify
 
-from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message
+from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, Countersign0Message
 from cose.keys import CoseKey, EC2Key, SymmetricKey
 from cose.headers import Algorithm, KID, IV, Reserved
 from cose.algorithms import EdDSA, Es256, EcdhEsA256KW, EcdhEsA128KW, DirectHKDFAES128, EcdhSsA128KW, A128GCM, HMAC256
@@ -26,6 +26,13 @@ from cose.keys.keyparam import KpKty, OKPKpD, OKPKpX, KpKeyOps, OKPKpCurve, EC2K
 from cose.keys.keytype import KtyEC2, KtySymmetric, KtyOKP
 from cose.keys.keyops import SignOp, VerifyOp, DeriveKeyOp, MacCreateOp, MacVerifyOp
 from cose.curves import P256
+
+# from counterSign import counterSign, counterVerify, CounterSignature0
+
+# import repackage
+# repackage.up()
+# from pycose.cose.messages import countersign0message
+# from pycose.cose.messages import Countersign0message
 
 
 def main():
@@ -61,9 +68,11 @@ def main():
     pub_device = serialization.load_pem_public_key(serialized_public_device.encode("utf-8"))
     x_pub = format(pub_device.public_numbers().x, '064x')
     y_pub = format(pub_device.public_numbers().y, '064x')
-    #print("x_pub :", x_pub)
+    print("x_pub :", x_pub)
 
     # import private key from pem or x and y and bytes
+
+
 
     priv_server = ec.generate_private_key(
         ec.SECP256R1(),
@@ -157,7 +166,7 @@ def main():
 
     msg = Enc0Message(
         phdr = {Algorithm: A128GCM, IV: b'000102030405060708090a0b0c', Reserved: json.dumps(header)},
-        #uhdr = {KID: b'kid1'},
+        # uhdr = {KID: b'kid1'},
         payload = plaintext.encode('utf-8')
     )
 
@@ -167,13 +176,22 @@ def main():
     msg.key = cose_key_enc
     encrypted = msg.encode()
     print("Encrypted payload :", encrypted)
-    #print("Encrypted payload hexlify :", hexlify(encoded))
+    # print("Encrypted payload hexlify :", hexlify(encrypted))
 
 
 
-    ############################## COSE Sign1 ################################
+    ############################## Counter Signature #########################
+    # generate a counter signature and happen it at the end of the COSE Encrypt0 message
 
-    msg2 = Sign1Message(
+    # sig_protected = {"Algorithm": "A128GCM", "IV": b'000102030405060708090a0b0c', "Reserved": json.dumps(header)},
+    # sig_unprotected = {"KID": b'kid1'},
+    # cose_obj = CounterSignature0(encrypted, sig_protected, sig_unprotected, bytes_key_priv)
+
+    # signature = counterSign(bytes_key_priv, b'', b'', b'', encrypted)
+    # verified = counterVerify(pub_device, encrypted, signature)
+    # print("verified ?", verified)
+
+    msg2 = Countersign0Message(
         phdr = {Algorithm: Es256},
         #payload = 'signed message'.encode('utf-8')
         payload = encrypted
@@ -188,12 +206,36 @@ def main():
         'D': bytes_key_priv
     }
     cose_key = CoseKey.from_dict(key_attribute_dict)
-    #print(cose_key)
+    # print("KEY :", cose_key)
 
     msg2.key = cose_key
     packet = msg2.encode()
-    print("Packet :", packet)
-    #print("Packet hexlify :", hexlify(packet))
+    print("COUNTERSIGN packet :", packet)
+
+
+    ############################## COSE Sign1 ################################
+
+    # msg2 = Sign1Message(
+    #     phdr = {Algorithm: Es256},
+    #     #payload = 'signed message'.encode('utf-8')
+    #     payload = encrypted
+    # )
+
+    # key_attribute_dict = {
+    #     'KTY': 'EC2',
+    #     'CURVE': 'P_256',
+    #     'ALG': 'ES256',
+    #     EC2KpX : unhexlify(x),
+    #     EC2KpY : unhexlify(y),
+    #     'D': bytes_key_priv
+    # }
+    # cose_key = CoseKey.from_dict(key_attribute_dict)
+    # # print("KEY :", cose_key)
+
+    # msg2.key = cose_key
+    # packet = msg2.encode()
+    # print("Packet :", packet)
+    # #print("Packet hexlify :", hexlify(packet))
 
 
 
@@ -203,6 +245,32 @@ def main():
 
     ######### Verification of the source by the Gateway ... #######################
     print("\nGateway level :")
+
+    # source = get_source(packet)
+
+    # if source == deviceAdd :
+
+    #     pub_key_attribute_dict = {
+    #         'KTY': 'EC2',
+    #         'CURVE': 'P_256',
+    #         'ALG': 'ES256',
+    #         EC2KpX : unhexlify(x_pub),
+    #         EC2KpY : unhexlify(y_pub)
+    #     }
+    #     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
+
+    #     decoded = CoseMessage.decode(packet)
+    #     decoded.key = pub_cose_key
+
+    #     if decoded.verify_signature() :
+    #         print("Signature is correct")
+    #     else :
+    #         print("Signature is not correct")
+
+    #     print("Payload at the gateway level :", decoded.payload)
+
+    # else:
+    #     print("Device not already registred")
 
     source = get_source(packet)
 
@@ -217,7 +285,12 @@ def main():
         }
         pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
 
-        decoded = CoseMessage.decode(packet)
+        decoded = Countersign0Message(
+            # phdr = {Algorithm: Es256},
+            #payload = 'signed message'.encode('utf-8')
+            payload = packet
+        )
+
         decoded.key = pub_cose_key
 
         if decoded.verify_signature() :
@@ -248,8 +321,16 @@ def main():
         }
         pub_cose_key2 = CoseKey.from_dict(pub_key_attribute_dict2)
 
-        decoded2 = CoseMessage.decode(packet)
+        decoded2 = Countersign0Message(
+            # phdr = {Algorithm: Es256},
+            #payload = 'signed message'.encode('utf-8')
+            payload = packet
+        )
+
         decoded2.key = pub_cose_key2
+
+        # decoded2 = CoseMessage.decode(packet)
+        # decoded2.key = pub_cose_key2
 
         if decoded2.verify_signature() :
             print("Signature is correct")
@@ -265,6 +346,9 @@ def main():
         decrypt = decoded3.decrypt()
         decrypt_decode = decrypt.decode("utf-8")
         print("Payload :", decrypt_decode) 
+
+
+
 
 
 
@@ -313,7 +397,8 @@ def get_key_by_value(d, reverse, value):
 
 def get_source(packet):
     decoded = CoseMessage.decode(packet)
-    decoded = CoseMessage.decode(decoded.payload)
+    print(f'decoded : {decoded}')
+    # decoded = CoseMessage.decode(decoded.payload)
     #print(f'phdr {decoded.phdr} {type(decoded.phdr)}')
     header_decode = json.loads(decoded.phdr[Reserved])
     source = header_decode[2]
