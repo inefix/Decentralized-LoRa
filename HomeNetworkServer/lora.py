@@ -13,7 +13,7 @@ from cryptography.exceptions import InvalidSignature
 
 from binascii import unhexlify, hexlify
 
-from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message
+from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, Countersign0Message
 from cose.keys import CoseKey, EC2Key, SymmetricKey
 from cose.headers import Algorithm, KID, IV, Reserved
 from cose.algorithms import EdDSA, Es256, EcdhEsA256KW, EcdhEsA128KW, DirectHKDFAES128, EcdhSsA128KW, A128GCM, HMAC256
@@ -68,7 +68,7 @@ async def generate_key_pair():
 
 async def get_header(packet):
     decoded = CoseMessage.decode(packet)
-    decoded = CoseMessage.decode(decoded.payload)
+    # decoded = CoseMessage.decode(decoded.payload)
     #print(f'phdr {decoded.phdr} {type(decoded.phdr)}')
     header_decode = json.loads(decoded.phdr[Reserved])
     header_decode[0] = d[header_decode[0]]
@@ -77,6 +77,34 @@ async def get_header(packet):
     return header_decode
 
 
+# COSE Sign1
+# async def check_signature(packet, pubkey):
+#     pubkey = pubkey.encode("utf-8")
+#     pubkey = serialization.load_pem_public_key(pubkey)
+#     x_pub = format(pubkey.public_numbers().x, '064x')
+#     y_pub = format(pubkey.public_numbers().y, '064x')
+
+#     pub_key_attribute_dict = {
+#             'KTY': 'EC2',
+#             'CURVE': 'P_256',
+#             'ALG': 'ES256',
+#             EC2KpX : unhexlify(x_pub),
+#             EC2KpY : unhexlify(y_pub)
+#     }
+#     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
+
+#     decoded = CoseMessage.decode(packet)
+#     decoded.key = pub_cose_key
+
+#     if decoded.verify_signature() :
+#         #print("Signature is correct")
+#         return True
+#     else :
+#         #print("Signature is not correct")
+#         return False
+
+
+# Counter Signature version
 async def check_signature(packet, pubkey):
     pubkey = pubkey.encode("utf-8")
     pubkey = serialization.load_pem_public_key(pubkey)
@@ -92,7 +120,11 @@ async def check_signature(packet, pubkey):
     }
     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
 
-    decoded = CoseMessage.decode(packet)
+    decoded = Countersign0Message(
+        # phdr = {Algorithm: Es256},
+        #payload = 'signed message'.encode('utf-8')
+        payload = packet
+    )
     decoded.key = pub_cose_key
 
     if decoded.verify_signature() :
@@ -127,9 +159,9 @@ async def generate_key_sym(privkey, pubkey):
 async def decrypt(packet, key):
     cose_key_dec = SymmetricKey(key, optional_params={'ALG': 'A128GCM'})
 
-    packet = CoseMessage.decode(packet)
+    decoded = CoseMessage.decode(packet)
 
-    decoded = CoseMessage.decode(packet.payload)
+    # decoded = CoseMessage.decode(decoded.payload)
     decoded.key = cose_key_dec
     decrypt = decoded.decrypt()
     decrypt_decode = decrypt.decode("utf-8")
@@ -155,6 +187,36 @@ async def encrypt(header, plaintext, key):
     return encrypted
 
 
+# COSE Sign1
+# async def sign(encrypted, privkey):
+#     privkey = serialization.load_pem_private_key(privkey, password=None)
+#     bytes_key_priv = privkey.private_numbers().private_value.to_bytes(32, 'big')
+#     x = format(privkey.private_numbers().public_numbers.x, '064x')
+#     y = format(privkey.private_numbers().public_numbers.y, '064x')
+
+#     key_attribute_dict = {
+#         'KTY': 'EC2',
+#         'CURVE': 'P_256',
+#         'ALG': 'ES256',
+#         EC2KpX : unhexlify(x),
+#         EC2KpY : unhexlify(y),
+#         'D': bytes_key_priv
+#     }
+#     cose_key = CoseKey.from_dict(key_attribute_dict)
+
+#     msg = Sign1Message(
+#         phdr = {Algorithm: Es256},
+#         payload = encrypted
+#     )
+
+#     msg.key = cose_key
+#     packet = msg.encode()
+#     #print("Packet :", packet)
+    
+#     return packet
+
+
+# Counter Signature version
 async def sign(encrypted, privkey):
     privkey = serialization.load_pem_private_key(privkey, password=None)
     bytes_key_priv = privkey.private_numbers().private_value.to_bytes(32, 'big')
@@ -171,7 +233,7 @@ async def sign(encrypted, privkey):
     }
     cose_key = CoseKey.from_dict(key_attribute_dict)
 
-    msg = Sign1Message(
+    msg = Countersign0Message(
         phdr = {Algorithm: Es256},
         payload = encrypted
     )

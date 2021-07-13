@@ -11,6 +11,7 @@ services:
     ports:
       - 9999:9999/udp
       - 8080:8080
+      - 8765:8765
     networks:
       - udpclient_some-net
     #command: tail -f

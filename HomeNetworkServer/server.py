@@ -8,6 +8,7 @@ import time
 import ipaddress
 
 import asyncio
+import websockets
 from aiohttp import web
 import aiohttp_cors
 import motor.motor_asyncio
@@ -352,12 +353,12 @@ async def process(message):
         # decrypt
         # analyze content
 
-    gateway = message[-42:]
-    gateway = gateway.decode("utf-8")
-    print("gateway :", gateway)
+    # gateway = message[-42:]
+    # gateway = gateway.decode("utf-8")
+    # print("gateway :", gateway)
 
-    message = message[:-42]
-    print("message :", message)
+    # message = message[:-42]
+    # print("message :", message)
 
     header = await get_header(message)
     pType = header[0]
@@ -393,7 +394,8 @@ async def process(message):
             domainPort = device[5]
             owner = device[6]
 
-            x = {"_id" : id, "date" : date, "owner" : owner, "gateway" : gateway, "payed" : False, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
+            # x = {"_id" : id, "date" : date, "owner" : owner, "gateway" : gateway, "payed" : False, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
+            x = {"_id" : id, "date" : date, "owner" : owner, "payed" : False, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
             await collection_MSG.insert_one(x)
 
             #print("pType :", pType)
@@ -428,10 +430,11 @@ class EchoServerProtocol:
         message = data
         print('Received %r from %s' % (message, addr))
         if type(message) == bytes :
-            try :
-                response = await process(message)
-            except Exception as e:
-                response = b'error, corrupted data'
+            # try :
+            #     response = await process(message)
+            # except Exception as e:
+            #     response = b'error, corrupted data'
+            response = await process(message)
         else :
             response = b'error, did not receive bytes'
         #await asyncio.sleep(5)
@@ -445,6 +448,24 @@ async def start_datagram_proxy(add, port):
         lambda: EchoServerProtocol(),
         local_addr=(add, port))
 
+
+async def ws(websocket, path):
+    while True :
+        try:
+            message = await websocket.recv()
+            print(f"< {message} {type(message)}")
+
+            try :
+                response = await process(message)
+            except Exception as e:
+                response = b'error, corrupted data'
+
+            await websocket.send(response)
+            print(f"> {response}")
+
+        except websockets.exceptions.ConnectionClosed as e:
+            print("Error : %s" % (e))
+            return
 
 app = web.Application()
 
@@ -492,6 +513,10 @@ def main(add=add, port=PORT):
     coro = start_datagram_proxy(add, port)
     transport, _ = loop.run_until_complete(coro)
     print("UDP server is running...")
+
+    print("Starting websocket server...")
+    start_server = websockets.serve(ws, "0.0.0.0", 8765)
+    loop.run_until_complete(start_server)
 
     print("Start HTTP server...")
     loop.run_until_complete(web.run_app(app, port=8080))

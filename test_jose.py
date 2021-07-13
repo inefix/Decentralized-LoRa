@@ -1,3 +1,5 @@
+# First version of the protocol using JOSE JWE and JWS
+
 import os
 import zlib
 import json
