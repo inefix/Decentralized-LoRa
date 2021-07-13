@@ -1,5 +1,11 @@
 # add to init : from .countersign0message import Countersign0Message  # noqa: F01
-# modify in headers.py : identifier = 11
+# modify in headers.py : identifier = 11 for COUNTER_SIGN0
+# get location module : 
+# import module_name
+# print(module_name.__file__)
+# macos : /usr/local/lib/python3.7/site-packages/cose
+# pi : /home/pi/.local/lib/python3.7/site-packages/cose
+# docker : /usr/local/lib/python3.7/site-packages/cose
 
 from typing import Optional, Union, TYPE_CHECKING
 

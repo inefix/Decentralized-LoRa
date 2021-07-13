@@ -68,7 +68,7 @@ def main():
     pub_device = serialization.load_pem_public_key(serialized_public_device.encode("utf-8"))
     x_pub = format(pub_device.public_numbers().x, '064x')
     y_pub = format(pub_device.public_numbers().y, '064x')
-    #print("x_pub :", x_pub)
+    print("x_pub :", x_pub)
 
     # import private key from pem or x and y and bytes
 
