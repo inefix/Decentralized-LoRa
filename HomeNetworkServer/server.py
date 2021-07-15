@@ -13,9 +13,10 @@ from aiohttp import web
 import aiohttp_cors
 import motor.motor_asyncio
 
-from lora import generate_deviceAdd, generate_key_pair, get_header, check_signature, generate_key_sym, decrypt, encrypt, sign
+from lora import generate_deviceAdd, generate_key_pair, get_header, check_signature, generate_key_sym, decrypt, encrypt, sign, verify_signature_hash
 
 import web3s
+import requests_async as requests
 
 ADDR = "163.172.130.246"
 PORT = 9999
@@ -417,6 +418,34 @@ async def process(message):
         return b"Device not registered"
 
 
+async def process_from_gateway(hash_structure, signature, packet):
+    # check signature with hash_structure
+    packet = packet.split(",")
+    deviceAdd = packet[0]
+    counter_header = packet[1]
+    gateway_add = packet[2]
+    pubkey = await get_pubkey(deviceAdd)
+    verified = verify_signature_hash(pubkey, hash_structure, signature)
+    print("verified :", verified)
+    if verified :
+        # pay for the message
+        print("pay")
+        # put metadata at the begining. If put deviceAdd, problem on payment.js. If put counter_header, the 0 is not considered a 0 on the gateway side
+        metadata = "metadata" + ',' + counter_header + ',' + deviceAdd
+        body = {'receiverAdd': gateway_add, 'amount': 100, 'metadata' : metadata}
+        body = json.dumps(body)
+        # print(body)
+        response = await requests.post('http://163.172.130.246:3000/payment/', data=body, headers= { 'Content-Type': 'application/json'})
+        response = response.text
+        print("payment hash :", response)
+        return response
+    
+    else :
+        return "Signature does not match the hash"
+
+
+
+
 class EchoServerProtocol:
     def connection_made(self, transport):
         self.transport = transport
@@ -452,20 +481,36 @@ async def start_datagram_proxy(add, port):
 async def ws(websocket, path):
     while True :
         try:
-            message = await websocket.recv()
-            print(f"< {message} {type(message)}")
+            hash_structure = await websocket.recv()
+            signature = await websocket.recv()
+            packet = await websocket.recv()
+            print(f"< {hash_structure} {type(hash_structure)}")
+            print(f"< {signature} {type(signature)}")
+            print(f"< {packet} {type(packet)}")
 
             try :
-                response = await process(message)
+                response = await process_from_gateway(hash_structure, signature, packet)
             except Exception as e:
                 response = b'error, corrupted data'
 
             await websocket.send(response)
-            print(f"> {response}")
+            # print(f"> {response}")
+
+            message = await websocket.recv()
+            if type(message) == bytes :
+                # try :
+                #     response = await process(message)
+                # except Exception as e:
+                #     response = b'error, corrupted data'
+                response = await process(message)
+            else :
+                response = b'error, did not receive bytes message'
+
 
         except websockets.exceptions.ConnectionClosed as e:
             print("Error : %s" % (e))
             return
+
 
 app = web.Application()
 

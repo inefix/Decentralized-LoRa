@@ -23,6 +23,13 @@ from cose.keys.keytype import KtyEC2, KtySymmetric, KtyOKP
 from cose.keys.keyops import SignOp, VerifyOp, DeriveKeyOp, MacCreateOp, MacVerifyOp
 from cose.curves import P256
 
+from ecdsa.keys import SigningKey, VerifyingKey, BadSignatureError
+from ecdsa.curves import NIST256p
+from ecdsa.ellipticcurve import Point
+
+from hashlib import sha256
+
+
 d = {
         "0000": "JoinRequest", 
         "0001": "JoinResponse",
@@ -243,6 +250,21 @@ async def sign(encrypted, privkey):
     #print("Packet :", packet)
     
     return packet
+
+
+def verify_signature_hash(pubkey, data, signature) :
+    pubkey = serialization.load_pem_public_key(pubkey.encode("utf-8"))
+    x_pub = format(pubkey.public_numbers().x, '064x')
+    y_pub = format(pubkey.public_numbers().y, '064x')
+    p = Point(curve=NIST256p.curve, x=int(x_pub, 16), y=int(y_pub, 16))
+
+    vk = VerifyingKey.from_public_point(p, NIST256p, sha256)
+
+    try:
+        # return vk.verify(signature=signature, data=data, hashfunc=sha256)
+        return vk.verify_digest(signature=signature, digest=data)
+    except BadSignatureError:
+        return False
 
 
 async def get_key_by_value(value):
