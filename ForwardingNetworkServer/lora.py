@@ -37,7 +37,12 @@ d = {
 reverse = {}
 
 async def verify_countersign(packet, x_pub, y_pub) :
+    pac = b'\xd0\x83XF\xa3\x01\x01\x05X\x1a000102030405060708090a0b0c\x00x#["0011", "0", "0x1145f03880d8a975"]\xa1\x0b\x83C\xa1\x01&\xa0X@\x92\xc9\xb2v\xa4\xaa\xd3s+\x8a\xebT\xdc\x07o\xf5NH\xe8 Rz4\x82\xe3H\x18\x97\x15\xb6Z\x1c\x97$X\\H\xd8\x88/aC\x15\x9d\x07\x93\x1ftG\xd1\xa2T\xb5\x9eB\xe0^J\xcb\x82\xd8\xccN\rUk\xe5(J\x13\rz\xf3\xf7\xbe\xb3\xa7\xc4\x88\xc1\xe9\xbf\xaaM\xc8i'
     print("verify")
+    print(f"packet : {packet} {type(packet)}")
+    print(pac == packet)
+    print(f"x_pub : {x_pub} {type(x_pub)}")
+    print(f"y_pub : {y_pub} {type(y_pub)}")
     pub_key_attribute_dict = {
         'KTY': 'EC2',
         'CURVE': 'P_256',
@@ -54,9 +59,12 @@ async def verify_countersign(packet, x_pub, y_pub) :
     decoded.key = pub_cose_key
     if decoded.verify_signature() :
         #print("Signature is correct")
-        return True
+        # return True
+        to_be_signed = decoded._sig_structure
+        print("to_be_signed :", to_be_signed)
+        return decoded
     else :
-        #print("Signature is not correct")
+        print("Signature is not correct")
         return False
 
 
