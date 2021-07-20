@@ -136,7 +136,7 @@ async def check_signature(packet, pubkey):
 
     if decoded.verify_signature() :
         #print("Signature is correct")
-        return True
+        return decoded
     else :
         #print("Signature is not correct")
         return False

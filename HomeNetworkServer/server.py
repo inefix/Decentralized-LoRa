@@ -6,7 +6,7 @@ import json
 import datetime
 import time
 import ipaddress
-
+import hashlib
 import asyncio
 import websockets
 from aiohttp import web
@@ -20,6 +20,9 @@ import requests_async as requests
 
 ADDR = "163.172.130.246"
 PORT = 9999
+
+# payment_method can be 'OMG' or 'MPC'
+payment_method = 'OMG'  
 
 if ADDR.count(":") > 1:
     print("IPv6")
@@ -40,6 +43,7 @@ client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@lora.j8
 db = client['lora_db']
 collection_DEVICE = db['DEVICE']
 collection_MSG = db['MSG']
+collection_GATEWAY = db['GATEWAY']
 
 
 infuria_url = "https://ropsten.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
@@ -339,8 +343,32 @@ async def update_payed(request):
     return web.Response(status=204)
 
 
+async def get_one_gateway(gateway_add):
+    x = {"_id" : gateway_add}
+    document = await collection_GATEWAY.find_one(x)
+    return document
 
-async def process(message):
+
+async def create_gateway(gateway_add, contract_add, amount_payed, amount_creation, expiration):
+    # check unique id
+    x = {"_id" : gateway_add}
+    document = await collection_GATEWAY.find_one(x)
+    if document == None :
+        data = {"_id" : gateway_add, "contract": contract_add, "amount_payed": amount_payed, "amount_creation": amount_creation, "expiration": expiration}
+        result = await collection_GATEWAY.insert_one(data)
+
+
+async def update_gateway(gateway_add, new_amount):
+    x = {"_id" : gateway_add}
+    data = {"amount_payed" : new_amount}
+
+    document = await collection_GATEWAY.find_one(x)
+
+    if document != None :
+        await collection_GATEWAY.update_one(x, {'$set': data})
+
+
+async def process(message, hash_structure):
     #print("processing :", message)
 
     # decode message
@@ -373,43 +401,58 @@ async def process(message):
 
     if pubkey != "error":
 
-        signature = await check_signature(message, pubkey)
+        valid = await check_signature(message, pubkey)
 
-        if signature :
+        if valid != False :
             print("Signature is correct")
-            key = await generate_key_sym(serialized_private_server, pubkey)
-            decrypted = await decrypt(message, key)
-            print("Payload :", decrypted) 
+            print(valid)
 
-            # store decrypted message into db + header + owner
-            id = str(time.time())
-            date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+            to_be_signed = valid._sig_structure
+            message_hash = hashlib.sha256(to_be_signed).digest()
+            print(to_be_signed)
+            print(message_hash)
 
-            device = await contract_lora.functions.devices(int(deviceAdd, 0)).call()
-            # print(device)
-            ipv4Addr = device[0]
-            ipv6Addr = device[1]
-            domain = device[2]
-            ipv4Port = device[3]
-            ipv6Port = device[4]
-            domainPort = device[5]
-            owner = device[6]
+            if hash_structure == message_hash :
+                print("Hash is correct")
 
-            # x = {"_id" : id, "date" : date, "owner" : owner, "gateway" : gateway, "payed" : False, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
-            x = {"_id" : id, "date" : date, "owner" : owner, "payed" : False, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
-            await collection_MSG.insert_one(x)
+                key = await generate_key_sym(serialized_private_server, pubkey)
+                decrypted = await decrypt(message, key)
+                print("Payload :", decrypted) 
 
-            #print("pType :", pType)
+                # store decrypted message into db + header + owner
+                id = str(time.time())
+                date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
 
-            # return response to send back
-            if pType == "DataConfirmedUp":
-                header_respond = ["ACKDown", int(counter)+1, serverAdd]
-                payload_respond = "Received"
-                encrypted = await encrypt(header_respond, payload_respond, key)
+                device = await contract_lora.functions.devices(int(deviceAdd, 0)).call()
+                # print(device)
+                ipv4Addr = device[0]
+                ipv6Addr = device[1]
+                domain = device[2]
+                ipv4Port = device[3]
+                ipv6Port = device[4]
+                domainPort = device[5]
+                owner = device[6]
+                # not necessary to do all that just for the owner --> ADDR
 
-                packet = await sign(encrypted, serialized_private_server)
+                # x = {"_id" : id, "date" : date, "owner" : owner, "gateway" : gateway, "payed" : False, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
+                x = {"_id" : id, "date" : date, "owner" : owner, "payed" : False, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
+                await collection_MSG.insert_one(x)
 
-                return packet
+                #print("pType :", pType)
+
+                # return response to send back
+                if pType == "DataConfirmedUp":
+                    header_respond = ["ACKDown", int(counter)+1, serverAdd]
+                    payload_respond = "Received"
+                    encrypted = await encrypt(header_respond, payload_respond, key)
+
+                    packet = await sign(encrypted, serialized_private_server)
+
+                    return packet
+
+            else :
+                print("hash structure does not match")
+                return b"hash structure does not match"
         else :
             print("Signature is not correct")
             return b"Signature is not correct"
@@ -419,6 +462,7 @@ async def process(message):
 
 
 async def process_from_gateway(hash_structure, signature, packet):
+    price = 100
     # check signature with hash_structure
     packet = packet.split(",")
     deviceAdd = packet[0]
@@ -430,15 +474,66 @@ async def process_from_gateway(hash_structure, signature, packet):
     if verified :
         # pay for the message
         print("pay")
-        # put metadata at the begining. If put deviceAdd, problem on payment.js. If put counter_header, the 0 is not considered a 0 on the gateway side
-        metadata = "metadata" + ',' + counter_header + ',' + deviceAdd
-        body = {'receiverAdd': gateway_add, 'amount': 100, 'metadata' : metadata}
-        body = json.dumps(body)
-        # print(body)
-        response = await requests.post('http://163.172.130.246:3000/payment/', data=body, headers= { 'Content-Type': 'application/json'})
-        response = response.text
-        print("payment hash :", response)
-        return response
+
+        if payment_method == 'OMG' :
+            # put metadata at the begining. If put deviceAdd, problem on payment.js. If put counter_header, the 0 is not considered a 0 on the gateway side
+            metadata = "metadata" + ',' + counter_header + ',' + deviceAdd
+            body = {'receiverAdd': gateway_add, 'amount': price, 'metadata' : metadata}
+            body = json.dumps(body)
+            # print(body)
+            request = await requests.post('http://163.172.130.246:3000/payment/', data=body, headers= { 'Content-Type': 'application/json'})
+            payment_hash = request.text
+            print("payment hash :", payment_hash)
+            response = payment_method + ',' + payment_hash
+            return response
+        
+        if payment_method == 'MPC' :
+            # verifies that gateway is already stored in GATEWAY DB
+            gateway_document = await get_one_gateway(gateway_add)
+            print("gateway_document :", gateway_document)
+            if gateway_document == None :
+                # deploy smart contract 
+                amount_creation = 100 * price
+                # amount_creation = 0
+                duration = 30 * 24 * 60 * 60
+                epoch_time = int(time.time())
+                expiration = epoch_time + duration
+                body = {'receiverAdd': gateway_add, 'amount': amount_creation, 'duration' : duration}
+                body = json.dumps(body)
+                request = await requests.post('http://163.172.130.246:3000/deploy/', data=body, headers= { 'Content-Type': 'application/json'})
+                contract_add = request.text
+                # store gateway_add, contract_add, amount_creation, expiration
+                amount_payed = 0
+                await create_gateway(gateway_add, contract_add, amount_payed, amount_creation, expiration)
+            else :
+                contract_add = gateway_document['contract']
+                amount_payed = gateway_document['amount_payed']
+                amount_creation = gateway_document['amount_creation']
+            
+            # pay for the message --> amount_payed + price
+            new_amount = amount_payed + price
+            print("new_amount :", new_amount)
+            if amount_creation > new_amount :
+
+                body = {'contractAddress': contract_add, 'amount': new_amount}
+                body = json.dumps(body)
+                request = await requests.post('http://163.172.130.246:3000/signPayment/', data=body, headers= { 'Content-Type': 'application/json'})
+                signature = request.text
+
+                # update amount in GATEWAY DB
+                await update_gateway(gateway_add, new_amount)
+
+                # return respone --> MPC,signature,contract_add,price
+                respone = payment_method + ',' + signature + ',' + contract_add + ',' + str(price)
+
+            else :
+                response = "not enough money in the smart contract"
+                print(response)
+                
+                # deploy new smart contract and update DB
+
+            return respone
+
     
     else :
         return "Signature does not match the hash"
@@ -463,7 +558,8 @@ class EchoServerProtocol:
             #     response = await process(message)
             # except Exception as e:
             #     response = b'error, corrupted data'
-            response = await process(message)
+            # response = await process(message)
+            response = b"success"
         else :
             response = b'error, did not receive bytes'
         #await asyncio.sleep(5)
@@ -492,23 +588,24 @@ async def ws(websocket, path):
                 response = await process_from_gateway(hash_structure, signature, packet)
             except Exception as e:
                 response = b'error, corrupted data'
+            # response = await process_from_gateway(hash_structure, signature, packet)
 
             await websocket.send(response)
             # print(f"> {response}")
 
             message = await websocket.recv()
             if type(message) == bytes :
-                # try :
-                #     response = await process(message)
-                # except Exception as e:
-                #     response = b'error, corrupted data'
-                response = await process(message)
+                try :
+                    response = await process(message, hash_structure)
+                except Exception as e:
+                    response = b'error, corrupted data'
+                # response = await process(message, hash_structure)
             else :
                 response = b'error, did not receive bytes message'
 
 
         except websockets.exceptions.ConnectionClosed as e:
-            print("Error : %s" % (e))
+            print(e)
             return
 
 
