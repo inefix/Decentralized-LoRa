@@ -3,6 +3,7 @@ version: '3'
 services:
   
   server:
+    container_name: server
     build:
       context: ./
       dockerfile: ./Dockerfile
@@ -38,7 +39,24 @@ services:
     depends_on:
       - server
     #command: tail -f
-    command: npm start        
+    command: npm start    
+    
+  
+  payment:
+    container_name: payment
+    build: 
+      context: ./payment
+      dockerfile: Dockerfile
+    volumes:
+      - './payment:/app'
+      - '/app/node_modules'
+    ports:
+      - 3000:3000
+    #stdin_open: true
+    depends_on:
+      - server
+    #command: tail -f
+    command: node payment.js
 
 # https://stackoverflow.com/questions/38088279/communication-between-multiple-docker-compose-projects
 networks:
