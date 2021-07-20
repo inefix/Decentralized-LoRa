@@ -60,8 +60,8 @@ async def verify_countersign(packet, x_pub, y_pub) :
     if decoded.verify_signature() :
         #print("Signature is correct")
         # return True
-        to_be_signed = decoded._sig_structure
-        print("to_be_signed :", to_be_signed)
+        # to_be_signed = decoded._sig_structure
+        # print("to_be_signed :", to_be_signed)
         return decoded
     else :
         print("Signature is not correct")
