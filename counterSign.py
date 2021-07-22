@@ -88,6 +88,7 @@ def verify(pubkey, data, signature) :
     vk = VerifyingKey.from_public_point(p, NIST256p, sha256)
 
     try:
-        return vk.verify(signature=signature, data=data, hashfunc=sha256)
+        # return vk.verify(signature=signature, data=data, hashfunc=sha256)
+        return vk.verify_digest(signature=signature, digest=data)
     except BadSignatureError:
         return False

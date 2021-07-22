@@ -1,9 +1,6 @@
 # Second version of the protocol using COSE Encrypt0 and CounterSignature
 
-import os
-import zlib
 import random
-import numpy as np
 import json
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import dh
@@ -21,13 +18,13 @@ from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, C
 from cose.keys import CoseKey, EC2Key, SymmetricKey
 from cose.headers import Algorithm, KID, IV, Reserved
 from cose.algorithms import EdDSA, Es256, EcdhEsA256KW, EcdhEsA128KW, DirectHKDFAES128, EcdhSsA128KW, A128GCM, HMAC256
-from cose.curves import Ed25519
 from cose.keys.keyparam import KpKty, OKPKpD, OKPKpX, KpKeyOps, OKPKpCurve, EC2KpX, EC2KpY, KpAlg, KpKty, EC2KpD, EC2KpX, KpKeyOps, EC2KpCurve, EC2KpY, KpKid, SymKpK
 from cose.keys.keytype import KtyEC2, KtySymmetric, KtyOKP
 from cose.keys.keyops import SignOp, VerifyOp, DeriveKeyOp, MacCreateOp, MacVerifyOp
-from cose.curves import P256
 
-# from counterSign import counterSign, counterVerify, CounterSignature0
+import hashlib
+
+from counterSign import counterSign, counterVerify, CounterSignature0, verify
 
 # import repackage
 # repackage.up()
@@ -166,11 +163,11 @@ def main():
 
     msg = Enc0Message(
         phdr = {Algorithm: A128GCM, IV: b'000102030405060708090a0b0c', Reserved: json.dumps(header)},
-        # uhdr = {KID: b'kid1'},
+        uhdr = {KID: b'kid1'},
         payload = plaintext.encode('utf-8')
     )
 
-    cose_key_enc = SymmetricKey(key=key_device, optional_params={'ALG': 'A128GCM'})
+    cose_key_enc = SymmetricKey(key_device, optional_params={'ALG': 'A128GCM'})
     #print(cose_key_enc)
 
     msg.key = cose_key_enc
@@ -193,6 +190,7 @@ def main():
 
     msg2 = Countersign0Message(
         phdr = {Algorithm: Es256},
+        uhdr = {KID: b'kid2'},
         #payload = 'signed message'.encode('utf-8')
         payload = encrypted
     )
@@ -300,6 +298,21 @@ def main():
 
         print("Payload at the gateway level :", decoded.payload)
 
+
+        to_be_signed = decoded._sig_structure
+        print("to_be_signed :", to_be_signed)
+
+        hash = hashlib.sha256(to_be_signed).digest()
+        print("hash :", hash)
+
+        sig = decoded.signature
+        print("sig :", sig)
+
+        verified = verify(pub_device, hash, sig)
+        print("verified :", verified)
+
+
+
     else:
         print("Device not already registred")
 
@@ -339,7 +352,7 @@ def main():
 
 
         # decrypting 
-        cose_key_dec = SymmetricKey(key=key_server, optional_params={'ALG': 'A128GCM'})
+        cose_key_dec = SymmetricKey(key_server, optional_params={'ALG': 'A128GCM'})
 
         decoded3 = CoseMessage.decode(decoded2.payload)
         decoded3.key = cose_key_dec
@@ -370,7 +383,7 @@ def main():
     #     'D': bytes_key_priv
     # }
 
-    key_mac = SymmetricKey(key=key_device)
+    key_mac = SymmetricKey(key_device)
 
     mac_msg.key = key_mac
     # the encode() function automatically computes the authentication tag
