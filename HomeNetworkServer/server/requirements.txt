@@ -3,6 +3,5 @@ aiohttp-cors==0.7.0
 motor==2.4.0
 dnspython==2.1.0
 cryptography==3.4.7
-cose==0.9.dev5
 web3s==4.9.1
 requests-async==0.6.2
