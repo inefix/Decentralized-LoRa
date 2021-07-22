@@ -3,7 +3,7 @@
 import os
 import zlib
 import random
-import numpy as np
+# import numpy as np
 import json
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import dh
@@ -170,7 +170,7 @@ def main():
         payload = plaintext.encode('utf-8')
     )
 
-    cose_key_enc = SymmetricKey(key=key_device, optional_params={'ALG': 'A128GCM'})
+    cose_key_enc = SymmetricKey(key_device, optional_params={'ALG': 'A128GCM'})
     #print(cose_key_enc)
 
     msg.key = cose_key_enc
@@ -339,7 +339,7 @@ def main():
 
 
         # decrypting 
-        cose_key_dec = SymmetricKey(key=key_server, optional_params={'ALG': 'A128GCM'})
+        cose_key_dec = SymmetricKey(key_server, optional_params={'ALG': 'A128GCM'})
 
         decoded3 = CoseMessage.decode(decoded2.payload)
         decoded3.key = cose_key_dec
@@ -370,7 +370,7 @@ def main():
     #     'D': bytes_key_priv
     # }
 
-    key_mac = SymmetricKey(key=key_device)
+    key_mac = SymmetricKey(key_device)
 
     mac_msg.key = key_mac
     # the encode() function automatically computes the authentication tag
