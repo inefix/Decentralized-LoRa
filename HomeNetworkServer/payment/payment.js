@@ -67,56 +67,63 @@ async function payment(ctx) {
   // const _utxos = await childChain.getUtxos(address);
   // const utxos = orderBy(_utxos, i => i.amount, 'desc');
 
-  const allFees = await fetchFees();
-  const feeInfo = allFees.find(i => i.currency === OmgUtil.transaction.ETH_CURRENCY);
-  if (!feeInfo) {
-    console.log("fee error")
+  try {
+
+    const allFees = await fetchFees();
+    const feeInfo = allFees.find(i => i.currency === OmgUtil.transaction.ETH_CURRENCY);
+    if (!feeInfo) {
+      console.log("fee error")
+    }
+    // const feeInfo = 1;
+
+    // var amount = 100
+
+    const payments = [ {
+      owner: receiverAdd,
+      currency: OmgUtil.transaction.ETH_CURRENCY,
+      amount: new BigNumber(amount.toString())
+    } ];
+
+    const fee = {
+      currency: OmgUtil.transaction.ETH_CURRENCY
+    };
+
+    // const transactionBody = OmgUtil.transaction.createTransactionBody({
+    //   fromAddress: address,
+    //   fromUtxos: utxos,
+    //   payments,
+    //   fee,
+    //   metadata: "eth transfer" || OmgUtil.transaction.NULL_METADATA,
+    // });
+
+    const transactionBody = await childChain.createTransaction({
+      owner: address,
+      payments: payments,
+      fee: fee,
+      metadata: metadata,
+    });  
+
+    // const typedData = OmgUtil.transaction.getTypedData(transactionBody, plasmaContractAddress);
+    const typedData = OmgUtil.transaction.getTypedData(
+      transactionBody.transactions[0], plasmaContractAddress);
+
+    const privateKeys = new Array(
+      transactionBody.transactions[0].inputs.length
+    ).fill(senderPrivateKey); 
+
+    const signatures = childChain.signTransaction(typedData, privateKeys);  
+
+    const signedTypedData = childChain.buildSignedTransaction(typedData, signatures);  
+    const receipt = await childChain.submitTransaction(signedTypedData);
+    console.log('Transaction submitted: ', receipt.txhash)
+
+    
+    ctx.body = receipt.txhash;
+
+  } catch (error) {
+    ctx.body = "Too early for another payment";
   }
-  // const feeInfo = 1;
 
-  // var amount = 100
-
-  const payments = [ {
-    owner: receiverAdd,
-    currency: OmgUtil.transaction.ETH_CURRENCY,
-    amount: new BigNumber(amount.toString())
-  } ];
-
-  const fee = {
-    currency: OmgUtil.transaction.ETH_CURRENCY
-  };
-
-  // const transactionBody = OmgUtil.transaction.createTransactionBody({
-  //   fromAddress: address,
-  //   fromUtxos: utxos,
-  //   payments,
-  //   fee,
-  //   metadata: "eth transfer" || OmgUtil.transaction.NULL_METADATA,
-  // });
-
-  const transactionBody = await childChain.createTransaction({
-    owner: address,
-    payments: payments,
-    fee: fee,
-    metadata: metadata,
-  });  
-
-  // const typedData = OmgUtil.transaction.getTypedData(transactionBody, plasmaContractAddress);
-  const typedData = OmgUtil.transaction.getTypedData(
-    transactionBody.transactions[0], plasmaContractAddress);
-
-  const privateKeys = new Array(
-    transactionBody.transactions[0].inputs.length
-  ).fill(senderPrivateKey); 
-
-  const signatures = childChain.signTransaction(typedData, privateKeys);  
-
-  const signedTypedData = childChain.buildSignedTransaction(typedData, signatures);  
-  const receipt = await childChain.submitTransaction(signedTypedData);
-  console.log('Transaction submitted: ', receipt.txhash)
-
-  
-  ctx.body = receipt.txhash;
 }
 
 

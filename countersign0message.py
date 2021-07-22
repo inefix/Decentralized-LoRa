@@ -20,6 +20,7 @@ from cose.headers import Algorithm
 if TYPE_CHECKING:
     from cose.keys.ec2 import EC2
     from cose.keys.okp import OKP
+    from cose.keys.rsa import RSA
 
 CBOR = bytes
 
@@ -34,8 +35,8 @@ class Countersign0Message(SignCommon):
     enc = b''
 
     @classmethod
-    def from_cose_obj(cls, cose_obj, *args, **kwargs) -> 'Countersign0Message':
-        msg = super().from_cose_obj(cose_obj)
+    def from_cose_obj(cls, cose_obj, allow_unknown_attributes: bool) -> 'Countersign0Message':
+        msg = super().from_cose_obj(cose_obj, allow_unknown_attributes)
         msg._signature = cose_obj.pop(0)
         return msg
 
@@ -44,7 +45,9 @@ class Countersign0Message(SignCommon):
                  uhdr: Optional[dict] = None,
                  payload: bytes = b'',
                  external_aad: bytes = b'',
-                 key: Optional[Union['EC2', 'OKP']] = None):
+                 key: Optional[Union['EC2', 'OKP']] = None,
+                 *args,
+                 **kwargs):
         if phdr is None:
             phdr = {}
         if uhdr is None:
@@ -66,7 +69,7 @@ class Countersign0Message(SignCommon):
         # packet = [self.body_protected, self.body_unprotected, self.enc]
         # print(payload == cbor2.dumps(cbor2.CBORTag(self.payload_tag, packet), default=self._custom_cbor_encoder))
         
-        super().__init__(phdr, uhdr, payload, external_aad, key)
+        super().__init__(phdr, uhdr, payload, external_aad, key, *args, **kwargs)
 
         self._signature = b''
 
@@ -129,7 +132,6 @@ class Countersign0Message(SignCommon):
     def __repr__(self) -> str:
         phdr, uhdr = self._hdr_repr()
 
-        return f'<COSE_CounterSign0: [{phdr}, {uhdr}, {utils.truncate(self._payload)}, ' \
+        return f'<COSE_CounterSign0: [{phdr}, {uhdr}, {utils.truncate(self.enc)}, ' \
                f'{utils.truncate(self._signature)}]>'
-
 

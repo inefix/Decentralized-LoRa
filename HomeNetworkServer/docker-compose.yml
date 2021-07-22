@@ -5,19 +5,20 @@ services:
   server:
     container_name: server
     build:
-      context: ./
-      dockerfile: ./Dockerfile
+      context: ./server
+      dockerfile: Dockerfile
     volumes:
-      - ./:/app
+      # notice : this will delete the pycose git repo from the container
+      - ./server:/app
     ports:
       - 9999:9999/udp
       - 8080:8080
       - 8765:8765
-    networks:
-      - udpclient_some-net
+    # networks:
+    #   - udpclient_some-net
     #command: tail -f
     #restart: always
-    command: python -u server.py
+    command: python3 -u server.py
 
 
   frontend:
@@ -59,6 +60,6 @@ services:
     command: node payment.js
 
 # https://stackoverflow.com/questions/38088279/communication-between-multiple-docker-compose-projects
-networks:
-  udpclient_some-net:
-    external: true
+# networks:
+#   udpclient_some-net:
+#     external: true

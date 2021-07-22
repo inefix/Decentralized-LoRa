@@ -17,11 +17,9 @@ from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, C
 from cose.keys import CoseKey, EC2Key, SymmetricKey
 from cose.headers import Algorithm, KID, IV, Reserved
 from cose.algorithms import EdDSA, Es256, EcdhEsA256KW, EcdhEsA128KW, DirectHKDFAES128, EcdhSsA128KW, A128GCM, HMAC256
-from cose.curves import Ed25519
 from cose.keys.keyparam import KpKty, OKPKpD, OKPKpX, KpKeyOps, OKPKpCurve, EC2KpX, EC2KpY, KpAlg, KpKty, EC2KpD, EC2KpX, KpKeyOps, EC2KpCurve, EC2KpY, KpKid, SymKpK
 from cose.keys.keytype import KtyEC2, KtySymmetric, KtyOKP
 from cose.keys.keyops import SignOp, VerifyOp, DeriveKeyOp, MacCreateOp, MacVerifyOp
-from cose.curves import P256
 
 from ecdsa.keys import SigningKey, VerifyingKey, BadSignatureError
 from ecdsa.curves import NIST256p

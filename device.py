@@ -39,6 +39,11 @@ port = 9999
 deviceAdd = "0x1145f03880d8a975"
 serialized_private = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgMSp/hxGyOMubQVr5\nxIUYeVqFjylWXBNRjvyp1di865ChRANCAARkOGbAJWUYFw8k6PsBsjM/1+8ULqrg\nmqjBIrQbkGY9DNTdZDcQOtvOg8dXiPN25nu4q3/Mda7pMyvSCSB3I7Jv\n-----END PRIVATE KEY-----\n'
 serialized_public = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'
+pubkey = serialization.load_pem_public_key(serialized_public, backend=default_backend())
+x_pub = format(pubkey.public_numbers().x, '064x')
+y_pub = format(pubkey.public_numbers().y, '064x')
+print(f"x_pub : {x_pub} {type(x_pub)}")
+print(f"y_pub : {y_pub} {type(y_pub)}")
 
 serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
 
