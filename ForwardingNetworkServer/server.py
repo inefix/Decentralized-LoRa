@@ -66,6 +66,8 @@ packet_forwarder_response_add = 0
 x_pub = "643866c0256518170f24e8fb01b2333fd7ef142eaae09aa8c122b41b90663d0c"
 y_pub = "d4dd6437103adbce83c75788f376e67bb8ab7fcc75aee9332bd209207723b26f"
 
+message_price = 100
+
 
 async def save_msg(msg, pType, counter, deviceAdd, host, port) :
     id = str(time.time())
@@ -472,15 +474,19 @@ class ProxyDatagramProtocol():
                     except ValueError :
                         print("ValueError")
                         message = b'error, corrupted data'
+                        messageQueue.put(message)
                     except TypeError :
                         print("TypeError")
                         message = b'error, corrupted data'
+                        messageQueue.put(message)
                     except AttributeError : 
                         print("AttributeError")
                         message = b'error, corrupted data'
+                        messageQueue.put(message)
                     except SystemError :
                         print("SystemError")
                         message = b'error, corrupted data'
+                        messageQueue.put(message)
 
 
 
@@ -520,9 +526,11 @@ class ProxyDatagramProtocol():
 
 
 async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, remote_host) :
+    global messageQueue
     try :
         async with websockets.connect(uri) as websocket:
             try :
+
                 packet = deviceAdd + "," + counter_header + "," + ether_add
                 print("packet :", packet)
 
@@ -531,72 +539,89 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                 await websocket.send(packet)
 
                 payment_receipt = await websocket.recv()
+                down_message = await websocket.recv()
                 print("payment_receipt :", payment_receipt)
+                print("down_message :", down_message)
+
                 payment_list = payment_receipt.split(',')
                 if payment_list[0] == 'OMG' :
+                    price = message_price
+                    # send down_message directly if any
+                    if down_message != b"down_message":
+                        price = message_price * 2
+                        messageQueue.put(down_message)
+
                     payment_hash = payment_list[1]
                     # sleep 2 minutes
+                    print("sleep for 2 minutes")
                     await asyncio.sleep(120)
-                    message = await verify_payment(payment_hash, remote_host)
-                    if message != b"" and message != None :
-                        await websocket.send(message['msg'])
+                    metadata = await verify_omg_payment(payment_hash, remote_host, price)
+                    # get value from metadata
+                        # split ,
+                    meta_list = metadata.split(",")
+                    counter_header = meta_list[1]
+                    deviceAdd = meta_list[2]
+
+                    # get and pay message
+                    message = await get_and_pay(remote_host, deviceAdd, counter_header)
+                    print("message :", message)
+
+                    # if message != b"" and message != None :
+                    #     await websocket.send(message['msg'])
                 
+
                 if payment_list[0] == 'MPC' :
                     signature = payment_list[1]
                     contract_add = payment_list[2]
                     payed_amount = int(payment_list[3])
 
-                    contract_mpc = web3_rinkeby.eth.contract(contract_add, abi=abi_mpc)
+                    verified = await verify_mpc_payment(signature, contract_add, payed_amount, remote_host)
+                    if verified == True :
+                        # send down_message if any
+                        if down_message != b"down_message" and payed_amount == 2*message_price:
+                            messageQueue.put(down_message)
 
-                    # verify valid bytecode 
-                    bytecode = await web3_rinkeby.eth.getCode(contract_add)
-                    bytecode = bytecode.hex()
-                    if bytecode == runtimeBytecode_mpc :
-
-                        # verify if MPC document present
-                        # get amount and calculate new one
-                        mpc_document = await get_mpc_document(contract_add)
-                        print("mpc_document :", mpc_document)
-                        if mpc_document == None :
-                            amount = 0
-                        else :
-                            amount = mpc_document['amount']
-
-                        expiration = await contract_mpc.functions.expiration().call()
-                        print("expiration :", expiration)
-                        # verify that the smart contract has not expired
-                        epoch_time = int(time.time())
-                        if expiration > epoch_time :
-
-                            new_amount = amount + payed_amount
-
-                            # verify enough ether stored in contract
-                            balance = await web3_rinkeby.eth.getBalance(contract_add)
-                            print("balance :", balance)
-                            if balance > new_amount :
-
-                                # verify signature
-                                valid_sig = await contract_mpc.functions.isValidSignature(new_amount, signature).call()
-                                print("valid_sig :", valid_sig)
-
-                                if valid_sig :
-                                    # store in MPC DB
-                                    await store_mpc(contract_add, signature, new_amount, expiration, remote_host)
-
-                                    # send message
-                                    message = await get_and_pay(remote_host, deviceAdd, counter_header)
-                                    print("message :", message)
-                                    if message != None :
-                                        await websocket.send(message['msg'])
-                            
-                            else :
-                                print("not enough balance in the smart contract")
-
-                        else :
-                            print("the smart contract has expired")
-                    
+                        # send message
+                        message = await get_and_pay(remote_host, deviceAdd, counter_header)
+                        print("message :", message)
+                        # if message != None :
+                        #     await websocket.send(message['msg'])
                     else :
-                        print("runtimeBytecode does not match")
+                        message = None
+
+                
+                if message != b"" and message != None :
+                    await websocket.send(message['msg'])
+                    print("message sent to server")
+
+                    if down_message == b"down_message" and payment_list[0] != 'OMG':
+
+                        payment_receipt = await websocket.recv()
+                        response = await websocket.recv()
+                        print("payment_receipt :", payment_receipt)
+                        print("received response :", response)
+
+                        if payment_receipt != "nothing":
+                            payment_list = payment_receipt.split(',')
+                            if payment_list[0] == 'MPC' :
+                                signature = payment_list[1]
+                                contract_add = payment_list[2]
+                                payed_amount = int(payment_list[3])
+
+                                verified = await verify_mpc_payment(signature, contract_add, payed_amount, remote_host)
+                                if verified == True and response != "nothing":
+                                    messageQueue.put(response)
+
+
+
+                
+                else :
+                    await websocket.send("payment error")
+
+
+
+
+                    
         
 
                 # global messageQueue
@@ -608,30 +633,108 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                 await websocket.close()
 
     except ConnectionRefusedError :
-        print("No server connection")
+        response = b"error : no server connection"
+        print(response)
+        messageQueue.put(response)
     except RuntimeError :
         print("Closing the connection")
 
+    
+async def verify_mpc_payment(signature, contract_add, payed_amount, remote_host):
+    contract_mpc = web3_rinkeby.eth.contract(contract_add, abi=abi_mpc)
 
-async def verify_payment(payment_hash, remote_host):
+    # verify valid bytecode 
+    bytecode = await web3_rinkeby.eth.getCode(contract_add)
+    bytecode = bytecode.hex()
+    if bytecode == runtimeBytecode_mpc :
+
+        # verify if MPC document present
+        # get amount and calculate new one
+        mpc_document = await get_mpc_document(contract_add)
+        print("mpc_document :", mpc_document)
+        if mpc_document == None :
+            amount = 0
+        else :
+            amount = mpc_document['amount']
+
+        expiration = await contract_mpc.functions.expiration().call()
+        print("expiration :", expiration)
+        # verify that the smart contract has not expired
+        epoch_time = int(time.time())
+        if expiration > epoch_time :
+
+            new_amount = amount + payed_amount
+
+            # verify enough ether stored in contract
+            balance = await web3_rinkeby.eth.getBalance(contract_add)
+            print("balance :", balance)
+            if balance > new_amount :
+
+                # verify signature
+                valid_sig = await contract_mpc.functions.isValidSignature(new_amount, signature).call()
+                print("valid_sig :", valid_sig)
+
+                if valid_sig :
+                    # send down_message if any
+                    # if down_message != b"down_message" and payed_amount == 2*message_price:
+                    #     messageQueue.put(down_message)
+
+                    # store in MPC DB
+                    await store_mpc(contract_add, signature, new_amount, expiration, remote_host)
+
+                    # send message
+                    # message = await get_and_pay(remote_host, deviceAdd, counter_header)
+                    # print("message :", message)
+                    # if message != None :
+                    #     await websocket.send(message['msg'])
+                    return True
+                
+                else :
+                    print("signature is not valid")
+                    return False
+            
+            else :
+                print("not enough balance in the smart contract")
+                return False
+
+        else :
+            print("the smart contract has expired")
+            return False
+    
+    else :
+        print("runtimeBytecode does not match")
+        return False
+
+
+
+# async def verify_omg_payment(payment_hash, remote_host, price):
+#     sender, currency, amount, receiver, metadata = await verifyHash(payment_hash)
+#     if receiver.lower() == ether_add.lower() and amount == price and currency == "0x0000000000000000000000000000000000000000" :
+#         # get value from metadata
+#             # split ,
+#         meta_list = metadata.split(",")
+#         counter_header = meta_list[1]
+#         deviceAdd = meta_list[2]
+
+#         # get message
+#         message = await get_and_pay(remote_host, deviceAdd, counter_header)
+#         print("message :", message)
+
+#         # send message
+#         return message
+#     else :
+#         print("There is an error in the payment")
+#         return b""
+
+
+async def verify_omg_payment(payment_hash, remote_host, price):
     sender, currency, amount, receiver, metadata = await verifyHash(payment_hash)
-    if receiver.lower() == ether_add.lower() and amount == 100 and currency == "0x0000000000000000000000000000000000000000" :
-        # get value from metadata
-            # split ,
-        meta_list = metadata.split(",")
-        counter_header = meta_list[1]
-        deviceAdd = meta_list[2]
+    if receiver.lower() == ether_add.lower() and amount == price and currency == "0x0000000000000000000000000000000000000000" :
 
-        # get message
-        message = await get_and_pay(remote_host, deviceAdd, counter_header)
-        print("message :", message)
-
-        # send message
-        return message
+        return metadata
     else :
         print("There is an error in the payment")
-        return b""
-
+        return None
 
 
 async def verifyHash(hashed):
@@ -736,6 +839,9 @@ async def start_datagram_proxy(bind, port):
 
     # balance = await web3_rinkeby.eth.getBalance('0xFFC869826E724845a65F710D3Ffa8691f274b3Ba')
     # print("balance :", balance)
+    # b = b"error1"
+    # if b"error" in b :
+    #     print("true")
 
     loop = asyncio.get_event_loop()
     return await loop.create_datagram_endpoint(
