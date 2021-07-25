@@ -121,7 +121,7 @@ async function payment(ctx) {
     ctx.body = receipt.txhash;
 
   } catch (error) {
-    ctx.body = "Too early for another payment";
+    ctx.body = "error4 : too early for another payment";
   }
 
 }

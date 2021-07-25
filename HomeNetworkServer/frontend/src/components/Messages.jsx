@@ -1,12 +1,12 @@
 import React from "react";
 import axios from 'axios';
 import './Style.css';
-import { Button, Card, Row, Col } from 'react-bootstrap';
+import { Button, Card, Row, Col, Modal, Form } from 'react-bootstrap';
 import { ethers } from 'ethers'
 
 import Web3 from "web3";
 // import '@metamask/legacy-web3';
-import { ChildChain, RootChain, OmgUtil } from "@omisego/omg-js";
+import { ChildChain, OmgUtil } from "@omisego/omg-js";
 import BigNumber from 'bn.js';
 // import JSONBigNumber from 'omg-json-bigint';
 // import { bufferToHex } from 'ethereumjs-util';
@@ -18,7 +18,7 @@ const plasmaContractAddress = '0xb43f53394d86deab35bc2d8356d6522ced6429b5';  // 
 const watcherUrl = 'https://watcher-info.rinkeby.v1.omg.network';  // WATCHER_INFO_URL
 // const watcherUrl = 'https://watcher.rinkeby.v1.omg.network';  // WATCHER_URL
 const web3 = new Web3(new Web3.providers.HttpProvider(web3_provider_url));
-const rootChain = new RootChain({ web3, plasmaContractAddress });
+// const rootChain = new RootChain({ web3, plasmaContractAddress });
 const childChain = new ChildChain({ watcherUrl, plasmaContractAddress });
 // const childChain = new ChildChain({
 //   watcherUrl: watcherInfoUrl,
@@ -42,14 +42,47 @@ class Messages extends React.Component {
       add: [],
       total: 0,
       pay: {},
-      address: ""
+      address: "",
+      modal_resp: false,
+      deviceAdd: "",
+      down: ""
     };
 
     this.componentDidMount = this.componentDidMount.bind(this);
   }
 
+
   handleModalShowHide() {
-    this.setState({ showHide: !this.state.showHide })
+    this.setState({ modal_resp: !this.state.modal_resp })
+    this.setState({ deviceAdd: "" })
+    this.setState({ down: "" })
+  }
+
+  openModalSend = (deviceAdd) => () => {
+    //console.log(name);
+    this.setState({ modal_resp: !this.state.modal_resp })
+    this.setState({ deviceAdd: deviceAdd })
+  };
+
+  send() {
+    this.setState({ modal_resp: !this.state.modal_resp })
+
+    //console.log(this.state.val);
+    if(this.state.down !== ""){
+      // update server
+      const url = 'http://163.172.130.246:8080/down';
+      axios.post(url, {"deviceAdd":this.state.deviceAdd, "payload":this.state.down}).then(response => response.data)
+      .then((data) => {
+        // this.componentDidMount()
+        // console.log("send")
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+
+      this.setState({ deviceAdd: "" })
+      this.setState({ down: "" })
+    }
   }
 
   closeAndReload(){
@@ -399,14 +432,14 @@ class Messages extends React.Component {
             </div>
             {/* <Button variant="secondary" onClick={() => this.transfer()}>Transfer</Button> */}
             {/* <Button variant="secondary" onClick={async () => {await this.transfer();} }>Transfer</Button> */}
-            <Button variant="secondary" onClick={this.getOMGtransaction}>OMG balance</Button>
+            {/* <Button variant="secondary" onClick={this.getOMGtransaction}>OMG balance</Button> */}
             <Button variant="secondary" onClick={this.componentDidMount}>Reload</Button>
           </div>
           {this.state.messages.map((message, i) => (
             <Card key={i} className="card">
               <Card.Header>{message.date}</Card.Header>
               <Row>
-              <Col xs={10}>
+              <Col xs={9}>
               <Card.Body>
                 <Card.Title>{message.payload}</Card.Title>
                 <Card.Text>
@@ -415,12 +448,50 @@ class Messages extends React.Component {
               </Card.Body>
               </Col>
               <Col>
+              <div>
+              <Button className="mybutton_message" variant="success" onClick={this.openModalSend(message.header.deviceAdd)}>Respond</Button>
               {/* <Button variant="secondary" onClick={this.componentDidMount}>Modify</Button> */}
-              <Button className="mybutton" variant="danger" onClick={this.deleteClick(message._id)}>Delete</Button>
+              <Button className="mybutton_message2" variant="danger" onClick={this.deleteClick(message._id)}>Delete</Button>
+              </div>
               </Col>
               </Row>
             </Card>
           ))}
+
+          <Modal 
+            dialogClassName="my-modal"
+            show={this.state.modal_resp}
+            onHide={() => this.handleModalShowHide()}
+          >
+                {/* <Modal.Header closeButton onClick={() => this.handleModal2ShowHide()}> */}
+                <Modal.Header>
+                  {/* <Modal.Title className="modal-test">{this.state.name}</Modal.Title> */}
+                  <Modal.Title className="modal-test">{this.state.deviceAdd}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                <h5>Message to send :</h5>
+                <Form>
+                  <Form.Group controlId="formBasicName">
+                    {/* <Form.Label>Name</Form.Label> */}
+                    {/* <Form.Control type="name" placeholder={this.state.name} /> */}
+                    <Form.Control
+                      placeholder="payload"
+                      value={this.state.down}
+                      onChange={e => this.setState({ down: e.target.value })}
+                      type="name"
+                    />
+                  </Form.Group>
+                </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                <Button variant="danger" onClick={() => this.handleModalShowHide()}>
+                    Close
+                </Button>
+                <Button variant="primary" onClick={() => this.send()}>
+                    Send
+                </Button>
+                </Modal.Footer>
+            </Modal> 
         </div>
     </div>
    );

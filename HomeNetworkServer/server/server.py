@@ -22,7 +22,11 @@ ADDR = "163.172.130.246"
 PORT = 9999
 
 # payment_method can be 'OMG' or 'MPC'
-payment_method = 'OMG'  
+payment_method = 'MPC'  
+message_price = 100
+
+automatic_pay = True
+automatic_response = True
 
 if ADDR.count(":") > 1:
     print("IPv6")
@@ -44,6 +48,7 @@ db = client['lora_db']
 collection_DEVICE = db['DEVICE']
 collection_MSG = db['MSG']
 collection_GATEWAY = db['GATEWAY']
+collection_DOWN = db['DOWN']
 
 
 infuria_url = "https://ropsten.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
@@ -276,6 +281,109 @@ async def remove_msg(request):
     return web.Response(status=204)
 
 
+async def get_all_down(request):
+    return web.json_response([
+        document async for document in collection_DOWN.find().sort("_id", -1)
+    ])
+
+
+# curl -X DELETE http://163.172.130.246:8080/msg
+async def remove_all_down(request):
+    await collection_DOWN.delete_many({})
+    return web.Response(status=204)
+
+
+# curl -X POST -d '{"deviceAdd": "0x1145f03880d8a975", "payload": "ciao"}' http://163.172.130.246:8080/down
+async def create_down(request):
+    data = await request.json()
+
+    if 'deviceAdd' not in data:
+        return web.json_response({'error': '"deviceAdd" is a required field'}, status=404)
+    deviceAdd = data['deviceAdd']
+  
+    if 'payload' not in data:
+        return web.json_response({'error': '"payload" is a required field'}, status=404)
+    payload = data['payload']
+    if not isinstance(payload, str) or not len(payload):
+        return web.json_response({'error': '"payload" must be a string with at least one character'}, status=404)
+    
+    id = str(time.time())
+    data['_id'] = id
+    date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+    data['date'] = date
+    data['payed'] = False
+    result = await collection_DOWN.insert_one(data)
+    #return web.Response(text="Added successfuly", status=204)
+    return web.json_response({'success': 'Added successfuly'})
+
+
+async def get_one_down(request):
+    id = str(request.match_info['id'])
+
+    x = {"_id" : id}
+
+    document = await collection_DOWN.find_one(x)
+
+    if str(type(document)) == "<class 'NoneType'>":
+        return web.json_response({'error': 'Msg not found'}, status=404)
+
+    return web.json_response(document)
+
+
+async def get_one_down_f(deviceAdd):
+    x = {"deviceAdd" : deviceAdd, "payed" : False}
+
+    document = await collection_DOWN.find_one(x, sort=[('_id', 1)])
+
+    return document
+
+
+# curl -X PATCH -d '{"payload":"salut"}' http://163.172.130.246:8080/msg/25-04-2021.10:47:53
+async def update_down(request):
+    id = str(request.match_info['id'])
+
+    data = await request.json()
+
+    x = {"_id" : id}
+
+    document = await collection_DOWN.find_one(x)
+
+    if str(type(document)) == "<class 'NoneType'>":
+        return web.json_response({'error': 'Device not found'}, status=404)
+
+    await collection_DOWN.update_one({'_id': id}, {'$set': data})
+
+    new_document = await collection_DOWN.find_one(x)
+
+    return web.json_response(new_document)
+
+
+# curl -X DELETE http://163.172.130.246:8080/msg/25-04-2021.10:47:53
+async def remove_down(request):
+    id = str(request.match_info['id'])
+
+    x = {"_id" : id}
+
+    document = await collection_DOWN.find_one(x)
+
+    if str(type(document)) == "<class 'NoneType'>":
+        return web.json_response({'error': 'Msg not found'}, status=404)
+
+    await collection_DOWN.delete_many(x)
+
+    return web.Response(status=204)
+
+
+async def pay_down(id) :
+    data = {"payed" : True}
+    x = {"_id" : id}
+
+    document = await collection_DOWN.find_one(x)
+
+    if document != None :
+        await collection_DOWN.update_one({'_id': id}, {'$set': data})
+
+
 async def generate_device(request):
     deviceAdd = await generate_deviceAdd()
     privkey, pubkey = await generate_key_pair()
@@ -368,7 +476,7 @@ async def update_gateway(gateway_add, new_amount):
         await collection_GATEWAY.update_one(x, {'$set': data})
 
 
-async def process(message, hash_structure):
+async def process(message, hash_structure, gateway, down):
     #print("processing :", message)
 
     # decode message
@@ -395,6 +503,7 @@ async def process(message, hash_structure):
     deviceAdd = header[2]
     print("header :", header)
     print("deviceAdd :", deviceAdd)
+    print("counter :", counter)
 
     pubkey = await get_pubkey(deviceAdd)
     print("pubkey :", pubkey)
@@ -434,110 +543,224 @@ async def process(message, hash_structure):
                 owner = device[6]
                 # not necessary to do all that just for the owner --> ADDR
 
-                # x = {"_id" : id, "date" : date, "owner" : owner, "gateway" : gateway, "payed" : False, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
-                x = {"_id" : id, "date" : date, "owner" : owner, "payed" : False, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
+                x = {"_id" : id, "date" : date, "owner" : owner, "gateway" : gateway, "payed" : automatic_pay, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
                 await collection_MSG.insert_one(x)
 
                 #print("pType :", pType)
 
-                # return response to send back
-                if pType == "DataConfirmedUp":
-                    header_respond = ["ACKDown", int(counter)+1, serverAdd]
-                    payload_respond = "Received"
-                    encrypted = await encrypt(header_respond, payload_respond, key)
+                # return response to send back if no previous down sent by user
+                if down == b"down_message" and automatic_response == True and payment_method != 'OMG':
+                    if pType == "DataConfirmedUp":
+                        header_respond = ["ACKDown", int(counter)+1, serverAdd]
+                        # can insert a function to generate some payload !
+                        payload_respond = "Received"
+                        encrypted = await encrypt(header_respond, payload_respond, key)
 
-                    packet = await sign(encrypted, serialized_private_server)
+                        packet = await sign(encrypted, serialized_private_server)
 
-                    return packet
+                        return packet
+                    
+                    else :
+                        print("no DataConfirmedUp")
+                        return b"nothing"    
+                
+                else :
+                    print("nothing to send")
+                    return b"nothing"
 
             else :
                 print("hash structure does not match")
-                return b"hash structure does not match"
+                return b"error3 : hash structure does not match"
         else :
-            print("Signature is not correct")
-            return b"Signature is not correct"
+            print("signature is not correct")
+            return b"error2 : signature is not correct"
     else: 
-        print("Device not registered")
-        return b"Device not registered"
+        print("device not registered")
+        return b"error1 : device not registered"
 
 
-async def process_from_gateway(hash_structure, signature, packet):
-    price = 100
-    # check signature with hash_structure
-    packet = packet.split(",")
-    deviceAdd = packet[0]
-    counter_header = packet[1]
-    gateway_add = packet[2]
+async def down_message(deviceAdd, counter_header, pubkey):
+    key = await generate_key_sym(serialized_private_server, pubkey)
+    header_respond = ["DataUnconfirmedDown", int(counter_header)+1, serverAdd]
+    payload_respond = await get_one_down_f(deviceAdd)
+    if payload_respond != None :
+        print("payload_respond :", payload_respond['payload'])
+        encrypted = await encrypt(header_respond, payload_respond['payload'], key)
+        packet = await sign(encrypted, serialized_private_server)
+        return packet, payload_respond["_id"]
+    else :
+        return b"down_message", None
+
+
+
+# async def process_hash(hash_structure, signature, deviceAdd, counter_header, gateway_add):
+#     # check signature with hash_structure
+#     # packet = packet.split(",")
+#     # deviceAdd = packet[0]
+#     # counter_header = packet[1]
+#     # gateway_add = packet[2]
+#     pubkey = await get_pubkey(deviceAdd)
+#     verified = verify_signature_hash(pubkey, hash_structure, signature)
+#     print("verified :", verified)
+#     if verified :
+#         # check if there is a down_message to send back
+#         down, down_id = await down_message(deviceAdd, counter_header, pubkey)
+#         if down != b"down_message":
+#             price = message_price * 2
+
+#         # pay for the message
+#         # print("pay")
+#         if payment_method == 'OMG' :
+#             # put metadata at the begining. If put deviceAdd, problem on payment.js. If put counter_header, the 0 is not considered a 0 on the gateway side
+#             metadata = "metadata" + ',' + counter_header + ',' + deviceAdd
+#             body = {'receiverAdd': gateway_add, 'amount': price, 'metadata' : metadata}
+#             body = json.dumps(body)
+#             # print(body)
+#             request = await requests.post('http://163.172.130.246:3000/payment/', data=body, headers= { 'Content-Type': 'application/json'})
+#             payment_hash = request.text
+#             print("payment hash :", payment_hash)
+#             response = payment_method + ',' + payment_hash
+#             # mark down as payed
+#             if down != b"down_message":
+#                 await pay_down(down_id)
+
+#             return response, down
+        
+#         if payment_method == 'MPC' :
+#             # verifies that gateway is already stored in GATEWAY DB
+#             gateway_document = await get_one_gateway(gateway_add)
+#             print("gateway_document :", gateway_document)
+#             if gateway_document == None :
+#                 # deploy smart contract 
+#                 amount_creation = 100 * price
+#                 # amount_creation = 0
+#                 duration = 30 * 24 * 60 * 60
+#                 epoch_time = int(time.time())
+#                 expiration = epoch_time + duration
+#                 body = {'receiverAdd': gateway_add, 'amount': amount_creation, 'duration' : duration}
+#                 body = json.dumps(body)
+#                 request = await requests.post('http://163.172.130.246:3000/deploy/', data=body, headers= { 'Content-Type': 'application/json'})
+#                 contract_add = request.text
+#                 # store gateway_add, contract_add, amount_creation, expiration
+#                 amount_payed = 0
+#                 await create_gateway(gateway_add, contract_add, amount_payed, amount_creation, expiration)
+#             else :
+#                 contract_add = gateway_document['contract']
+#                 amount_payed = gateway_document['amount_payed']
+#                 amount_creation = gateway_document['amount_creation']
+            
+#             # pay for the message --> amount_payed + price
+#             new_amount = amount_payed + price
+#             print("new_amount :", new_amount)
+#             if amount_creation > new_amount :
+
+#                 body = {'contractAddress': contract_add, 'amount': new_amount}
+#                 body = json.dumps(body)
+#                 request = await requests.post('http://163.172.130.246:3000/signPayment/', data=body, headers= { 'Content-Type': 'application/json'})
+#                 signature = request.text
+
+#                 # update amount in GATEWAY DB
+#                 await update_gateway(gateway_add, new_amount)
+
+#                 # return response --> MPC,signature,contract_add,price
+#                 response = payment_method + ',' + signature + ',' + contract_add + ',' + str(price)
+
+#                 # mark down as payed
+#                 if down != b"down_message":
+#                     await pay_down(down_id)
+
+#             else :
+#                 response = "error5 : not enough money in the smart contract"
+#                 print(response)
+                
+#                 # deploy new smart contract and update DB
+
+#             return response, down
+
+    
+#     else :
+#         return "Signature does not match the hash"
+
+
+
+async def process_hash(hash_structure, signature, deviceAdd, counter_header, gateway_add):
     pubkey = await get_pubkey(deviceAdd)
     verified = verify_signature_hash(pubkey, hash_structure, signature)
     print("verified :", verified)
+
     if verified :
-        # pay for the message
-        print("pay")
+        # check if there is a down_message to send back
+        down = b"down_message"
+        down_id = None
+        price = message_price
 
-        if payment_method == 'OMG' :
-            # put metadata at the begining. If put deviceAdd, problem on payment.js. If put counter_header, the 0 is not considered a 0 on the gateway side
-            metadata = "metadata" + ',' + counter_header + ',' + deviceAdd
-            body = {'receiverAdd': gateway_add, 'amount': price, 'metadata' : metadata}
-            body = json.dumps(body)
-            # print(body)
-            request = await requests.post('http://163.172.130.246:3000/payment/', data=body, headers= { 'Content-Type': 'application/json'})
-            payment_hash = request.text
-            print("payment hash :", payment_hash)
-            response = payment_method + ',' + payment_hash
-            return response
-        
-        if payment_method == 'MPC' :
-            # verifies that gateway is already stored in GATEWAY DB
-            gateway_document = await get_one_gateway(gateway_add)
-            print("gateway_document :", gateway_document)
-            if gateway_document == None :
-                # deploy smart contract 
-                amount_creation = 100 * price
-                # amount_creation = 0
-                duration = 30 * 24 * 60 * 60
-                epoch_time = int(time.time())
-                expiration = epoch_time + duration
-                body = {'receiverAdd': gateway_add, 'amount': amount_creation, 'duration' : duration}
-                body = json.dumps(body)
-                request = await requests.post('http://163.172.130.246:3000/deploy/', data=body, headers= { 'Content-Type': 'application/json'})
-                contract_add = request.text
-                # store gateway_add, contract_add, amount_creation, expiration
-                amount_payed = 0
-                await create_gateway(gateway_add, contract_add, amount_payed, amount_creation, expiration)
-            else :
-                contract_add = gateway_document['contract']
-                amount_payed = gateway_document['amount_payed']
-                amount_creation = gateway_document['amount_creation']
-            
-            # pay for the message --> amount_payed + price
-            new_amount = amount_payed + price
-            print("new_amount :", new_amount)
-            if amount_creation > new_amount :
-
-                body = {'contractAddress': contract_add, 'amount': new_amount}
-                body = json.dumps(body)
-                request = await requests.post('http://163.172.130.246:3000/signPayment/', data=body, headers= { 'Content-Type': 'application/json'})
-                signature = request.text
-
-                # update amount in GATEWAY DB
-                await update_gateway(gateway_add, new_amount)
-
-                # return respone --> MPC,signature,contract_add,price
-                respone = payment_method + ',' + signature + ',' + contract_add + ',' + str(price)
-
-            else :
-                response = "not enough money in the smart contract"
-                print(response)
-                
-                # deploy new smart contract and update DB
-
-            return respone
-
+        down, down_id = await down_message(deviceAdd, counter_header, pubkey)
+        if down != b"down_message":
+            price = message_price * 2
     
-    else :
-        return "Signature does not match the hash"
+    return down, down_id, price
 
+
+async def omg_pay(deviceAdd, counter_header, gateway_add, price):
+    # put metadata at the begining. If put deviceAdd, problem on payment.js. If put counter_header, the 0 is not considered a 0 on the gateway side
+    metadata = "metadata" + ',' + counter_header + ',' + deviceAdd
+    body = {'receiverAdd': gateway_add, 'amount': price, 'metadata' : metadata}
+    body = json.dumps(body)
+    # print(body)
+    request = await requests.post('http://163.172.130.246:3000/payment/', data=body, headers= { 'Content-Type': 'application/json'})
+    payment_hash = request.text
+    print("payment hash :", payment_hash)
+    response = payment_method + ',' + payment_hash
+
+    return response
+
+
+async def mpc_pay(deviceAdd, counter_header, gateway_add, price):
+    # verifies that gateway is already stored in GATEWAY DB
+    gateway_document = await get_one_gateway(gateway_add)
+    print("gateway_document :", gateway_document)
+    if gateway_document == None :
+        # deploy smart contract 
+        amount_creation = 100 * price
+        # amount_creation = 0
+        duration = 30 * 24 * 60 * 60
+        epoch_time = int(time.time())
+        expiration = epoch_time + duration
+        body = {'receiverAdd': gateway_add, 'amount': amount_creation, 'duration' : duration}
+        body = json.dumps(body)
+        request = await requests.post('http://163.172.130.246:3000/deploy/', data=body, headers= { 'Content-Type': 'application/json'})
+        contract_add = request.text
+        # store gateway_add, contract_add, amount_creation, expiration
+        amount_payed = 0
+        await create_gateway(gateway_add, contract_add, amount_payed, amount_creation, expiration)
+    else :
+        contract_add = gateway_document['contract']
+        amount_payed = gateway_document['amount_payed']
+        amount_creation = gateway_document['amount_creation']
+    
+    # pay for the message --> amount_payed + price
+    new_amount = amount_payed + price
+    print("new_amount :", new_amount)
+    if amount_creation > new_amount :
+
+        body = {'contractAddress': contract_add, 'amount': new_amount}
+        body = json.dumps(body)
+        request = await requests.post('http://163.172.130.246:3000/signPayment/', data=body, headers= { 'Content-Type': 'application/json'})
+        signature = request.text
+
+        # update amount in GATEWAY DB
+        await update_gateway(gateway_add, new_amount)
+
+        # return respone --> MPC,signature,contract_add,price
+        response = payment_method + ',' + signature + ',' + contract_add + ',' + str(price)
+
+    else :
+        response = "error5 : not enough money in the smart contract"
+        print(response)
+        
+        # deploy new smart contract and update DB
+
+    return response
 
 
 
@@ -584,24 +807,58 @@ async def ws(websocket, path):
             print(f"< {signature} {type(signature)}")
             print(f"< {packet} {type(packet)}")
 
-            try :
-                response = await process_from_gateway(hash_structure, signature, packet)
-            except Exception as e:
-                response = b'error, corrupted data'
-            # response = await process_from_gateway(hash_structure, signature, packet)
+            packet = packet.split(",")
+            deviceAdd = packet[0]
+            counter_header = packet[1]
+            gateway_add = packet[2]
 
-            await websocket.send(response)
+            try :
+                down, down_id, price = await process_hash(hash_structure, signature, deviceAdd, counter_header, gateway_add)
+            except Exception as e:
+                down = b"down_message"
+                down_id = None
+                price = message_price
+            # down, down_id, price = await process_hash(hash_structure, signature, deviceAdd, counter_header, gateway_add)
+
+            payment_receipt = None
+            if payment_method == 'OMG' :
+                payment_receipt = await omg_pay(deviceAdd, counter_header, gateway_add, price)
+            if payment_method == 'MPC' :
+                payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, price)
+
+            if down != b"down_message" and "error" not in payment_receipt and payment_receipt != None:
+                await pay_down(down_id)
+
+            await websocket.send(payment_receipt)
+            await websocket.send(down)
             # print(f"> {response}")
 
             message = await websocket.recv()
-            if type(message) == bytes :
-                try :
-                    response = await process(message, hash_structure)
-                except Exception as e:
-                    response = b'error, corrupted data'
-                # response = await process(message, hash_structure)
+            if message != "payment error":
+                if type(message) == bytes :
+                    try :
+                        response = await process(message, hash_structure, gateway_add, down)
+                    except Exception as e:
+                        response = b'error, corrupted data'
+                    # response = await process(message, hash_structure, gateway_add)
+                else :
+                    response = b'error, did not receive bytes message'
             else :
-                response = b'error, did not receive bytes message'
+                print(message)
+                response = b"payment error"
+
+            print("response :", response)
+
+            if down == b"down_message" and response != b"nothing" and b"error" not in response and payment_method != 'OMG':
+                print("send response")
+
+                # pay for the message if it is actual content
+                payment_receipt = "nothing"
+                print("pay")
+                if payment_method == 'MPC' :
+                    payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, message_price)
+                await websocket.send(payment_receipt)
+                await websocket.send(response)
 
 
         except websockets.exceptions.ConnectionClosed as e:
@@ -642,6 +899,14 @@ cors.add(app.router.add_get('/msg/{id}', get_one_msg))
 cors.add(app.router.add_patch('/msg/{id}', update_msg))
 cors.add(app.router.add_delete('/msg/{id}', remove_msg))
 cors.add(app.router.add_get('/msgs/{owner}', get_multiple_msg))
+
+cors.add(app.router.add_get('/down', get_all_down))
+cors.add(app.router.add_get('/down/', get_all_down))
+cors.add(app.router.add_delete('/down', remove_all_down))
+cors.add(app.router.add_post('/down', create_down))
+cors.add(app.router.add_get('/down/{id}', get_one_down))
+cors.add(app.router.add_patch('/down/{id}', update_down))
+cors.add(app.router.add_delete('/down/{id}', remove_down))
 
 cors.add(app.router.add_get('/pay/{owner}', get_address))   # get the address of the gateway to pay
 cors.add(app.router.add_patch('/pay/{owner}/{gateway}', update_payed))

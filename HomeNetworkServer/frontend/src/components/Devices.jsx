@@ -21,11 +21,13 @@ class Devices extends React.Component {
       devices: [],
       showHide : false,
       modal : false,
+      modal_resp : false,
       name : "test",
       deviceAdd: "test",
       pubkey: "test",
       val: "",
       val2: "",
+      down: "",
       add: [],
       willShowLoader: false,
       error: false
@@ -51,6 +53,16 @@ class Devices extends React.Component {
   handleModal2ShowHide() {
     this.setState({ modal: !this.state.modal })
     this.setState({ val: "" })
+    this.setState({ name: "" })
+    this.setState({ deviceAdd: "" })
+    this.setState({ pubkey: "" })
+  }
+
+  handleModal3ShowHide() {
+    this.setState({ modal_resp: !this.state.modal_resp })
+    this.setState({ name: "" })
+    this.setState({ deviceAdd: "" })
+    this.setState({ down: "" })
   }
 
   submit() {
@@ -69,6 +81,31 @@ class Devices extends React.Component {
       });
 
       this.setState({ val: "" })
+      this.setState({ name: "" })
+      this.setState({ deviceAdd: "" })
+      this.setState({ pubkey: "" })
+    }
+  }
+
+  send() {
+    this.setState({ modal_resp: !this.state.modal_resp })
+
+    //console.log(this.state.val);
+    if(this.state.down !== ""){
+      // update server
+      const url = 'http://163.172.130.246:8080/down';
+      axios.post(url, {"deviceAdd":this.state.deviceAdd, "payload":this.state.down}).then(response => response.data)
+      .then((data) => {
+        // this.componentDidMount()
+        // console.log("send")
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+
+      this.setState({ name: "" })
+      this.setState({ deviceAdd: "" })
+      this.setState({ down: "" })
     }
   }
 
@@ -78,6 +115,13 @@ class Devices extends React.Component {
     this.setState({ name: name })
     this.setState({ deviceAdd: deviceAdd })
     this.setState({ pubkey: pubkey })
+  };
+
+  openModalSend = (name, deviceAdd) => () => {
+    //console.log(name);
+    this.setState({ modal_resp: !this.state.modal_resp })
+    this.setState({ name: name })
+    this.setState({ deviceAdd: deviceAdd })
   };
 
   createDevice(){
@@ -308,6 +352,7 @@ class Devices extends React.Component {
                 </Col>
                 <Col>
                 <div>
+                  <Button className="mybutton_device" variant="success" onClick={this.openModalSend(device.name, device.deviceAdd)}>Send</Button>
                   <Button className="mybutton_device" variant="secondary" onClick={this.openModal(device.name, device.deviceAdd, device.pubkey)}>Modify</Button>
                   <Button className="mybutton_device" variant="danger" onClick={this.deleteClick(device.deviceAdd)}>Delete</Button>
                 </div>
@@ -316,38 +361,74 @@ class Devices extends React.Component {
             </Card>
           ))}
           <Modal 
-                  dialogClassName="my-modal"
-                  show={this.state.modal}
-                  onHide={() => this.handleModal2ShowHide()}
-                >
-                        {/* <Modal.Header closeButton onClick={() => this.handleModal2ShowHide()}> */}
-                        <Modal.Header>
-                          <Modal.Title className="modal-test">{this.state.name}</Modal.Title>
-                        </Modal.Header>
-                        <Modal.Body>
-                        <h5>Name :</h5>
-                        <Form>
-                          <Form.Group controlId="formBasicName">
-                            {/* <Form.Label>Name</Form.Label> */}
-                            {/* <Form.Control type="name" placeholder={this.state.name} /> */}
-                            <Form.Control
-                              placeholder={this.state.name}
-                              value={this.state.val}
-                              onChange={e => this.setState({ val: e.target.value })}
-                              type="name"
-                            />
-                          </Form.Group>
-                        </Form>
-                        </Modal.Body>
-                        <Modal.Footer>
-                        <Button variant="danger" onClick={() => this.handleModal2ShowHide()}>
-                            Close
-                        </Button>
-                        <Button variant="primary" onClick={() => this.submit()}>
-                            Modify
-                        </Button>
-                        </Modal.Footer>
-                </Modal>
+            dialogClassName="my-modal"
+            show={this.state.modal}
+            onHide={() => this.handleModal2ShowHide()}
+          >
+                {/* <Modal.Header closeButton onClick={() => this.handleModal2ShowHide()}> */}
+                <Modal.Header>
+                  <Modal.Title className="modal-test">{this.state.name}</Modal.Title>
+                  <Modal.Title className="modal-test">{this.state.deviceAdd}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                <h5>Name :</h5>
+                <Form>
+                  <Form.Group controlId="formBasicName">
+                    {/* <Form.Label>Name</Form.Label> */}
+                    {/* <Form.Control type="name" placeholder={this.state.name} /> */}
+                    <Form.Control
+                      placeholder={this.state.name}
+                      value={this.state.val}
+                      onChange={e => this.setState({ val: e.target.value })}
+                      type="name"
+                    />
+                  </Form.Group>
+                </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                <Button variant="danger" onClick={() => this.handleModal2ShowHide()}>
+                    Close
+                </Button>
+                <Button variant="primary" onClick={() => this.submit()}>
+                    Modify
+                </Button>
+                </Modal.Footer>
+            </Modal> 
+
+            <Modal 
+            dialogClassName="my-modal"
+            show={this.state.modal_resp}
+            onHide={() => this.handleModal3ShowHide()}
+          >
+                {/* <Modal.Header closeButton onClick={() => this.handleModal2ShowHide()}> */}
+                <Modal.Header>
+                  <Modal.Title className="modal-test">{this.state.name}</Modal.Title>
+                  <Modal.Title className="modal-test">{this.state.deviceAdd}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                <h5>Message to send :</h5>
+                <Form>
+                  <Form.Group controlId="formBasicName">
+                    {/* <Form.Label>Name</Form.Label> */}
+                    {/* <Form.Control type="name" placeholder={this.state.name} /> */}
+                    <Form.Control
+                      placeholder="payload"
+                      value={this.state.down}
+                      onChange={e => this.setState({ down: e.target.value })}
+                      type="name"
+                    />
+                  </Form.Group>
+                </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                <Button variant="danger" onClick={() => this.handleModal3ShowHide()}>
+                    Close
+                </Button>
+                <Button variant="primary" onClick={() => this.send()}>
+                    Send
+                </Button>
+                </Modal.Footer>
+            </Modal> 
         </div>
     </div>
    );
