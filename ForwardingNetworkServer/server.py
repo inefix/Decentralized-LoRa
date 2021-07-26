@@ -319,7 +319,7 @@ class ProxyDatagramProtocol():
         global counter
         global message
         global messageQueue
-        print(f"Received : {data} from : {addr}")
+        # print(f"Received : {data} from : {addr}")
         if data[0:2] == b'0x' :
             print("hash received")
             sender, currency, amount, receiver, metadata = await verifyHash(hashed)
@@ -539,85 +539,86 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                 await websocket.send(packet)
 
                 payment_receipt = await websocket.recv()
-                down_message = await websocket.recv()
-                print("payment_receipt :", payment_receipt)
-                print("down_message :", down_message)
+                if "error" not in payment_receipt:
+                    down_message = await websocket.recv()
+                    print("payment_receipt :", payment_receipt)
+                    print("down_message :", down_message)
 
-                payment_list = payment_receipt.split(',')
-                if payment_list[0] == 'OMG' :
-                    price = message_price
-                    # send down_message directly if any
-                    if down_message != b"down_message":
-                        price = message_price * 2
-                        messageQueue.put(down_message)
-
-                    payment_hash = payment_list[1]
-                    # sleep 2 minutes
-                    print("sleep for 2 minutes")
-                    await asyncio.sleep(120)
-                    metadata = await verify_omg_payment(payment_hash, remote_host, price)
-                    # get value from metadata
-                        # split ,
-                    meta_list = metadata.split(",")
-                    counter_header = meta_list[1]
-                    deviceAdd = meta_list[2]
-
-                    # get and pay message
-                    message = await get_and_pay(remote_host, deviceAdd, counter_header)
-                    print("message :", message)
-
-                    # if message != b"" and message != None :
-                    #     await websocket.send(message['msg'])
-                
-
-                if payment_list[0] == 'MPC' :
-                    signature = payment_list[1]
-                    contract_add = payment_list[2]
-                    payed_amount = int(payment_list[3])
-
-                    verified = await verify_mpc_payment(signature, contract_add, payed_amount, remote_host)
-                    if verified == True :
-                        # send down_message if any
-                        if down_message != b"down_message" and payed_amount == 2*message_price:
+                    payment_list = payment_receipt.split(',')
+                    if payment_list[0] == 'OMG' :
+                        price = message_price
+                        # send down_message directly if any
+                        if down_message != b"down_message":
+                            price = message_price * 2
                             messageQueue.put(down_message)
 
-                        # send message
+                        payment_hash = payment_list[1]
+                        # sleep 2 minutes
+                        print("sleep for 2 minutes")
+                        await asyncio.sleep(120)
+                        metadata = await verify_omg_payment(payment_hash, remote_host, price)
+                        # get value from metadata
+                            # split ,
+                        meta_list = metadata.split(",")
+                        counter_header = meta_list[1]
+                        deviceAdd = meta_list[2]
+
+                        # get and pay message
                         message = await get_and_pay(remote_host, deviceAdd, counter_header)
                         print("message :", message)
-                        # if message != None :
+
+                        # if message != b"" and message != None :
                         #     await websocket.send(message['msg'])
+                    
+
+                    if payment_list[0] == 'MPC' :
+                        signature = payment_list[1]
+                        contract_add = payment_list[2]
+                        payed_amount = int(payment_list[3])
+
+                        verified = await verify_mpc_payment(signature, contract_add, payed_amount, remote_host)
+                        if verified == True :
+                            # send down_message if any
+                            if down_message != b"down_message" and payed_amount == 2*message_price:
+                                messageQueue.put(down_message)
+
+                            # send message
+                            message = await get_and_pay(remote_host, deviceAdd, counter_header)
+                            print("message :", message)
+                            # if message != None :
+                            #     await websocket.send(message['msg'])
+                        else :
+                            message = None
+
+                    
+                    if message != b"" and message != None :
+                        await websocket.send(message['msg'])
+                        print("message sent to server")
+
+                        if down_message == b"down_message" and payment_list[0] != 'OMG':
+
+                            payment_receipt = await websocket.recv()
+                            response = await websocket.recv()
+                            print("payment_receipt :", payment_receipt)
+                            print("received response :", response)
+
+                            if payment_receipt != "nothing":
+                                payment_list = payment_receipt.split(',')
+                                if payment_list[0] == 'MPC' :
+                                    signature = payment_list[1]
+                                    contract_add = payment_list[2]
+                                    payed_amount = int(payment_list[3])
+
+                                    verified = await verify_mpc_payment(signature, contract_add, payed_amount, remote_host)
+                                    if verified == True and response != "nothing":
+                                        messageQueue.put(response)
+
+
                     else :
-                        message = None
+                        await websocket.send("payment is invalid")
 
-                
-                if message != b"" and message != None :
-                    await websocket.send(message['msg'])
-                    print("message sent to server")
-
-                    if down_message == b"down_message" and payment_list[0] != 'OMG':
-
-                        payment_receipt = await websocket.recv()
-                        response = await websocket.recv()
-                        print("payment_receipt :", payment_receipt)
-                        print("received response :", response)
-
-                        if payment_receipt != "nothing":
-                            payment_list = payment_receipt.split(',')
-                            if payment_list[0] == 'MPC' :
-                                signature = payment_list[1]
-                                contract_add = payment_list[2]
-                                payed_amount = int(payment_list[3])
-
-                                verified = await verify_mpc_payment(signature, contract_add, payed_amount, remote_host)
-                                if verified == True and response != "nothing":
-                                    messageQueue.put(response)
-
-
-
-                
                 else :
-                    await websocket.send("payment error")
-
+                    print(payment_receipt)
 
 
 
@@ -842,6 +843,37 @@ async def start_datagram_proxy(bind, port):
     # b = b"error1"
     # if b"error" in b :
     #     print("true")
+
+
+
+
+
+    # private_key = "3c1a2e912be2ccfd0a9802a73002fdaddff5d6e7c4d6aac66a8d5612277c7b9e"
+
+    # nonce = await web3_rinkeby.eth.getTransactionCount(ether_add)  
+    # print("nonce :", nonce)
+
+    # chainId = await web3_rinkeby.eth.chainId
+    # print("chainId :", chainId)
+    
+    # contract_add = '0xBf2625b1bFaA60d46eeB74F00A9E62213aEB4e88'
+    # contract_mpc = web3_rinkeby.eth.contract(contract_add, abi=abi_mpc)
+    # amount = 5200
+    # signature = '0xeeb14e223ee20986f6f71818b98cb79c855d304e57bb321d26bac3254f994d2e4aa5ceeabcbf5fe802eacbb5174d31e11c3042bd08620e52318e6e695fea965b1c'
+    # transaction = contract_mpc.functions.close(amount, signature).buildTransaction({
+    #     'chainId': chainId,
+    #     'gas': 70000,
+    #     'gasPrice': web3_rinkeby.toWei('1', 'gwei'),
+    #     'nonce': nonce,
+    # })
+    # signed_txn = web3_rinkeby.eth.account.signTransaction(transaction, private_key=private_key)
+    # close = await web3_rinkeby.eth.sendRawTransaction(signed_txn.rawTransaction)
+
+    # print("close :", close)
+
+
+
+
 
     loop = asyncio.get_event_loop()
     return await loop.create_datagram_endpoint(
