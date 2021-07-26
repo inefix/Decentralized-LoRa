@@ -1,32 +1,22 @@
 import asyncio
 
-import os
-import zlib
-import random
-#import numpy as np
 import json
 
 # pip3 install cryptography
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import dh
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.exceptions import InvalidSignature
-#from cbor2 import dumps, loads
 
 from binascii import unhexlify, hexlify
 
 # pip3 install cose
-from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, Countersign0Message
-from cose.keys import CoseKey, EC2Key, SymmetricKey
+from cose.messages import CoseMessage, Enc0Message, Countersign0Message
+from cose.keys import CoseKey, SymmetricKey
 from cose.headers import Algorithm, KID, IV, Reserved
-from cose.algorithms import EdDSA, Es256, EcdhEsA256KW, EcdhEsA128KW, DirectHKDFAES128, EcdhSsA128KW, A128GCM, HMAC256
-from cose.keys.keyparam import KpKty, OKPKpD, OKPKpX, KpKeyOps, OKPKpCurve, EC2KpX, EC2KpY, KpAlg, KpKty, EC2KpD, EC2KpX, KpKeyOps, EC2KpCurve, EC2KpY, KpKid, SymKpK
-from cose.keys.keytype import KtyEC2, KtySymmetric, KtyOKP
-from cose.keys.keyops import SignOp, VerifyOp, DeriveKeyOp, MacCreateOp, MacVerifyOp
+from cose.algorithms import Es256, A128GCM
+from cose.keys.keyparam import EC2KpX, EC2KpY, EC2KpX, EC2KpY
 
 add = "163.172.130.246"
 port = 9999
@@ -298,6 +288,15 @@ class EchoClientProtocol:
 
 
 async def start(add, port):
+
+    message = b'\xd0\x83XF\xa3\x01\x01\x05X\x1a000102030405060708090a0b0c\x00x#["0011", "0", "0x1145f03880d8a975"]\xa1\x0b\x83C\xa1\x01&\xa0X@\x92\xc9\xb2v\xa4\xaa\xd3s+\x8a\xebT\xdc\x07o\xf5NH\xe8 Rz4\x82\xe3H\x18\x97\x15\xb6Z\x1c\x97$X\\H\xd8\x88/aC\x15\x9d\x07\x93\x1ftG\xd1\xa2T\xb5\x9eB\xe0^J\xcb\x82\xd8\xccN\rUk\xe5(J\x13\rz\xf3\xf7\xbe\xb3\xa7\xc4\x88\xc1\xe9\xbf\xaaM\xc8i'
+    message = b"error"
+    message_hex = hexlify(message)
+    print("message_hex :", message_hex)
+    message_unhex = unhexlify(message_hex)
+    print(message == message_unhex)
+
+
     loop = asyncio.get_event_loop()
     return await loop.create_datagram_endpoint(
         lambda: EchoClientProtocol(message, loop),
