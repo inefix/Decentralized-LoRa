@@ -40,6 +40,8 @@ serialized_public = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQ
 pubkey = serialization.load_pem_public_key(serialized_public, backend=default_backend())
 x_pub = format(pubkey.public_numbers().x, '064x')
 y_pub = format(pubkey.public_numbers().y, '064x')
+x_pub = pubkey.public_numbers().x
+y_pub = pubkey.public_numbers().y
 print(f"x_pub : {x_pub} {type(x_pub)}")
 print(f"y_pub : {y_pub} {type(y_pub)}")
 

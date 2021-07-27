@@ -21,15 +21,24 @@ from cose.keys.keyparam import EC2KpX, EC2KpY, EC2KpX, EC2KpY
 
 
 deviceAdd = "0x1145f03880d8a975"
-serialized_private = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgMSp/hxGyOMubQVr5\nxIUYeVqFjylWXBNRjvyp1di865ChRANCAARkOGbAJWUYFw8k6PsBsjM/1+8ULqrg\nmqjBIrQbkGY9DNTdZDcQOtvOg8dXiPN25nu4q3/Mda7pMyvSCSB3I7Jv\n-----END PRIVATE KEY-----\n'
-serialized_public = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'
-pubkey = serialization.load_pem_public_key(serialized_public, backend=default_backend())
-x_pub = format(pubkey.public_numbers().x, '064x')
-y_pub = format(pubkey.public_numbers().y, '064x')
-print(f"x_pub : {x_pub} {type(x_pub)}")
-print(f"y_pub : {y_pub} {type(y_pub)}")
+serialized_private_device = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgMSp/hxGyOMubQVr5\nxIUYeVqFjylWXBNRjvyp1di865ChRANCAARkOGbAJWUYFw8k6PsBsjM/1+8ULqrg\nmqjBIrQbkGY9DNTdZDcQOtvOg8dXiPN25nu4q3/Mda7pMyvSCSB3I7Jv\n-----END PRIVATE KEY-----\n'
+# serialized_public = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'
+# pubkey = serialization.load_pem_public_key(serialized_public, backend=default_backend())
+# x_pub = format(pubkey.public_numbers().x, '064x')
+# y_pub = format(pubkey.public_numbers().y, '064x')
+x_pub_device = "643866c0256518170f24e8fb01b2333fd7ef142eaae09aa8c122b41b90663d0c"
+y_pub_device = "d4dd6437103adbce83c75788f376e67bb8ab7fcc75aee9332bd209207723b26f"
+# print(f"x_pub : {x_pub} {type(x_pub)}")
+# print(f"y_pub : {y_pub} {type(y_pub)}")
 
-serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
+# serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
+# pubkey = serialization.load_pem_public_key(serialized_public_server, backend=default_backend())
+# x_pub_server = format(pubkey.public_numbers().x, '064x')
+# y_pub_server = format(pubkey.public_numbers().y, '064x')
+# print(f"x_pub_server : {x_pub_server} {type(x_pub_server)}")
+# print(f"y_pub_server : {y_pub_server} {type(y_pub_server)}")
+x_pub_server = "c29769136166eec1299e1b5d56c48de1787a3f72f0e8ee5c14357ef5b78fc6ea"
+y_pub_server = "7666b00c308248cf824c8e224dd8ffcc4ccd1362c822f2ea82f5b01f79e1b49a"
 
 # Sign1 :
 # message = b'\xd2\x84C\xa1\x01&\xa0Xr\xd0\x83XF\xa3\x01\x01\x05X\x1a000102030405060708090a0b0c\x00x#["0100", "0", "0x37dae2a4323e7028"]\xa0X%-b\xc8}l\xc6\x91#\x1bm?\x06\xd2\x13\x13ac\xd8\xa0@\xec\xa2\xc2!\xb0\xd3K)\x9b\xcc\xf1\x95\xaes\x19\xaa\xe7X@\xf4\x11\x1ayj\x1f\'\xf1/\xe8\x8fi6\x0eO\x95\xccE\xff\xb8\xbc7-ff\xf1\xdc\xf5m\xac\xf0qsH\x95\xc5\xc94\xe7\xae@\xab\x8f\x13\xa6u\xd9\xcf\xdc\xa0\xd4\x86\xa9\x88\xa3\xa2\x92\xc4m\xe3\x1a\xf4\xbf\xb0'
@@ -60,9 +69,12 @@ async def read_increment_counter():
 
 
 async def generate_key_sym():
-    privkey = serialization.load_pem_private_key(serialized_private, password=None, backend=default_backend())
+    privkey = serialization.load_pem_private_key(serialized_private_device, password=None, backend=default_backend())
 
-    pubkey = serialization.load_pem_public_key(serialized_public_server, backend=default_backend())
+    # pubkey = serialization.load_pem_public_key(serialized_public_server, backend=default_backend())
+    x_pub_int = int(x_pub_server, 16)
+    y_pub_int = int(y_pub_server, 16)
+    pubkey = ec.EllipticCurvePublicNumbers(x_pub_int, y_pub_int, ec.SECP256R1()).public_key(backend=default_backend())
 
     # ECDH
     s_key = privkey.exchange(ec.ECDH(), pubkey)
@@ -118,7 +130,7 @@ async def encrypt(text, key):
 
 # Counter Signature version
 async def sign(encrypted):
-    privkey = serialization.load_pem_private_key(serialized_private, password=None, backend=default_backend())
+    privkey = serialization.load_pem_private_key(serialized_private_device, password=None, backend=default_backend())
     bytes_key_priv = privkey.private_numbers().private_value.to_bytes(32, 'big')
     x = format(privkey.private_numbers().public_numbers.x, '064x')
     y = format(privkey.private_numbers().public_numbers.y, '064x')
@@ -149,17 +161,17 @@ async def sign(encrypted):
 
 
 # Counter Signature version
-async def check_signature(packet, pubkey):
-    pubkey = serialization.load_pem_public_key(serialized_public_server, backend=default_backend())
-    x_pub = format(pubkey.public_numbers().x, '064x')
-    y_pub = format(pubkey.public_numbers().y, '064x')
+async def check_signature(packet):
+    # pubkey = serialization.load_pem_public_key(serialized_public_server, backend=default_backend())
+    # x_pub = format(pubkey.public_numbers().x, '064x')
+    # y_pub = format(pubkey.public_numbers().y, '064x')
 
     pub_key_attribute_dict = {
             'KTY': 'EC2',
             'CURVE': 'P_256',
             'ALG': 'ES256',
-            EC2KpX : unhexlify(x_pub),
-            EC2KpY : unhexlify(y_pub)
+            EC2KpX : unhexlify(x_pub_server),
+            EC2KpY : unhexlify(y_pub_server)
     }
     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
 
@@ -218,7 +230,7 @@ async def run():
 
     try :
         if line_unhex != b'' and b'error' not in line_unhex :
-            signature = await check_signature(line_unhex, serialized_public_server)
+            signature = await check_signature(line_unhex)
 
             if signature :
                 print("Signature is correct")

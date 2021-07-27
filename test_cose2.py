@@ -52,7 +52,11 @@ def main():
     x = format(priv_device.private_numbers().public_numbers.x, '064x')
     y = format(priv_device.private_numbers().public_numbers.y, '064x')
     #bytes_key_priv2 = unhexlify(format(priv_device.private_numbers().private_value, '064x'))
-    #print("byte_key_priv :", bytes_key_priv)
+    print("byte_key_priv :", bytes_key_priv)
+    private_value = priv_device.private_numbers().private_value
+    print("private_value :", private_value)
+    private_value_bytes = private_value.to_bytes(32, 'big')
+    print("private_value_bytes :", private_value_bytes)
     #print("byte_key_priv2 :", bytes_key_priv2)
     #print("x :", x)
 
@@ -61,11 +65,23 @@ def main():
         encoding=serialization.Encoding.PEM, 
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     ).decode("utf-8")
-    #print("serialized_public_device :", serialized_public_device)
-    pub_device = serialization.load_pem_public_key(serialized_public_device.encode("utf-8"))
+    print("serialized_public_device :", serialized_public_device)
+    # pub_device = serialization.load_pem_public_key(serialized_public_device.encode("utf-8"))
     x_pub = format(pub_device.public_numbers().x, '064x')
     y_pub = format(pub_device.public_numbers().y, '064x')
     print("x_pub :", x_pub)
+
+    x_pub_int = int(x_pub, 16)
+    print("x_pub_int :", x_pub_int)
+    y_pub_int = int(y_pub, 16)
+    print("y_pub_int :", y_pub_int)
+    test = ec.EllipticCurvePublicNumbers(x_pub_int, y_pub_int, ec.SECP256R1()).public_key()
+    print("test :", test)
+    serialized_public_device = test.public_bytes(
+        encoding=serialization.Encoding.PEM, 
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    ).decode("utf-8")
+    print("serialized_public_device :", serialized_public_device)
 
     # import private key from pem or x and y and bytes
 
