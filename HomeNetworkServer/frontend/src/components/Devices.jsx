@@ -4,12 +4,19 @@ import './Style.css';
 import { Button, Card, Modal, Row, Col, Form, Spinner } from 'react-bootstrap';
 // import Web3 from 'web3';
 import { ethers } from 'ethers'
-import { simpleStorageAbi } from './abis';
+import { loraResolverAbi } from './abis';
 
 // const web3 = new Web3(Web3.givenProvider);
 // const contractAddr = '0xc3C5B3159dE1d2f348Ff952a7175648E77Af23c7';
-const contractAddr = '0xCd862ceF6D5EDd348854e4a280b62d51F7F62a65';
+// ropsten
+// const contractAddr = '0xCd862ceF6D5EDd348854e4a280b62d51F7F62a65';    
+// rinkeby
+const contractAddr = '0x4a9fF7c806231fF7d4763c1e83E8B131467adE61';
 // const SimpleContract = new web3.eth.Contract(simpleStorageAbi, contractAddr);
+
+const serverAdd = 2745991926
+const x_pub_server = "c29769136166eec1299e1b5d56c48de1787a3f72f0e8ee5c14357ef5b78fc6ea"
+const y_pub_server = "7666b00c308248cf824c8e224dd8ffcc4ccd1362c822f2ea82f5b01f79e1b49a"
 
 
 class Devices extends React.Component {
@@ -151,7 +158,7 @@ class Devices extends React.Component {
       axios.patch(url, {"deviceAdd":this.state.add.deviceAdd, "name":this.state.val2}).then(response => response.data)
       .then((data) => {
         this.componentDidMount()
-        this.handleSet(this.state.add.deviceAdd, this.state.add.serverAdd, this.state.add.port)
+        this.handleSet(this.state.add.deviceAdd, this.state.add.serverAdd, this.state.add.port, "0x" + this.state.add.x_pub, "0x" + this.state.add.y_pub)
       })
       .catch(function (error) {
         console.log(error);
@@ -159,7 +166,7 @@ class Devices extends React.Component {
       this.setState({ val2: "" })
     } else {
       this.componentDidMount()
-      this.handleSet(this.state.add.deviceAdd, this.state.add.serverAdd, this.state.add.port)
+      this.handleSet(this.state.add.deviceAdd, this.state.add.serverAdd, this.state.add.port, "0x" + this.state.add.x_pub, "0x" + this.state.add.y_pub)
     }
   }
 
@@ -210,7 +217,38 @@ class Devices extends React.Component {
     .catch(function (error) {
       console.log(error); 
     });
+
+    // look if server already stored in db, otherwise, store it
+    this.getDeviceBlockchain()
   }
+
+
+  async getDeviceBlockchain(){
+    if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum)
+      const contract = new ethers.Contract(contractAddr, loraResolverAbi, provider)
+      try {
+        const data = await contract.ipv4Servers(serverAdd);
+        // const data = await contract.publicstoredData()
+        console.log('data: ', data)
+        if (data['owner'] === "0x0000000000000000000000000000000000000000"){
+          console.log("add device")
+
+          const signer = provider.getSigner()
+          const contract = new ethers.Contract(contractAddr, loraResolverAbi, signer)
+          const transaction = await contract.registerIpv4Server(serverAdd, "0x" + x_pub_server, "0x" + y_pub_server)
+          this.setState({willShowLoader: true});
+          await transaction.wait()
+          this.setState({willShowLoader: false});
+
+        }
+      } catch (err) {
+        console.log("Error: ", err)
+      }
+    } 
+  }
+
+
 
   // handleGet = async (e) => {
   //   e.preventDefault();
@@ -227,7 +265,7 @@ class Devices extends React.Component {
   async handleGet() {
     if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
-      const contract = new ethers.Contract(contractAddr, simpleStorageAbi, provider)
+      const contract = new ethers.Contract(contractAddr, loraResolverAbi, provider)
       try {
         const data = await contract.devices("0xd454ddb830bee4cf");
         // const data = await contract.publicstoredData()
@@ -239,7 +277,7 @@ class Devices extends React.Component {
   }
 
   // call the smart contract, send an update
-  async handleSet(deviceAdd, serverAddr, port) {
+  async handleSet(deviceAdd, serverAddr, port, x_pub, y_pub) {
     // console.log(serverAddr);
     // console.log(port);
     if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
@@ -248,8 +286,8 @@ class Devices extends React.Component {
         this.setState({error: false});
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const signer = provider.getSigner()
-        const contract = new ethers.Contract(contractAddr, simpleStorageAbi, signer)
-        const transaction = await contract.registerIpv4(deviceAdd, serverAddr, port)
+        const contract = new ethers.Contract(contractAddr, loraResolverAbi, signer)
+        const transaction = await contract.registerIpv4Device(deviceAdd, serverAddr, port, x_pub, y_pub)
         // console.log("end 1");
         this.setState({willShowLoader: true});
         await transaction.wait()
@@ -323,7 +361,8 @@ class Devices extends React.Component {
                           </Form.Group>
                         </Form>
                         <h5>Public key :</h5>
-                        <p className="p-test">{this.state.add.pubkey}</p>
+                        <p>x_pub : {this.state.add.x_pub}</p>
+                        <p className="p-test">y_pub : {this.state.add.y_pub}</p>
                         <h5>Private key :</h5>
                         <p>{this.state.add.privkey}</p>
                     </Modal.Body>
@@ -345,8 +384,9 @@ class Devices extends React.Component {
                 <Col xs={10} className="mycard">
                 <Card.Body>
                   <Card.Title>{device.deviceAdd}</Card.Title>
-                  <Card.Text>
-                    {device.pubkey}
+                  <Card.Text as="div">
+                  <p className="p-test3">x_pub : {device.x_pub}</p>
+                  <p className="p-test2">y_pub : {device.y_pub}</p>
                   </Card.Text>
                 </Card.Body>
                 </Col>
