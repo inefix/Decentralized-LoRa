@@ -66,6 +66,29 @@ serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZ
 
 serverAdd = "163.172.130.246"
 
+
+async def read_increment_counter():
+    try :
+        # read the counter
+        f = open("counter.txt", "r")
+        counter = f.read()
+        f.close()
+    except FileNotFoundError:
+        counter = ""
+
+    if counter == "" :
+        counter = 0
+    else :
+        counter = int(counter) + 1
+    # print(counter)
+    # update the counter
+    f = open("counter.txt", "w")
+    f.write(str(counter))
+    f.close()
+
+    return counter
+
+
 async def start(request):
     print("Server started")
     return web.json_response({'success': 'Server started'})
@@ -551,7 +574,8 @@ async def process(message, hash_structure, gateway, down):
                 # return response to send back if no previous down sent by user
                 if down == b"down_message" and automatic_response == True and payment_method != 'OMG':
                     if pType == "DataConfirmedUp":
-                        header_respond = ["ACKDown", int(counter)+1, serverAdd]
+                        counter = await read_increment_counter()
+                        header_respond = ["ACKDown", counter, serverAdd]
                         # can insert a function to generate some payload !
                         payload_respond = "Received"
                         encrypted = await encrypt(header_respond, payload_respond, key)
@@ -579,12 +603,13 @@ async def process(message, hash_structure, gateway, down):
         return b"error1 : device not registered"
 
 
-async def down_message(deviceAdd, counter_header, pubkey):
+async def down_message(deviceAdd, pubkey):
     key = await generate_key_sym(serialized_private_server, pubkey)
-    header_respond = ["DataUnconfirmedDown", int(counter_header)+1, serverAdd]
     payload_respond = await get_one_down_f(deviceAdd)
     if payload_respond != None :
         print("payload_respond :", payload_respond['payload'])
+        counter = await read_increment_counter()
+        header_respond = ["DataUnconfirmedDown", counter, serverAdd]
         encrypted = await encrypt(header_respond, payload_respond['payload'], key)
         packet = await sign(encrypted, serialized_private_server)
         return packet, payload_respond["_id"]
@@ -683,20 +708,29 @@ async def down_message(deviceAdd, counter_header, pubkey):
 
 
 
-async def process_hash(hash_structure, signature, deviceAdd, counter_header, gateway_add):
+async def verify_hash(hash_structure, signature, deviceAdd):
+    try :
+        pubkey = await get_pubkey(deviceAdd)
+        verified = verify_signature_hash(pubkey, hash_structure, signature)
+        print("verified :", verified)
+
+        return verified
+
+    except Exception :
+        return False
+
+
+async def check_if_down(deviceAdd):
     pubkey = await get_pubkey(deviceAdd)
-    verified = verify_signature_hash(pubkey, hash_structure, signature)
-    print("verified :", verified)
 
-    if verified :
-        # check if there is a down_message to send back
-        down = b"down_message"
-        down_id = None
-        price = message_price
+    # check if there is a down_message to send back
+    down = b"down_message"
+    down_id = None
+    price = message_price
 
-        down, down_id = await down_message(deviceAdd, counter_header, pubkey)
-        if down != b"down_message":
-            price = message_price * 2
+    down, down_id = await down_message(deviceAdd, pubkey)
+    if down != b"down_message":
+        price = message_price * 2
     
     return down, down_id, price
 
@@ -812,53 +846,69 @@ async def ws(websocket, path):
             counter_header = packet[1]
             gateway_add = packet[2]
 
-            try :
-                down, down_id, price = await process_hash(hash_structure, signature, deviceAdd, counter_header, gateway_add)
-            except Exception as e:
-                down = b"down_message"
-                down_id = None
-                price = message_price
-            # down, down_id, price = await process_hash(hash_structure, signature, deviceAdd, counter_header, gateway_add)
+            # verifies unique counter
+            # get last message document from this device
 
-            payment_receipt = None
-            if payment_method == 'OMG' :
-                payment_receipt = await omg_pay(deviceAdd, counter_header, gateway_add, price)
-            if payment_method == 'MPC' :
-                payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, price)
+            # verifies that gateway is the same
 
-            if down != b"down_message" and "error" not in payment_receipt and payment_receipt != None:
-                await pay_down(down_id)
+            # if does not match, wait a moment to see if receive the message from the correct gateway,
+            # otherwise process this one
 
-            await websocket.send(payment_receipt)
-            await websocket.send(down)
-            # print(f"> {response}")
+            verified = await verify_hash(hash_structure, signature, deviceAdd)
 
-            message = await websocket.recv()
-            if message != "payment error":
-                if type(message) == bytes :
-                    try :
-                        response = await process(message, hash_structure, gateway_add, down)
-                    except Exception as e:
-                        response = b'error, corrupted data'
-                    # response = await process(message, hash_structure, gateway_add)
-                else :
-                    response = b'error, did not receive bytes message'
-            else :
-                print(message)
-                response = b"payment error"
+            if verified :
 
-            print("response :", response)
+                down, down_id, price = await check_if_down(deviceAdd)
 
-            if down == b"down_message" and response != b"nothing" and b"error" not in response and payment_method != 'OMG':
-                print("send response")
+                # down, down_id, price = await process_hash(hash_structure, signature, deviceAdd, counter_header, gateway_add)
 
-                # pay for the message if it is actual content
-                payment_receipt = "nothing"
-                print("pay")
+                payment_receipt = None
+                if payment_method == 'OMG' :
+                    payment_receipt = await omg_pay(deviceAdd, counter_header, gateway_add, price)
                 if payment_method == 'MPC' :
-                    payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, message_price)
-                await websocket.send(payment_receipt)
-                await websocket.send(response)
+                    payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, price)
+
+                if "error" not in payment_receipt and payment_receipt != None:
+
+                    if down != b"down_message" :
+                        await pay_down(down_id)
+
+                    await websocket.send(payment_receipt)
+                    await websocket.send(down)
+                    # print(f"> {response}")
+
+                    message = await websocket.recv()
+                    if message != "payment error":
+                        if type(message) == bytes :
+                            try :
+                                response = await process(message, hash_structure, gateway_add, down)
+                            except Exception as e:
+                                response = b'error, corrupted data'
+                            # response = await process(message, hash_structure, gateway_add)
+                        else :
+                            response = b'error, did not receive bytes message'
+                    else :
+                        print(message)
+                        response = b"payment error"
+
+                    print("response :", response)
+
+                    if down == b"down_message" and response != b"nothing" and b"error" not in response and payment_method != 'OMG':
+                        print("send response")
+
+                        # pay for the message if it is actual content
+                        payment_receipt = "nothing"
+                        print("pay")
+                        if payment_method == 'MPC' :
+                            payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, message_price)
+                        await websocket.send(payment_receipt)
+                        await websocket.send(response)
+                
+                else :
+                    await websocket.send("error : payment error")
+
+            else :
+                await websocket.send("error : invalid signature")
 
 
         except websockets.exceptions.ConnectionClosed as e:
