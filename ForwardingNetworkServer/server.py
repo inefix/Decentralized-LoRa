@@ -16,6 +16,7 @@ from namehash import namehash
 import requests_async as requests   # pip3 install requests-async
 import motor.motor_asyncio  # pip3 install motor, pip3 install dnspython
 import hashlib
+import ipaddress
 
 client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@forwardingnetworkserver.tbilb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
 db = client['lora_db']
@@ -24,16 +25,18 @@ collection_MPC = db['MPC']
 
 ether_add = '0x956015029B53403D6F39cf1A37Db555F03FD74dc'
 
-infuria_url = "https://ropsten.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
+infuria_url = "https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
 web3 = web3s.Web3s(web3s.Web3s.HTTPProvider(infuria_url))
 
-infuria_url_rinkeby = "https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
-web3_rinkeby = web3s.Web3s(web3s.Web3s.HTTPProvider(infuria_url_rinkeby))
+# infuria_url_rinkeby = "https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
+# web3_rinkeby = web3s.Web3s(web3s.Web3s.HTTPProvider(infuria_url_rinkeby))
 
-web3.eth.default_account = ether_add
+# web3.eth.default_account = ether_add
 
-abi_lora = json.loads('[{"inputs": [{"internalType": "uint64","name": "","type": "uint64"}],"name": "devices","outputs": [{"internalType": "uint32","name": "ipv4Addr","type": "uint32"},{"internalType": "uint128","name": "ipv6Addr","type": "uint128"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "ipv4Port","type": "uint16"},{"internalType": "uint16","name": "ipv6Port","type": "uint16"},{"internalType": "uint16","name": "domainPort","type": "uint16"},{"internalType": "address","name": "owner","type": "address"}],"stateMutability": "view","type": "function","constant": true},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint32","name": "server","type": "uint32"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerIpv4","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint128","name": "server","type": "uint128"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerIpv6","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerDomain","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint32","name": "server","type": "uint32"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateIpv4","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint128","name": "server","type": "uint128"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateIpv6","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateDomain","outputs": [],"stateMutability": "nonpayable","type": "function"}]')
-contract_addr_lora = "0xCd862ceF6D5EDd348854e4a280b62d51F7F62a65"
+# abi_lora = json.loads('[{"inputs": [{"internalType": "uint64","name": "","type": "uint64"}],"name": "devices","outputs": [{"internalType": "uint32","name": "ipv4Addr","type": "uint32"},{"internalType": "uint128","name": "ipv6Addr","type": "uint128"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "ipv4Port","type": "uint16"},{"internalType": "uint16","name": "ipv6Port","type": "uint16"},{"internalType": "uint16","name": "domainPort","type": "uint16"},{"internalType": "address","name": "owner","type": "address"}],"stateMutability": "view","type": "function","constant": true},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint32","name": "server","type": "uint32"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerIpv4","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint128","name": "server","type": "uint128"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerIpv6","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerDomain","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint32","name": "server","type": "uint32"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateIpv4","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint128","name": "server","type": "uint128"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateIpv6","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateDomain","outputs": [],"stateMutability": "nonpayable","type": "function"}]')
+# contract_addr_lora = "0xCd862ceF6D5EDd348854e4a280b62d51F7F62a65"
+abi_lora = json.loads('[{"inputs":[{"internalType":"uint64","name":"","type":"uint64"}],"name":"devices","outputs":[{"internalType":"uint32","name":"ipv4Addr","type":"uint32"},{"internalType":"uint128","name":"ipv6Addr","type":"uint128"},{"internalType":"string","name":"domain","type":"string"},{"internalType":"uint16","name":"ipv4Port","type":"uint16"},{"internalType":"uint16","name":"ipv6Port","type":"uint16"},{"internalType":"uint16","name":"domainPort","type":"uint16"},{"internalType":"address","name":"owner","type":"address"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"","type":"string"}],"name":"domainServers","outputs":[{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint32","name":"","type":"uint32"}],"name":"ipv4Servers","outputs":[{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint128","name":"","type":"uint128"}],"name":"ipv6Servers","outputs":[{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint64","name":"loraAddr","type":"uint64"},{"internalType":"string","name":"domain","type":"string"},{"internalType":"uint16","name":"port","type":"uint16"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerDomainDevice","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"domain","type":"string"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerDomainServer","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint64","name":"loraAddr","type":"uint64"},{"internalType":"uint32","name":"server","type":"uint32"},{"internalType":"uint16","name":"port","type":"uint16"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv4Device","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint32","name":"ipv4Addr","type":"uint32"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv4Server","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint64","name":"loraAddr","type":"uint64"},{"internalType":"uint128","name":"server","type":"uint128"},{"internalType":"uint16","name":"port","type":"uint16"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv6Device","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint128","name":"ipv6Addr","type":"uint128"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv6Server","outputs":[],"stateMutability":"nonpayable","type":"function"}]')
+contract_addr_lora = "0x4a9fF7c806231fF7d4763c1e83E8B131467adE61"
 contract_lora = web3.eth.contract(contract_addr_lora, abi=abi_lora)
 
 # name = namehash("alice.eth")
@@ -63,8 +66,8 @@ messageQueue = queue.Queue()
 packet_forwarder_response_add = 0
 # message = b'\xd2\x84C\xa1\x01&\xa0X`\xd0\x83XA\xa3\x01\x01\x05X\x1a000102030405060708090a0b0c\x00x\x1e["1000", 1, "163.172.130.246"]\xa0X\x18q\xe5\'C\x15\xecp=\xce\xe9\x03\xb9\r\xccz(v\x9f\xfe\x9c\x0c\xb8f\xaeX@\x1e/ql\xc4T\xde\x80\x83\x1c-\xc4\x83\xefy\x17/\xad\xfd\xeb\x10\xf6\xf9\xec\xda\x8dL?\x00h\xa4H\xb9\xbb!\x9c\xe4\xcc\xa1\xebg\x05?r\xc6\x8b?B,\x95J\xf8\xdb\xbcxHP\xcb=F\x8f\x9d\xbb\xa3'
 
-x_pub = "643866c0256518170f24e8fb01b2333fd7ef142eaae09aa8c122b41b90663d0c"
-y_pub = "d4dd6437103adbce83c75788f376e67bb8ab7fcc75aee9332bd209207723b26f"
+# x_pub = "643866c0256518170f24e8fb01b2333fd7ef142eaae09aa8c122b41b90663d0c"
+# y_pub = "d4dd6437103adbce83c75788f376e67bb8ab7fcc75aee9332bd209207723b26f"
 
 message_price = 100
 
@@ -374,6 +377,11 @@ class ProxyDatagramProtocol():
                         ipv4Port = device[3]
                         ipv6Port = device[4]
                         domainPort = device[5]
+                        x_pub = int(device[7])
+                        y_pub = int(device[8])
+
+                        x_pub = format(x_pub, '064x')
+                        y_pub = format(y_pub, '064x')
 
 
                         # verify signature 
@@ -549,8 +557,11 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                         price = message_price
                         # send down_message directly if any
                         if down_message != b"down_message":
-                            price = message_price * 2
-                            messageQueue.put(down_message)
+                            # verify down
+                            verified = await verify_down(down_message)
+                            if verified :
+                                price = message_price * 2
+                                messageQueue.put(down_message)
 
                         payment_hash = payment_list[1]
                         # sleep 2 minutes
@@ -580,7 +591,9 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                         if verified == True :
                             # send down_message if any
                             if down_message != b"down_message" and payed_amount == 2*message_price:
-                                messageQueue.put(down_message)
+                                verified = await verify_down(down_message)
+                                if verified :
+                                    messageQueue.put(down_message)
 
                             # send message
                             message = await get_and_pay(remote_host, deviceAdd, counter_header)
@@ -611,7 +624,9 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
 
                                     verified = await verify_mpc_payment(signature, contract_add, payed_amount, remote_host)
                                     if verified == True and response != "nothing":
-                                        messageQueue.put(response)
+                                        verified = await verify_down(response)
+                                        if verified :
+                                            messageQueue.put(response)
 
 
                     else :
@@ -640,12 +655,48 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
     except RuntimeError :
         print("Closing the connection")
 
+
+async def verify_down(message):
+    header = await get_header(message)
+    pType = header[0]
+    counter_header = header[1]
+    hostAdd = header[2]
+    # print("header :", header)
+    # print("hostAdd :", hostAdd)
+
+    if hostAdd.count(":") > 1:
+        # print("IPv6")
+        addr = int(ipaddress.IPv6Address(hostAdd))
+        server = await contract_lora.functions.ipv6Servers(addr).call()
+    elif hostAdd[0].isdigit() and hostAdd[len(hostAdd)-1].isdigit() :
+        # print("IPv4")
+        addr = int(ipaddress.IPv4Address(hostAdd))
+        server = await contract_lora.functions.ipv4Servers(addr).call()
+    else :
+        # print("domain")
+        server = await contract_lora.functions.domainServers(hostAdd).call()
+
+    if int(server[0]) != 0 and int(server[1]) != 0 :
+        x_pub = int(server[0])
+        y_pub = int(server[1])
+
+        x_pub = format(x_pub, '064x')
+        y_pub = format(y_pub, '064x')
+
+        # verify signature 
+        valid = await verify_countersign(message, x_pub, y_pub)
+
+        return valid
+
+    else :
+        return False
+
     
 async def verify_mpc_payment(signature, contract_add, payed_amount, remote_host):
-    contract_mpc = web3_rinkeby.eth.contract(contract_add, abi=abi_mpc)
+    contract_mpc = web3.eth.contract(contract_add, abi=abi_mpc)
 
     # verify valid bytecode 
-    bytecode = await web3_rinkeby.eth.getCode(contract_add)
+    bytecode = await web3.eth.getCode(contract_add)
     bytecode = bytecode.hex()
     if bytecode == runtimeBytecode_mpc :
 
@@ -667,7 +718,7 @@ async def verify_mpc_payment(signature, contract_add, payed_amount, remote_host)
             new_amount = amount + payed_amount
 
             # verify enough ether stored in contract
-            balance = await web3_rinkeby.eth.getBalance(contract_add)
+            balance = await web3.eth.getBalance(contract_add)
             print("balance :", balance)
             if balance > new_amount :
 
@@ -833,12 +884,12 @@ async def start_datagram_proxy(bind, port):
     # message = await get_and_pay("163.172.130.246", "0x1145f03880d8a975", "0")
     # print("message :", message)
 
-    # bytecode = await web3_rinkeby.eth.getCode('0x2c25489C46f6E463dBc4513D1c67838adD53737f')
+    # bytecode = await web3.eth.getCode('0x2c25489C46f6E463dBc4513D1c67838adD53737f')
     # bytecode = bytecode.hex()
     # print("bytecode :", bytecode)
     # print(bytecode == runtimeBytecode_mpc)
 
-    # balance = await web3_rinkeby.eth.getBalance('0xFFC869826E724845a65F710D3Ffa8691f274b3Ba')
+    # balance = await web3.eth.getBalance('0xFFC869826E724845a65F710D3Ffa8691f274b3Ba')
     # print("balance :", balance)
     # b = b"error1"
     # if b"error" in b :
@@ -850,24 +901,24 @@ async def start_datagram_proxy(bind, port):
 
     # private_key = "3c1a2e912be2ccfd0a9802a73002fdaddff5d6e7c4d6aac66a8d5612277c7b9e"
 
-    # nonce = await web3_rinkeby.eth.getTransactionCount(ether_add)  
+    # nonce = await web3.eth.getTransactionCount(ether_add)  
     # print("nonce :", nonce)
 
-    # chainId = await web3_rinkeby.eth.chainId
+    # chainId = await web3.eth.chainId
     # print("chainId :", chainId)
     
     # contract_add = '0xBf2625b1bFaA60d46eeB74F00A9E62213aEB4e88'
-    # contract_mpc = web3_rinkeby.eth.contract(contract_add, abi=abi_mpc)
+    # contract_mpc = web3.eth.contract(contract_add, abi=abi_mpc)
     # amount = 5200
     # signature = '0xeeb14e223ee20986f6f71818b98cb79c855d304e57bb321d26bac3254f994d2e4aa5ceeabcbf5fe802eacbb5174d31e11c3042bd08620e52318e6e695fea965b1c'
     # transaction = contract_mpc.functions.close(amount, signature).buildTransaction({
     #     'chainId': chainId,
     #     'gas': 70000,
-    #     'gasPrice': web3_rinkeby.toWei('1', 'gwei'),
+    #     'gasPrice': web3.toWei('1', 'gwei'),
     #     'nonce': nonce,
     # })
-    # signed_txn = web3_rinkeby.eth.account.signTransaction(transaction, private_key=private_key)
-    # close = await web3_rinkeby.eth.sendRawTransaction(signed_txn.rawTransaction)
+    # signed_txn = web3.eth.account.signTransaction(transaction, private_key=private_key)
+    # close = await web3.eth.sendRawTransaction(signed_txn.rawTransaction)
 
     # print("close :", close)
 
