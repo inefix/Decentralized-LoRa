@@ -51,11 +51,11 @@ collection_GATEWAY = db['GATEWAY']
 collection_DOWN = db['DOWN']
 
 
-infuria_url = "https://ropsten.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
+infuria_url = "https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
 web3 = web3s.Web3s(web3s.Web3s.HTTPProvider(infuria_url))
 
-abi_lora = json.loads('[{"inputs": [{"internalType": "uint64","name": "","type": "uint64"}],"name": "devices","outputs": [{"internalType": "uint32","name": "ipv4Addr","type": "uint32"},{"internalType": "uint128","name": "ipv6Addr","type": "uint128"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "ipv4Port","type": "uint16"},{"internalType": "uint16","name": "ipv6Port","type": "uint16"},{"internalType": "uint16","name": "domainPort","type": "uint16"},{"internalType": "address","name": "owner","type": "address"}],"stateMutability": "view","type": "function","constant": true},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint32","name": "server","type": "uint32"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerIpv4","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint128","name": "server","type": "uint128"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerIpv6","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "registerDomain","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint32","name": "server","type": "uint32"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateIpv4","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "uint128","name": "server","type": "uint128"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateIpv6","outputs": [],"stateMutability": "nonpayable","type": "function"},{"inputs": [{"internalType": "uint64","name": "loraAddr","type": "uint64"},{"internalType": "string","name": "domain","type": "string"},{"internalType": "uint16","name": "port","type": "uint16"}],"name": "updateDomain","outputs": [],"stateMutability": "nonpayable","type": "function"}]')
-contract_addr_lora = "0xCd862ceF6D5EDd348854e4a280b62d51F7F62a65"
+abi_lora = json.loads('[{"inputs":[{"internalType":"uint64","name":"","type":"uint64"}],"name":"devices","outputs":[{"internalType":"uint32","name":"ipv4Addr","type":"uint32"},{"internalType":"uint128","name":"ipv6Addr","type":"uint128"},{"internalType":"string","name":"domain","type":"string"},{"internalType":"uint16","name":"ipv4Port","type":"uint16"},{"internalType":"uint16","name":"ipv6Port","type":"uint16"},{"internalType":"uint16","name":"domainPort","type":"uint16"},{"internalType":"address","name":"owner","type":"address"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"","type":"string"}],"name":"domainServers","outputs":[{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint32","name":"","type":"uint32"}],"name":"ipv4Servers","outputs":[{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint128","name":"","type":"uint128"}],"name":"ipv6Servers","outputs":[{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint64","name":"loraAddr","type":"uint64"},{"internalType":"string","name":"domain","type":"string"},{"internalType":"uint16","name":"port","type":"uint16"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerDomainDevice","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"domain","type":"string"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerDomainServer","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint64","name":"loraAddr","type":"uint64"},{"internalType":"uint32","name":"server","type":"uint32"},{"internalType":"uint16","name":"port","type":"uint16"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv4Device","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint32","name":"ipv4Addr","type":"uint32"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv4Server","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint64","name":"loraAddr","type":"uint64"},{"internalType":"uint128","name":"server","type":"uint128"},{"internalType":"uint16","name":"port","type":"uint16"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv6Device","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint128","name":"ipv6Addr","type":"uint128"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv6Server","outputs":[],"stateMutability":"nonpayable","type":"function"}]')
+contract_addr_lora = "0x4a9fF7c806231fF7d4763c1e83E8B131467adE61"
 contract_lora = web3.eth.contract(contract_addr_lora, abi=abi_lora)
 
 
@@ -63,6 +63,9 @@ add = "0.0.0.0"     # localhost does not work ! https://stackoverflow.com/questi
 
 serialized_private_server = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
 serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
+x_pub_server = "c29769136166eec1299e1b5d56c48de1787a3f72f0e8ee5c14357ef5b78fc6ea"
+y_pub_server = "7666b00c308248cf824c8e224dd8ffcc4ccd1362c822f2ea82f5b01f79e1b49a"
+
 
 serverAdd = "163.172.130.246"
 
@@ -97,10 +100,12 @@ async def test(request):
     print("test")
 
     deviceAdd = "0x1145f03880d8a975"
-    pubkey = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
+    # serialized_public = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
+    x_pub = "643866c0256518170f24e8fb01b2333fd7ef142eaae09aa8c122b41b90663d0c"
+    y_pub = "d4dd6437103adbce83c75788f376e67bb8ab7fcc75aee9332bd209207723b26f"
     ts = str(time.time())
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": "test", "serverAdd": ADDR, "port": PORT}
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": "test", "serverAdd": ADDR, "port": PORT}
 
     # check unique id
     y = {"_id" : deviceAdd}
@@ -409,11 +414,14 @@ async def pay_down(id) :
 
 async def generate_device(request):
     deviceAdd = await generate_deviceAdd()
-    privkey, pubkey = await generate_key_pair()
+    # privkey, pubkey = await generate_key_pair()
+    privkey, x_pub, y_pub = await generate_key_pair()
     ts = str(time.time())
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
-    stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
+    # responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
+    # stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
+    responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
+    stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
 
     document = await collection_DEVICE.find_one(stored)
 
@@ -432,7 +440,7 @@ async def get_pubkey(id):
     if str(type(document)) == "<class 'NoneType'>":
         return "error"
 
-    return document['pubkey']
+    return document['x_pub'], document['y_pub']
 
 
 async def get_address(request):
@@ -528,12 +536,12 @@ async def process(message, hash_structure, gateway, down):
     print("deviceAdd :", deviceAdd)
     print("counter :", counter)
 
-    pubkey = await get_pubkey(deviceAdd)
-    print("pubkey :", pubkey)
+    x_pub, y_pub = await get_pubkey(deviceAdd)
+    # print("pubkey :", pubkey)
 
-    if pubkey != "error":
+    if x_pub != "error" and y_pub != "error":
 
-        valid = await check_signature(message, pubkey)
+        valid = await check_signature(message, x_pub, y_pub)
 
         if valid != False :
             print("Signature is correct")
@@ -547,7 +555,7 @@ async def process(message, hash_structure, gateway, down):
             if hash_structure == message_hash :
                 print("Hash is correct")
 
-                key = await generate_key_sym(serialized_private_server, pubkey)
+                key = await generate_key_sym(serialized_private_server, x_pub, y_pub)
                 decrypted = await decrypt(message, key)
                 print("Payload :", decrypted) 
 
@@ -603,8 +611,8 @@ async def process(message, hash_structure, gateway, down):
         return b"error1 : device not registered"
 
 
-async def down_message(deviceAdd, pubkey):
-    key = await generate_key_sym(serialized_private_server, pubkey)
+async def down_message(deviceAdd, x_pub, y_pub):
+    key = await generate_key_sym(serialized_private_server, x_pub, y_pub)
     payload_respond = await get_one_down_f(deviceAdd)
     if payload_respond != None :
         print("payload_respond :", payload_respond['payload'])
@@ -710,8 +718,8 @@ async def down_message(deviceAdd, pubkey):
 
 async def verify_hash(hash_structure, signature, deviceAdd):
     try :
-        pubkey = await get_pubkey(deviceAdd)
-        verified = verify_signature_hash(pubkey, hash_structure, signature)
+        x_pub, y_pub = await get_pubkey(deviceAdd)
+        verified = verify_signature_hash(x_pub, y_pub, hash_structure, signature)
         print("verified :", verified)
 
         return verified
@@ -721,14 +729,14 @@ async def verify_hash(hash_structure, signature, deviceAdd):
 
 
 async def check_if_down(deviceAdd):
-    pubkey = await get_pubkey(deviceAdd)
+    x_pub, y_pub = await get_pubkey(deviceAdd)
 
     # check if there is a down_message to send back
     down = b"down_message"
     down_id = None
     price = message_price
 
-    down, down_id = await down_message(deviceAdd, pubkey)
+    down, down_id = await down_message(deviceAdd, x_pub, y_pub)
     if down != b"down_message":
         price = message_price * 2
     

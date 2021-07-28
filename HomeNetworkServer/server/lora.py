@@ -53,22 +53,36 @@ async def generate_key_pair():
     )
 
     serialized_private_device = priv_device.private_bytes(
-        encoding=serialization.Encoding.PEM,        # DER
-        format=serialization.PrivateFormat.PKCS8,   # TraditionalOpenSSL or PKCS8
+        encoding=serialization.Encoding.PEM,        # also DER
+        format=serialization.PrivateFormat.PKCS8,   # also TraditionalOpenSSL or PKCS8
         encryption_algorithm=serialization.NoEncryption()
     ).decode("utf-8")
     print("serialized_private_device :", serialized_private_device)
 
+    x_pub = format(priv_device.private_numbers().public_numbers.x, '064x')
+    y_pub = format(priv_device.private_numbers().public_numbers.y, '064x')
+    print(f"x_pub : {x_pub} {type(x_pub)}")
+    print(f"y_pub : {y_pub} {type(y_pub)}")
 
-    pub_device = priv_device.public_key()
+    # private_value = priv_device.private_numbers().private_value
+    # print("private_value :", private_value)
 
-    serialized_public_device = pub_device.public_bytes(
-        encoding=serialization.Encoding.PEM, 
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
-    ).decode("utf-8")
-    print("serialized_public_device :", serialized_public_device)
 
-    return serialized_private_device, serialized_public_device
+
+
+    # pub_device = priv_device.public_key()
+
+    # serialized_public_device = pub_device.public_bytes(
+    #     encoding=serialization.Encoding.PEM, 
+    #     format=serialization.PublicFormat.SubjectPublicKeyInfo
+    # ).decode("utf-8")
+    # print("serialized_public_device :", serialized_public_device)
+    # x_pub = format(pub_device.public_numbers().x, '064x')
+    # y_pub = format(pub_device.public_numbers().y, '064x')
+    
+
+    # return serialized_private_device, serialized_public_device
+    return serialized_private_device, x_pub, y_pub
 
 
 async def get_header(packet):
@@ -110,11 +124,11 @@ async def get_header(packet):
 
 
 # Counter Signature version
-async def check_signature(packet, pubkey):
-    pubkey = pubkey.encode("utf-8")
-    pubkey = serialization.load_pem_public_key(pubkey)
-    x_pub = format(pubkey.public_numbers().x, '064x')
-    y_pub = format(pubkey.public_numbers().y, '064x')
+async def check_signature(packet, x_pub, y_pub):
+    # pubkey = pubkey.encode("utf-8")
+    # pubkey = serialization.load_pem_public_key(pubkey)
+    # x_pub = format(pubkey.public_numbers().x, '064x')
+    # y_pub = format(pubkey.public_numbers().y, '064x')
 
     pub_key_attribute_dict = {
             'KTY': 'EC2',
@@ -127,7 +141,7 @@ async def check_signature(packet, pubkey):
 
     decoded = Countersign0Message(
         # phdr = {Algorithm: Es256},
-        #payload = 'signed message'.encode('utf-8')
+        # payload = 'signed message'.encode('utf-8')
         payload = packet
     )
     decoded.key = pub_cose_key
@@ -140,11 +154,14 @@ async def check_signature(packet, pubkey):
         return False
 
 
-async def generate_key_sym(privkey, pubkey):
+async def generate_key_sym(privkey, x_pub, y_pub):
     privkey = serialization.load_pem_private_key(privkey, password=None)
 
-    pubkey = pubkey.encode("utf-8")
-    pubkey = serialization.load_pem_public_key(pubkey)
+    # pubkey = pubkey.encode("utf-8")
+    # pubkey = serialization.load_pem_public_key(pubkey)
+    x_pub_int = int(x_pub, 16)
+    y_pub_int = int(y_pub, 16)
+    pubkey = ec.EllipticCurvePublicNumbers(x_pub_int, y_pub_int, ec.SECP256R1()).public_key()
 
     # ECDH
     s_key = privkey.exchange(ec.ECDH(), pubkey)
@@ -250,10 +267,10 @@ async def sign(encrypted, privkey):
     return packet
 
 
-def verify_signature_hash(pubkey, data, signature) :
-    pubkey = serialization.load_pem_public_key(pubkey.encode("utf-8"))
-    x_pub = format(pubkey.public_numbers().x, '064x')
-    y_pub = format(pubkey.public_numbers().y, '064x')
+def verify_signature_hash(x_pub, y_pub, data, signature) :
+    # pubkey = serialization.load_pem_public_key(pubkey.encode("utf-8"))
+    # x_pub = format(pubkey.public_numbers().x, '064x')
+    # y_pub = format(pubkey.public_numbers().y, '064x')
     p = Point(curve=NIST256p.curve, x=int(x_pub, 16), y=int(y_pub, 16))
 
     vk = VerifyingKey.from_public_point(p, NIST256p, sha256)
