@@ -24,6 +24,7 @@ collection_MSG = db['MSG_GATEWAY']
 collection_MPC = db['MPC']
 
 ether_add = '0x956015029B53403D6F39cf1A37Db555F03FD74dc'
+private_key = "3c1a2e912be2ccfd0a9802a73002fdaddff5d6e7c4d6aac66a8d5612277c7b9e"
 
 infuria_url = "https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
 web3 = web3s.Web3s(web3s.Web3s.HTTPProvider(infuria_url))
@@ -70,6 +71,10 @@ packet_forwarder_response_add = 0
 # y_pub = "d4dd6437103adbce83c75788f376e67bb8ab7fcc75aee9332bd209207723b26f"
 
 message_price = 100
+# balance_threshold is indicated in percent --> if > balance_threshold, close the contract
+balance_threshold = 0.8
+# time_threshold is indicated in seconds --> if < time_threshold remaining, close the contract
+time_threshold = 2 * 24 * 60 * 60
 
 
 async def save_msg(msg, pType, counter, deviceAdd, host, port) :
@@ -102,6 +107,11 @@ async def get_mpc_document(contract_add) :
     x = {"_id" : contract_add}
     document = await collection_MPC.find_one(x)
     return document
+
+
+async def delete_mpc_document(contract_add) :
+    x = {"_id" : contract_add}
+    await collection_MPC.delete_many(x)
 
 
 async def store_mpc(contract_add, signature, new_amount, expiration, remote_host) :
@@ -591,8 +601,8 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                         if verified == True :
                             # send down_message if any
                             if down_message != b"down_message" and payed_amount == 2*message_price:
-                                verified = await verify_down(down_message)
-                                if verified :
+                                verified2 = await verify_down(down_message)
+                                if verified2 :
                                     messageQueue.put(down_message)
 
                             # send message
@@ -600,12 +610,29 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                             print("message :", message)
                             # if message != None :
                             #     await websocket.send(message['msg'])
+                        elif verified ==  "error : smart contract closed":
+                            message = verified
+                            # send down_message if any
+                            if down_message != b"down_message" and payed_amount == 2*message_price:
+                                verified = await verify_down(down_message)
+                                if verified :
+                                    messageQueue.put(down_message)
+
+                            # send message
+                            message2 = await get_and_pay(remote_host, deviceAdd, counter_header)
+                            print("message2 :", message2)
+
                         else :
                             message = None
 
-                    
                     if message != b"" and message != None :
-                        await websocket.send(message['msg'])
+                        if message == "error : smart contract closed":
+                            await websocket.send(message)
+                            await websocket.send(message2['msg'])
+                        
+                        else :
+                            await websocket.send(message['msg'])
+                        
                         print("message sent to server")
 
                         if down_message == b"down_message" and payment_list[0] != 'OMG':
@@ -623,14 +650,19 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                                     payed_amount = int(payment_list[3])
 
                                     verified = await verify_mpc_payment(signature, contract_add, payed_amount, remote_host)
-                                    if verified == True and response != "nothing":
-                                        verified = await verify_down(response)
-                                        if verified :
+                                    if verified != False and response != "nothing":
+                                        verified2 = await verify_down(response)
+                                        if verified2 :
                                             messageQueue.put(response)
+                                            if verified == "error : smart contract closed":
+                                                await websocket.send("error : smart contract closed")
+                                            else :
+                                                await websocket.send("success")
+
 
 
                     else :
-                        await websocket.send("payment is invalid")
+                        await websocket.send("invalid payment")
 
                 else :
                     print(payment_receipt)
@@ -721,30 +753,55 @@ async def verify_mpc_payment(signature, contract_add, payed_amount, remote_host)
             balance = await web3.eth.getBalance(contract_add)
             print("balance :", balance)
             if balance > new_amount :
-
+                
                 # verify signature
                 valid_sig = await contract_mpc.functions.isValidSignature(new_amount, signature).call()
                 print("valid_sig :", valid_sig)
 
                 if valid_sig :
-                    # send down_message if any
-                    # if down_message != b"down_message" and payed_amount == 2*message_price:
-                    #     messageQueue.put(down_message)
 
-                    # store in MPC DB
-                    await store_mpc(contract_add, signature, new_amount, expiration, remote_host)
+                    # if a threshold of balance and time is passed, close the contract
 
-                    # send message
-                    # message = await get_and_pay(remote_host, deviceAdd, counter_header)
-                    # print("message :", message)
-                    # if message != None :
-                    #     await websocket.send(message['msg'])
-                    return True
-                
+                    balance_limit = balance_threshold * balance
+                    time_limit = expiration - time_threshold
+                    if new_amount < balance_limit and epoch_time < time_limit :
+                        print("threshold not exceeded")
+
+                        # store in MPC DB
+                        await store_mpc(contract_add, signature, new_amount, expiration, remote_host)
+
+                        # send message
+                        # message = await get_and_pay(remote_host, deviceAdd, counter_header)
+                        # print("message :", message)
+                        # if message != None :
+                        #     await websocket.send(message['msg'])
+                        return True
+
+                    else :
+                        print("threshold exceeded")
+                        # close the contract
+                        nonce = await web3.eth.getTransactionCount(ether_add)  
+                        chainId = await web3.eth.chainId
+                        
+                        transaction = contract_mpc.functions.close(new_amount, signature).buildTransaction({
+                            'chainId': chainId,
+                            'gas': 70000,
+                            'gasPrice': web3.toWei('1', 'gwei'),
+                            'nonce': nonce,
+                        })
+                        signed_txn = web3.eth.account.signTransaction(transaction, private_key=private_key)
+                        close = await web3.eth.sendRawTransaction(signed_txn.rawTransaction)
+
+                        print("close :", close)
+
+                        # delete the MPC document
+                        await delete_mpc_document(contract_add)
+                        return "error : smart contract closed"
+
                 else :
                     print("signature is not valid")
                     return False
-            
+
             else :
                 print("not enough balance in the smart contract")
                 return False
