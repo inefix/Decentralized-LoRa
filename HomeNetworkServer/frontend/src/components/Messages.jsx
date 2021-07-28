@@ -443,13 +443,13 @@ class Messages extends React.Component {
               <Card.Body>
                 <Card.Title>{message.payload}</Card.Title>
                 <Card.Text>
-                  {message.header.pType}, {message.header.counter}, {message.header.deviceAdd}
+                  {message.pType}, {message.counter}, {message.deviceAdd}
                 </Card.Text>
               </Card.Body>
               </Col>
               <Col>
               <div>
-              <Button className="mybutton_message" variant="success" onClick={this.openModalSend(message.header.deviceAdd)}>Respond</Button>
+              <Button className="mybutton_message" variant="success" onClick={this.openModalSend(message.deviceAdd)}>Respond</Button>
               {/* <Button variant="secondary" onClick={this.componentDidMount}>Modify</Button> */}
               <Button className="mybutton_message2" variant="danger" onClick={this.deleteClick(message._id)}>Delete</Button>
               </div>

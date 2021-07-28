@@ -5,6 +5,8 @@ import { Button, Card, Modal, Row, Col, Form, Spinner } from 'react-bootstrap';
 // import Web3 from 'web3';
 import { ethers } from 'ethers'
 import { loraResolverAbi } from './abis';
+// import BigNumber from 'bn.js';
+import bigInt from 'big-integer';
 
 // const web3 = new Web3(Web3.givenProvider);
 // const contractAddr = '0xc3C5B3159dE1d2f348Ff952a7175648E77Af23c7';
@@ -14,9 +16,9 @@ import { loraResolverAbi } from './abis';
 const contractAddr = '0x4a9fF7c806231fF7d4763c1e83E8B131467adE61';
 // const SimpleContract = new web3.eth.Contract(simpleStorageAbi, contractAddr);
 
-const serverAdd = 2745991926
-const x_pub_server = "c29769136166eec1299e1b5d56c48de1787a3f72f0e8ee5c14357ef5b78fc6ea"
-const y_pub_server = "7666b00c308248cf824c8e224dd8ffcc4ccd1362c822f2ea82f5b01f79e1b49a"
+// const serverAdd = 2745991926
+// const x_pub_server = "c29769136166eec1299e1b5d56c48de1787a3f72f0e8ee5c14357ef5b78fc6ea"
+// const y_pub_server = "7666b00c308248cf824c8e224dd8ffcc4ccd1362c822f2ea82f5b01f79e1b49a"
 
 
 class Devices extends React.Component {
@@ -36,8 +38,9 @@ class Devices extends React.Component {
       val2: "",
       down: "",
       add: [],
+      server: [],
       willShowLoader: false,
-      error: false
+      error: false,
     };
 
     this.componentDidMount = this.componentDidMount.bind(this);
@@ -218,34 +221,98 @@ class Devices extends React.Component {
       console.log(error); 
     });
 
-    // look if server already stored in db, otherwise, store it
-    this.getDeviceBlockchain()
+    // get the ip of the server
+    const url2 = 'http://163.172.130.246:8080/ip';
+    axios.get(url2).then(response => response.data)
+    .then((data) => {
+      // look if server already stored in db, otherwise, store it
+      this.setState({ server: data })
+      this.getDeviceBlockchain(data)
+     })
+    .catch(function (error) {
+      console.log(error); 
+    });
   }
 
 
-  async getDeviceBlockchain(){
+  async getDeviceBlockchain(server){
     if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
       const provider = new ethers.providers.Web3Provider(window.ethereum)
       const contract = new ethers.Contract(contractAddr, loraResolverAbi, provider)
       try {
-        const data = await contract.ipv4Servers(serverAdd);
-        // const data = await contract.publicstoredData()
-        console.log('data: ', data)
+
+        // if ip4
+        var data = ""
+        if (server['ADDR_type'] === "IPv4"){
+          data = await contract.ipv4Servers(server["ADDR_int"]);
+          // const data = await contract.publicstoredData()
+          console.log('data: ', data)
+        }
+        if (server['ADDR_type'] === "IPv6"){
+          console.log("get IPv6")
+          var num = bigInt(server["ADDR_int"])
+          // console.log(num)
+          data = await contract.ipv6Servers(num.value);
+          // const data = await contract.publicstoredData()
+          console.log('data: ', data)
+        }
+        if (server['ADDR_type'] === "domain"){
+          data = await contract.domainServers(server["ADDR_int"]);
+          // const data = await contract.publicstoredData()
+          console.log('data: ', data)
+        }
+
         if (data['owner'] === "0x0000000000000000000000000000000000000000"){
           console.log("add device")
 
-          const signer = provider.getSigner()
-          const contract = new ethers.Contract(contractAddr, loraResolverAbi, signer)
-          const transaction = await contract.registerIpv4Server(serverAdd, "0x" + x_pub_server, "0x" + y_pub_server)
-          this.setState({willShowLoader: true});
-          await transaction.wait()
-          this.setState({willShowLoader: false});
+          // get pubkey
+          const url = 'http://163.172.130.246:8080/pubkey';
+          axios.get(url).then(response => response.data)
+          .then((data) => {
+            this.store_pubkey(server, data)
+          })
+          .catch(function (error) {
+            console.log(error); 
+          });
 
         }
       } catch (err) {
         console.log("Error: ", err)
       }
     } 
+  }
+
+  async store_pubkey(server, pubkey){
+    if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum)
+        const signer = provider.getSigner()
+        const contract = new ethers.Contract(contractAddr, loraResolverAbi, signer)
+
+        if (server['ADDR_type'] === "IPv4"){
+          const transaction = await contract.registerIpv4Server(server["ADDR_int"], "0x" + pubkey["x_pub_server"], "0x" + pubkey["y_pub_server"])
+          this.setState({willShowLoader: true});
+          await transaction.wait()
+          this.setState({willShowLoader: false});
+        }
+        if (server['ADDR_type'] === "IPv6"){
+          console.log("add IPv6")
+          var num = bigInt(server["ADDR_int"])
+          const transaction = await contract.registerIpv6Server(num.value, "0x" + pubkey["x_pub_server"], "0x" + pubkey["y_pub_server"])
+          this.setState({willShowLoader: true});
+          await transaction.wait()
+          this.setState({willShowLoader: false});
+        }
+        if (server['ADDR_type'] === "domain"){
+          const transaction = await contract.registerDomainServer(server["ADDR_int"], "0x" + pubkey["x_pub_server"], "0x" + pubkey["y_pub_server"])
+          this.setState({willShowLoader: true});
+          await transaction.wait()
+          this.setState({willShowLoader: false});
+        }
+      } catch (err) {
+        console.log("Error: ", err)
+      }
+    }
   }
 
 
@@ -287,7 +354,20 @@ class Devices extends React.Component {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const signer = provider.getSigner()
         const contract = new ethers.Contract(contractAddr, loraResolverAbi, signer)
-        const transaction = await contract.registerIpv4Device(deviceAdd, serverAddr, port, x_pub, y_pub)
+
+        var transaction = ""
+        if (this.state.server['ADDR_type'] === "IPv4"){
+          transaction = await contract.registerIpv4Device(deviceAdd, serverAddr, port, x_pub, y_pub)
+        }
+        if (this.state.server['ADDR_type'] === "IPv6"){
+          var num = bigInt(serverAddr)
+          transaction = await contract.registerIpv6Device(deviceAdd, num.value, port, x_pub, y_pub)
+        }
+        if (this.state.server['ADDR_type'] === "domain"){
+          transaction = await contract.registerDomainDevice(deviceAdd, serverAddr, port, x_pub, y_pub)
+        }
+
+        // const transaction = await contract.registerIpv4Device(deviceAdd, serverAddr, port, x_pub, y_pub)
         // console.log("end 1");
         this.setState({willShowLoader: true});
         await transaction.wait()
@@ -394,7 +474,7 @@ class Devices extends React.Component {
                 <div>
                   <Button className="mybutton_device" variant="success" onClick={this.openModalSend(device.name, device.deviceAdd)}>Send</Button>
                   <Button className="mybutton_device" variant="secondary" onClick={this.openModal(device.name, device.deviceAdd, device.pubkey)}>Modify</Button>
-                  <Button className="mybutton_device" variant="danger" onClick={this.deleteClick(device.deviceAdd)}>Delete</Button>
+                  <Button className="mybutton_device2" variant="danger" onClick={this.deleteClick(device.deviceAdd)}>Delete</Button>
                 </div>
                 </Col>
               </Row>
