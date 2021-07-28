@@ -26,11 +26,11 @@ collection_MPC = db['MPC']
 ether_add = '0x956015029B53403D6F39cf1A37Db555F03FD74dc'
 private_key = "3c1a2e912be2ccfd0a9802a73002fdaddff5d6e7c4d6aac66a8d5612277c7b9e"
 
-infuria_url = "https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
-web3 = web3s.Web3s(web3s.Web3s.HTTPProvider(infuria_url))
+infura_url = "https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
+web3 = web3s.Web3s(web3s.Web3s.HTTPProvider(infura_url))
 
-# infuria_url_rinkeby = "https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
-# web3_rinkeby = web3s.Web3s(web3s.Web3s.HTTPProvider(infuria_url_rinkeby))
+# infura_url_rinkeby = "https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
+# web3_rinkeby = web3s.Web3s(web3s.Web3s.HTTPProvider(infura_url_rinkeby))
 
 # web3.eth.default_account = ether_add
 
@@ -666,7 +666,6 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
 
                 else :
                     print(payment_receipt)
-
 
 
                     
