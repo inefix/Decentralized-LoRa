@@ -19,7 +19,11 @@ import web3s
 import requests_async as requests
 
 ADDR = "163.172.130.246"
+# ADDR = "2001:0620:0000:0000:0211:24FF:FE80:C12C"
 PORT = 9999
+
+ADDR_int = ADDR
+ADDR_type = None
 
 # payment_method can be 'OMG' or 'MPC'
 payment_method = 'MPC'  
@@ -30,14 +34,17 @@ automatic_response = True
 
 if ADDR.count(":") > 1:
     print("IPv6")
-    ADDR = int(ipaddress.IPv6Address(ADDR))
-    # print(ADDR)
+    ADDR_int = int(ipaddress.IPv6Address(ADDR))
+    ADDR_type = "IPv6"
+    print(ADDR_int)
 elif ADDR[0].isdigit() and ADDR[len(ADDR)-1].isdigit() :
     print("IPv4")
-    ADDR = int(ipaddress.IPv4Address(ADDR))
-    print(ADDR)
+    ADDR_int = int(ipaddress.IPv4Address(ADDR))
+    ADDR_type = "IPv4"
+    print(ADDR_int)
 else :
     print("domain")
+    ADDR_type = "domain"
 
 # ADDR = str(ipaddress.IPv4Address(ADDR))
 # print(ADDR)
@@ -67,7 +74,14 @@ x_pub_server = "c29769136166eec1299e1b5d56c48de1787a3f72f0e8ee5c14357ef5b78fc6ea
 y_pub_server = "7666b00c308248cf824c8e224dd8ffcc4ccd1362c822f2ea82f5b01f79e1b49a"
 
 
-serverAdd = "163.172.130.246"
+async def get_addr_server(request):
+    response = {"ADDR_int" : ADDR_int, "ADDR_type" : ADDR_type}
+    return web.json_response(response)
+
+
+async def get_server_pubkey(request):
+    response = {"x_pub_server" : x_pub_server, "y_pub_server" : y_pub_server}
+    return web.json_response(response)
 
 
 async def read_increment_counter():
@@ -105,7 +119,7 @@ async def test(request):
     y_pub = "d4dd6437103adbce83c75788f376e67bb8ab7fcc75aee9332bd209207723b26f"
     ts = str(time.time())
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": "test", "serverAdd": ADDR, "port": PORT}
+    x = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": "test", "serverAdd": ADDR_int, "port": PORT}
 
     # check unique id
     y = {"_id" : deviceAdd}
@@ -237,13 +251,18 @@ async def remove_all_msg(request):
     return web.Response(status=204)
 
 
-# curl -X POST -d '{"header": {"pType": "DataConfirmedUp", "counter": "0", "deviceAdd": "0x1145f03880d8a975"}, "payload": "ciao"}' http://163.172.130.246:8080/msg
+# curl -X POST -d '{"pType": "DataConfirmedUp", "counter": "0", "deviceAdd": "0x1145f03880d8a975", "payload": "ciao"}' http://163.172.130.246:8080/msg
 async def create_msg(request):
     data = await request.json()
 
-    if 'header' not in data:
-        return web.json_response({'error': '"header" is a required field'}, status=404)
-    header = data['header']
+    if 'pType' not in data:
+        return web.json_response({'error': '"pType" is a required field'}, status=404)
+
+    if 'counter' not in data:
+        return web.json_response({'error': '"counter" is a required field'}, status=404)
+
+    if 'deviceAdd' not in data:
+        return web.json_response({'error': '"deviceAdd" is a required field'}, status=404)
   
     if 'payload' not in data:
         return web.json_response({'error': '"payload" is a required field'}, status=404)
@@ -307,6 +326,13 @@ async def remove_msg(request):
     await collection_MSG.delete_many(x)
 
     return web.Response(status=204)
+
+
+async def get_last_msg(deviceAdd):
+    x = {"deviceAdd" : deviceAdd, "payed" : True}
+
+    document = await collection_MSG.find_one(x, sort=[('counter', -1)])
+    return document
 
 
 async def get_all_down(request):
@@ -418,10 +444,10 @@ async def generate_device(request):
     privkey, x_pub, y_pub = await generate_key_pair()
     ts = str(time.time())
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    # responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
-    # stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "pubkey": pubkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
-    responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
-    stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR, "port": PORT}
+    # responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
+    # stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
+    responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
+    stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": deviceAdd, "port": PORT}
 
     document = await collection_DEVICE.find_one(stored)
 
@@ -579,7 +605,7 @@ async def process(message, hash_structure, gateway, down):
                 owner = device[6]
                 # not necessary to do all that just for the owner --> ADDR
 
-                x = {"_id" : id, "date" : date, "owner" : owner, "gateway" : gateway, "payed" : automatic_pay, "header" : {"pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd}, "payload" : decrypted}
+                x = {"_id" : id, "date" : date, "owner" : owner, "gateway" : gateway, "payed" : automatic_pay, "pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd, "payload" : decrypted}
                 await collection_MSG.insert_one(x)
 
                 #print("pType :", pType)
@@ -588,7 +614,7 @@ async def process(message, hash_structure, gateway, down):
                 if down == b"down_message" and automatic_response == True and payment_method != 'OMG':
                     if pType == "DataConfirmedUp":
                         counter = await read_increment_counter()
-                        header_respond = ["ACKDown", counter, serverAdd]
+                        header_respond = ["ACKDown", counter, ADDR]
                         # can insert a function to generate some payload !
                         payload_respond = "Received"
                         encrypted = await encrypt(header_respond, payload_respond, key)
@@ -622,7 +648,7 @@ async def down_message(deviceAdd, x_pub, y_pub):
     if payload_respond != None :
         print("payload_respond :", payload_respond['payload'])
         counter = await read_increment_counter()
-        header_respond = ["DataUnconfirmedDown", counter, serverAdd]
+        header_respond = ["DataUnconfirmedDown", counter, ADDR]
         encrypted = await encrypt(header_respond, payload_respond['payload'], key)
         packet = await sign(encrypted, serialized_private_server)
         return packet, payload_respond["_id"]
@@ -864,9 +890,9 @@ async def ws(websocket, path):
             hash_structure = await websocket.recv()
             signature = await websocket.recv()
             packet = await websocket.recv()
-            print(f"< {hash_structure} {type(hash_structure)}")
-            print(f"< {signature} {type(signature)}")
-            print(f"< {packet} {type(packet)}")
+            # print(f"< {hash_structure} {type(hash_structure)}")
+            # print(f"< {signature} {type(signature)}")
+            # print(f"< {packet} {type(packet)}")
 
             packet = packet.split(",")
             deviceAdd = packet[0]
@@ -876,79 +902,112 @@ async def ws(websocket, path):
             # verifies unique counter
             # get last message document from this device
 
-            # verifies that gateway is the same
+            # verify that counter_header not already registred 
+            # get last counter_header for this device in msg DB
+            last_msg = await get_last_msg(deviceAdd)
+            if last_msg == None :
+                last_counter = -1
+                last_gateway = gateway_add
+            else :
+                last_counter = int(last_msg['counter'])
+                last_gateway = last_msg['gateway']
+            
+            # if counter_header > last_counter :
+            if 10 > last_counter :
+                print("last_counter :", last_counter)
+            
+                # verify that gateway is the same
+                # if gateway_add != last_gateway:
+                if "gateway_add" != last_gateway:
+                    print("sleep")
+                    await asyncio.sleep(10)
+                    last_msg = await get_last_msg(deviceAdd)
+                    last_counter = int(last_msg['counter'])
+                    # if the message has been processed in the meantime
+                    # if counter_header <= last_counter:
+                    if 0 <= last_counter:
+                        raise ValueError
 
-            # if does not match, wait a moment to see if receive the message from the correct gateway,
-            # otherwise process this one
+                # if does not match, wait a moment to see if receive the message from the correct gateway,
+                # otherwise process this one
 
-            verified = await verify_hash(hash_structure, signature, deviceAdd)
+                verified = await verify_hash(hash_structure, signature, deviceAdd)
 
-            if verified :
+                if verified :
 
-                down, down_id, price = await check_if_down(deviceAdd)
+                    down, down_id, price = await check_if_down(deviceAdd)
 
-                # down, down_id, price = await process_hash(hash_structure, signature, deviceAdd, counter_header, gateway_add)
+                    # down, down_id, price = await process_hash(hash_structure, signature, deviceAdd, counter_header, gateway_add)
 
-                payment_receipt = None
-                if payment_method == 'OMG' :
-                    payment_receipt = await omg_pay(deviceAdd, counter_header, gateway_add, price)
-                if payment_method == 'MPC' :
-                    payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, price)
+                    payment_receipt = None
+                    if payment_method == 'OMG' :
+                        payment_receipt = await omg_pay(deviceAdd, counter_header, gateway_add, price)
+                    if payment_method == 'MPC' :
+                        payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, price)
 
-                if "error" not in payment_receipt and payment_receipt != None:
+                    if "error" not in payment_receipt and payment_receipt != None:
 
-                    if down != b"down_message" :
-                        await pay_down(down_id)
+                        if down != b"down_message" :
+                            await pay_down(down_id)
 
-                    await websocket.send(payment_receipt)
-                    await websocket.send(down)
-                    # print(f"> {response}")
-
-                    message = await websocket.recv()
-
-                    if message ==  "error : smart contract closed" :
-                        # get the message
-                        message = await websocket.recv()
-                        await close_contract(gateway_add)
-
-                    if message != "invalid payment":
-                        if type(message) == bytes :
-                            try :
-                                response = await process(message, hash_structure, gateway_add, down)
-                            except Exception as e:
-                                response = b'error, corrupted data'
-                            # response = await process(message, hash_structure, gateway_add)
-                        else :
-                            response = b'error, did not receive bytes message'
-                    else :
-                        print(message)
-                        response = b"payment error"
-
-                    print("response :", response)
-
-                    if down == b"down_message" and response != b"nothing" and b"error" not in response and payment_method != 'OMG':
-                        print("send response")
-
-                        # pay for the message if it is actual content
-                        payment_receipt = "nothing"
-                        print("pay")
-                        if payment_method == 'MPC' :
-                            payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, message_price)
                         await websocket.send(payment_receipt)
-                        await websocket.send(response)
-                        success = await websocket.recv()
-                        if success == "error : smart contract closed":
+                        await websocket.send(down)
+                        # print(f"> {response}")
+
+                        message = await websocket.recv()
+
+                        if message ==  "error : smart contract closed" :
+                            # get the message
+                            message = await websocket.recv()
                             await close_contract(gateway_add)
-                
+
+                        if message != "invalid payment":
+                            if type(message) == bytes :
+                                try :
+                                    response = await process(message, hash_structure, gateway_add, down)
+                                except Exception as e:
+                                    response = b'error, corrupted data'
+                                # response = await process(message, hash_structure, gateway_add)
+                            else :
+                                response = b'error, did not receive bytes message'
+                        else :
+                            print(message)
+                            response = b"payment error"
+
+                        print("response :", response)
+
+                        if down == b"down_message" and response != b"nothing" and b"error" not in response and payment_method != 'OMG':
+                            print("send response")
+
+                            # pay for the message if it is actual content
+                            payment_receipt = "nothing"
+                            print("pay")
+                            if payment_method == 'MPC' :
+                                payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, message_price)
+                            await websocket.send(payment_receipt)
+                            await websocket.send(response)
+                            success = await websocket.recv()
+                            if success == "error : smart contract closed":
+                                await close_contract(gateway_add)
+                    
+                    else :
+                        await websocket.send("error : payment error")
+
                 else :
-                    await websocket.send("error : payment error")
+                    await websocket.send("error : invalid signature")
 
             else :
-                await websocket.send("error : invalid signature")
+                await websocket.send("error : message already received")
 
 
         except websockets.exceptions.ConnectionClosed as e:
             print(e)
+            return
+
+        except ValueError:
+            response = "error : message already processed"
+            print(response)
+            await websocket.send(response)
             return
 
 
@@ -966,6 +1025,8 @@ cors = aiohttp_cors.setup(app, defaults={
 
 cors.add(app.router.add_get('', start))
 cors.add(app.router.add_get('/', start))
+cors.add(app.router.add_get('/ip', get_addr_server))
+cors.add(app.router.add_get('/pubkey', get_server_pubkey))
 cors.add(app.router.add_get('/test', test))
 cors.add(app.router.add_get('/devices', get_all_devices))
 cors.add(app.router.add_get('/devices/', get_all_devices))
