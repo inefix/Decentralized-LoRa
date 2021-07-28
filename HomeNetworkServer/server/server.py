@@ -488,6 +488,11 @@ async def get_one_gateway(gateway_add):
     return document
 
 
+async def delete_one_gateway(gateway_add):
+    x = {"_id" : gateway_add}
+    await collection_GATEWAY.delete_many(x)
+
+
 async def create_gateway(gateway_add, contract_add, amount_payed, amount_creation, expiration):
     # check unique id
     x = {"_id" : gateway_add}
@@ -715,6 +720,20 @@ async def down_message(deviceAdd, x_pub, y_pub):
 #         return "Signature does not match the hash"
 
 
+async def close_contract(gateway_add):
+    # verifies that the smart contract has been closed
+    # get the contract_add
+    gateway_document = await get_one_gateway(gateway_add)
+    contract_add = gateway_document['contract']
+    # wait a moment
+    await asyncio.sleep(20)
+    balance = await web3.eth.getBalance(contract_add)
+    # print("balance :", balance)
+    if balance == 0:
+        # delete the gateway
+        await delete_one_gateway(gateway_add)
+
+
 
 async def verify_hash(hash_structure, signature, deviceAdd):
     try :
@@ -886,7 +905,13 @@ async def ws(websocket, path):
                     # print(f"> {response}")
 
                     message = await websocket.recv()
-                    if message != "payment error":
+
+                    if message ==  "error : smart contract closed" :
+                        # get the message
+                        message = await websocket.recv()
+                        await close_contract(gateway_add)
+
+                    if message != "invalid payment":
                         if type(message) == bytes :
                             try :
                                 response = await process(message, hash_structure, gateway_add, down)
@@ -911,6 +936,9 @@ async def ws(websocket, path):
                             payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, message_price)
                         await websocket.send(payment_receipt)
                         await websocket.send(response)
+                        success = await websocket.recv()
+                        if success == "error : smart contract closed":
+                            await close_contract(gateway_add)
                 
                 else :
                     await websocket.send("error : payment error")
