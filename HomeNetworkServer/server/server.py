@@ -441,12 +441,13 @@ async def pay_down(id) :
 async def generate_device(request):
     deviceAdd = await generate_deviceAdd()
     # privkey, pubkey = await generate_key_pair()
-    privkey, x_pub, y_pub = await generate_key_pair()
+    # privkey, x_pub, y_pub = await generate_key_pair()
+    private_value, x_pub, y_pub = await generate_key_pair()
     ts = str(time.time())
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
     # responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
     # stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
-    responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
+    responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "private_value": private_value, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
     stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": deviceAdd, "port": PORT}
 
     document = await collection_DEVICE.find_one(stored)

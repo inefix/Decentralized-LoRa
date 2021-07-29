@@ -52,12 +52,16 @@ async def generate_key_pair():
         backend=default_backend()
     )
 
-    serialized_private_device = priv_device.private_bytes(
-        encoding=serialization.Encoding.PEM,        # also DER
-        format=serialization.PrivateFormat.PKCS8,   # also TraditionalOpenSSL or PKCS8
-        encryption_algorithm=serialization.NoEncryption()
-    ).decode("utf-8")
-    print("serialized_private_device :", serialized_private_device)
+    # serialized_private_device = priv_device.private_bytes(
+    #     encoding=serialization.Encoding.PEM,        # also DER
+    #     format=serialization.PrivateFormat.PKCS8,   # also TraditionalOpenSSL or PKCS8
+    #     encryption_algorithm=serialization.NoEncryption()
+    # ).decode("utf-8")
+    # print("serialized_private_device :", serialized_private_device)
+
+    private_value = priv_device.private_numbers().private_value
+    private_value = str(private_value)
+    print("private_value :", private_value)
 
     x_pub = format(priv_device.private_numbers().public_numbers.x, '064x')
     y_pub = format(priv_device.private_numbers().public_numbers.y, '064x')
@@ -82,7 +86,8 @@ async def generate_key_pair():
     
 
     # return serialized_private_device, serialized_public_device
-    return serialized_private_device, x_pub, y_pub
+    # return serialized_private_device, x_pub, y_pub
+    return private_value, x_pub, y_pub
 
 
 async def get_header(packet):

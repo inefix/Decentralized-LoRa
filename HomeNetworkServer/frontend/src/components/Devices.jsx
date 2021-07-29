@@ -245,21 +245,18 @@ class Devices extends React.Component {
         var data = ""
         if (server['ADDR_type'] === "IPv4"){
           data = await contract.ipv4Servers(server["ADDR_int"]);
-          // const data = await contract.publicstoredData()
-          console.log('data: ', data)
+          // console.log('data: ', data)
         }
         if (server['ADDR_type'] === "IPv6"){
           console.log("get IPv6")
           var num = bigInt(server["ADDR_int"])
           // console.log(num)
           data = await contract.ipv6Servers(num.value);
-          // const data = await contract.publicstoredData()
-          console.log('data: ', data)
+          // console.log('data: ', data)
         }
         if (server['ADDR_type'] === "domain"){
           data = await contract.domainServers(server["ADDR_int"]);
-          // const data = await contract.publicstoredData()
-          console.log('data: ', data)
+          // console.log('data: ', data)
         }
 
         if (data['owner'] === "0x0000000000000000000000000000000000000000"){
@@ -443,8 +440,8 @@ class Devices extends React.Component {
                         <h5>Public key :</h5>
                         <p>x_pub : {this.state.add.x_pub}</p>
                         <p className="p-test">y_pub : {this.state.add.y_pub}</p>
-                        <h5>Private key :</h5>
-                        <p>{this.state.add.privkey}</p>
+                        <h5>Private value :</h5>
+                        <p>{this.state.add.private_value}</p>
                     </Modal.Body>
                     <Modal.Footer>
                     <Button variant="danger" onClick={() => this.handleModalShowHide()}>
