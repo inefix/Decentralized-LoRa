@@ -29,7 +29,7 @@ import React from "react";
 // import Web3 from 'web3';
 // import { simpleStorageAbi } from './components/abis';
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
-import { Navigation, Footer, About, Contact, Devices, Messages } from "./components";
+import { Navigation, Footer, About, Contact, Devices, Messages, Down } from "./components";
 function App() {
   return (
     <div className="App">
@@ -41,6 +41,7 @@ function App() {
           <Route path="/messages" exact component={() => <Messages />} />
           <Route path="/about" exact component={() => <About />} />
           <Route path="/contact" exact component={() => <Contact />} />
+          <Route path="/down" exact component={() => <Down />} />
         </Switch>
         <Footer />
       </Router>

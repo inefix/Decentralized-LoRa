@@ -487,7 +487,7 @@ async def get_address(request):
     
     address['total'] = counter
 
-    print(address)
+    # print(address)
     return web.json_response(address)
 
 
