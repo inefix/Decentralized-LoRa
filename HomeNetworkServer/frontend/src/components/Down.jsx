@@ -109,7 +109,7 @@ class Down extends React.Component {
               <Card.Body>
                 <Card.Title>{message.payload}</Card.Title>
                 <Card.Text>
-                  {message.deviceAdd}, payed : {String(message.payed)}
+                  {message.deviceAdd}, sent : {String(message.payed)}
                 </Card.Text>
               </Card.Body>
               </Col>

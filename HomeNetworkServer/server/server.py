@@ -157,26 +157,58 @@ async def create_device(request):
     if not isinstance(deviceAdd, str) or not len(deviceAdd):
         return web.json_response({'error': '"deviceAdd" must be a string with at least one character'}, status=404)
     
-    if 'pubkey' not in data:
-        return web.json_response({'error': '"pubkey" is a required field'}, status=404)
-    pubkey = data['pubkey']
-    if not isinstance(pubkey, str) or not len(pubkey):
-        return web.json_response({'error': '"pubkey" must be a string with at least one character'}, status=404)
+    if 'x_pub' not in data:
+        return web.json_response({'error': '"x_pub" is a required field'}, status=404)
+    x_pub = data['x_pub']
+    if not isinstance(x_pub, str) or not len(x_pub):
+        return web.json_response({'error': '"x_pub" must be a string with at least one character'}, status=404)
+
+    if 'y_pub' not in data:
+        return web.json_response({'error': '"y_pub" is a required field'}, status=404)
+    y_pub = data['y_pub']
+    if not isinstance(y_pub, str) or not len(y_pub):
+        return web.json_response({'error': '"y_pub" must be a string with at least one character'}, status=404)
     
     # check unique id
     x = {"_id" : data['deviceAdd']}
     document = await collection_DEVICE.find_one(x)
     if str(type(document)) == "<class 'NoneType'>":
         data['_id'] = data['deviceAdd']
-        data['name'] = data['deviceAdd']
         data['ts'] = str(time.time())
         data['date'] = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+        data["port"] = PORT
         result = await collection_DEVICE.insert_one(data)
         # store new device in smart contract
         #return web.Response(text="Added successfuly", status=204)
-        return web.json_response({'success': 'Added successfuly'})
+        data["serverAdd"] = ADDR_int
+        return web.json_response(data)
     else :
         return web.json_response({'error': 'Device already registred'}, status=404)
+
+
+
+    
+    # deviceAdd = await generate_deviceAdd()
+    # # privkey, pubkey = await generate_key_pair()
+    # # privkey, x_pub, y_pub = await generate_key_pair()
+    # private_value, x_pub, y_pub = await generate_key_pair()
+    # ts = str(time.time())
+    # date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
+    # # responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
+    # # stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
+    # responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "private_value": private_value, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
+    # stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": deviceAdd, "port": PORT}
+
+    # document = await collection_DEVICE.find_one(stored)
+
+    # if str(type(document)) == "<class 'NoneType'>":
+    #     await collection_DEVICE.insert_one(stored)
+    #     return web.json_response(responded)
+    # else :
+    #     return web.json_response({'error': 'Device already created'}, status=404)
+
+
+
 
 
 async def get_one_device(request):

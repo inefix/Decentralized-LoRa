@@ -31,9 +31,11 @@ class Devices extends React.Component {
       showHide : false,
       modal : false,
       modal_resp : false,
-      name : "test",
-      deviceAdd: "test",
-      pubkey: "test",
+      name : "",
+      deviceAdd: "",
+      x_pub: "",
+      y_pub: "",
+      pubkey: "",
       val: "",
       val2: "",
       down: "",
@@ -49,15 +51,18 @@ class Devices extends React.Component {
   handleModalShowHide() {
     this.setState({ showHide: !this.state.showHide })
     this.setState({ val2: "" })
+    this.setState({ deviceAdd: "" })
+    this.setState({ x_pub: "" })
+    this.setState({ y_pub: "" })
 
-    const url = 'http://163.172.130.246:8080/devices/' + this.state.add.deviceAdd;
-    axios.delete(url).then(response => response.data)
-    .then((data) => {
+    // const url = 'http://163.172.130.246:8080/devices/' + this.state.deviceAdd;
+    // axios.delete(url).then(response => response.data)
+    // .then((data) => {
 
-     })
-    .catch(function (error) {
-      console.log(error);
-    });
+    //  })
+    // .catch(function (error) {
+    //   console.log(error);
+    // });
   }
 
   handleModal2ShowHide() {
@@ -137,15 +142,15 @@ class Devices extends React.Component {
   createDevice(){
     this.setState({ showHide: !this.state.showHide })
     
-    const url = 'http://163.172.130.246:8080/generate';
-    axios.get(url).then(response => response.data)
-    .then((data) => {
-      this.setState({ add: data })
-      //console.log(this.state.add)
-     })
-    .catch(function (error) {
-      console.log(error);
-    });
+    // const url = 'http://163.172.130.246:8080/generate';
+    // axios.get(url).then(response => response.data)
+    // .then((data) => {
+    //   this.setState({ add: data })
+    //   //console.log(this.state.add)
+    //  })
+    // .catch(function (error) {
+    //   console.log(error);
+    // });
   }
 
   async closeAndReload(){
@@ -155,21 +160,25 @@ class Devices extends React.Component {
     // console.log(this.state.add.port);
 
     //console.log(this.state.val2);
-    if(this.state.val2 !== ""){
+    if(this.state.val2 !== "" && this.state.deviceAdd !== "" && this.state.x_pub !== "" && this.state.y_pub !== ""){
       // update server
-      const url = 'http://163.172.130.246:8080/devices/' + this.state.add.deviceAdd;
-      axios.patch(url, {"deviceAdd":this.state.add.deviceAdd, "name":this.state.val2}).then(response => response.data)
+      const url = 'http://163.172.130.246:8080/devices';
+      axios.post(url, {"deviceAdd":this.state.deviceAdd, "name":this.state.val2, "x_pub": this.state.x_pub, "y_pub": this.state.y_pub}).then(response => response.data)
       .then((data) => {
         this.componentDidMount()
-        this.handleSet(this.state.add.deviceAdd, this.state.add.serverAdd, this.state.add.port, "0x" + this.state.add.x_pub, "0x" + this.state.add.y_pub)
+        // console.log(data)
+        this.handleSet(this.state.deviceAdd, data["serverAdd"], data["port"], "0x" + this.state.x_pub, "0x" + this.state.y_pub)
       })
       .catch(function (error) {
         console.log(error);
       });
       this.setState({ val2: "" })
+      this.setState({ deviceAdd: "" })
+      this.setState({ x_pub: "" })
+      this.setState({ y_pub: "" })
     } else {
       this.componentDidMount()
-      this.handleSet(this.state.add.deviceAdd, this.state.add.serverAdd, this.state.add.port, "0x" + this.state.add.x_pub, "0x" + this.state.add.y_pub)
+      // this.handleSet(this.state.add.deviceAdd, this.state.add.serverAdd, this.state.add.port, "0x" + this.state.add.x_pub, "0x" + this.state.add.y_pub)
     }
   }
 
@@ -371,7 +380,7 @@ class Devices extends React.Component {
         // console.log("end 2");
         this.setState({willShowLoader: false});
       } catch(e) {
-        console.log("Error, reject");
+        console.log(e);
         this.delete(deviceAdd)
       }
       
@@ -421,7 +430,8 @@ class Devices extends React.Component {
             >
                     {/* <Modal.Header closeButton onClick={() => this.handleModalShowHide()}> */}
                     <Modal.Header>
-                      <Modal.Title className="modal-test">{this.state.add.name}</Modal.Title>
+                      {/* <Modal.Title className="modal-test">{this.state.add.name}</Modal.Title> */}
+                      <Modal.Title className="modal-test">Add a new device</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <h5>Name :</h5>
@@ -429,7 +439,7 @@ class Devices extends React.Component {
                           <Form.Group controlId="formBasicName">
                             {/* <Form.Control type="name" placeholder={this.state.name} /> */}
                             <Form.Control
-                              placeholder={this.state.add.name}
+                              placeholder="name"
                               value={this.state.val2}
                               onChange={e => this.setState({ val2: e.target.value })}
                               type="name"
@@ -437,11 +447,47 @@ class Devices extends React.Component {
                             />
                           </Form.Group>
                         </Form>
+
+                        <h5>deviceAdd :</h5>
+                        <Form>
+                          <Form.Group controlId="formBasicName">
+                            {/* <Form.Control type="name" placeholder={this.state.name} /> */}
+                            <Form.Control
+                              placeholder="deviceAdd"
+                              value={this.state.deviceAdd}
+                              onChange={e => this.setState({ deviceAdd: e.target.value })}
+                              type="name"
+                              className="form-test"
+                            />
+                          </Form.Group>
+                        </Form>
+
                         <h5>Public key :</h5>
-                        <p>x_pub : {this.state.add.x_pub}</p>
-                        <p className="p-test">y_pub : {this.state.add.y_pub}</p>
-                        <h5>Private value :</h5>
-                        <p>{this.state.add.private_value}</p>
+                        <Form>
+                          <Form.Group controlId="formBasicName">
+                            {/* <Form.Control type="name" placeholder={this.state.name} /> */}
+                            <Form.Control
+                              placeholder="x_pub"
+                              value={this.state.x_pub}
+                              onChange={e => this.setState({ x_pub: e.target.value })}
+                              type="name"
+                              className="form-test2"
+                            />
+                          </Form.Group>
+                        </Form>
+                        <Form>
+                          <Form.Group controlId="formBasicName">
+                            {/* <Form.Control type="name" placeholder={this.state.name} /> */}
+                            <Form.Control
+                              placeholder="y_pub"
+                              value={this.state.y_pub}
+                              onChange={e => this.setState({ y_pub: e.target.value })}
+                              type="name"
+                              className="form-test"
+                            />
+                          </Form.Group>
+                        </Form>
+
                     </Modal.Body>
                     <Modal.Footer>
                     <Button variant="danger" onClick={() => this.handleModalShowHide()}>
