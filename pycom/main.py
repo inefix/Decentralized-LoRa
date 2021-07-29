@@ -58,7 +58,7 @@ while True:
 
     counter = 0
     waiting_ack = True
-    while waiting_ack and counter < 25 :
+    while waiting_ack and counter < 40 :
         data = s.recv(512)
 
         if len(data) > 0 :
