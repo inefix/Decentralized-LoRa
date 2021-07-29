@@ -570,6 +570,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                             # verify down
                             verified = await verify_down(down_message)
                             if verified :
+                                print("down signature is valid")
                                 price = message_price * 2
                                 messageQueue.put(down_message)
 
@@ -616,6 +617,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                             if down_message != b"down_message" and payed_amount == 2*message_price:
                                 verified = await verify_down(down_message)
                                 if verified :
+                                    print("down signature is valid")
                                     messageQueue.put(down_message)
 
                             # send message
@@ -653,6 +655,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                                     if verified != False and response != "nothing":
                                         verified2 = await verify_down(response)
                                         if verified2 :
+                                            print("down signature is valid")
                                             messageQueue.put(response)
                                             if verified == "error : smart contract closed":
                                                 await websocket.send("error : smart contract closed")
