@@ -912,20 +912,20 @@ async def ws(websocket, path):
                 last_counter = int(last_msg['counter'])
                 last_gateway = last_msg['gateway']
             
-            # if int(counter_header) > last_counter :
-            if 100 > last_counter :
+            if int(counter_header) > last_counter :
+            # if 100 > last_counter :
                 print("last_counter :", last_counter)
             
                 # verify that gateway is the same
-                # if gateway_add != last_gateway:
-                if "gateway_add" != last_gateway:
+                if gateway_add != last_gateway:
+                # if "gateway_add" != last_gateway:
                     print("sleep")
                     await asyncio.sleep(10)
                     last_msg = await get_last_msg(deviceAdd)
                     last_counter = int(last_msg['counter'])
                     # if the message has been processed in the meantime
-                    # if int(counter_header) <= last_counter:
-                    if 0 <= last_counter:
+                    if int(counter_header) <= last_counter:
+                    # if 0 <= last_counter:
                         raise ValueError
 
                 # if does not match, wait a moment to see if receive the message from the correct gateway,
