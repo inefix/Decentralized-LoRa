@@ -3,6 +3,9 @@ import asyncio
 from serial_asyncio import open_serial_connection
 
 import json
+import sys
+import random
+
 
 # pip3 install cryptography
 from cryptography.hazmat.primitives import hashes
@@ -22,7 +25,7 @@ from cose.keys.keyparam import EC2KpX, EC2KpY, EC2KpX, EC2KpY
 
 # deviceAdd = "0x1145f03880d8a975"
 # new test
-deviceAdd = "0x1591afc43a11f1a4"
+# deviceAdd = "0x844bf9b98959d291"
 
 # x_pub_device = "643866c0256518170f24e8fb01b2333fd7ef142eaae09aa8c122b41b90663d0c"
 # y_pub_device = "d4dd6437103adbce83c75788f376e67bb8ab7fcc75aee9332bd209207723b26f"
@@ -31,9 +34,9 @@ deviceAdd = "0x1591afc43a11f1a4"
 
 
 # new test :
-x_pub_device = "25d8054706cf570842e97fec111781319684f7a753247a3152f04ff72bc4ac19"
-y_pub_device = "c09fb2d8d24772d0bd5bb7b66932aec30e9c4de53c898f38ab2fe3170bc25bb8"
-private_value = "39715938407080499532924403584839907282535437424262944365661151371375605084856"
+# x_pub_device = "d2605555b768324e3920c1e69d4ffe2bbe35c175b7fe8e6e7c8ffbb5f4837ffb"
+# y_pub_device = "d209671644048be5d2d27f021a96f34613ffcc44330f9eca3ba84bb096321912"
+# private_value = "36228857959517629172661374433975088390008576487536285977207444526088874348569"
 
 
 # serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
@@ -47,7 +50,7 @@ y_pub_server = "7666b00c308248cf824c8e224dd8ffcc4ccd1362c822f2ea82f5b01f79e1b49a
 # message = b'\xd0\x83XF\xa3\x01\x01\x05X\x1a000102030405060708090a0b0c\x00x#["0011", "0", "0x1145f03880d8a975"]\xa1\x0b\x83C\xa1\x01&\xa0X@\x92\xc9\xb2v\xa4\xaa\xd3s+\x8a\xebT\xdc\x07o\xf5NH\xe8 Rz4\x82\xe3H\x18\x97\x15\xb6Z\x1c\x97$X\\H\xd8\x88/aC\x15\x9d\x07\x93\x1ftG\xd1\xa2T\xb5\x9eB\xe0^J\xcb\x82\xd8\xccN\rUk\xe5(J\x13\rz\xf3\xf7\xbe\xb3\xa7\xc4\x88\xc1\xe9\xbf\xaaM\xc8i'
 # message = "Hello"
 
-private_value = int(private_value)
+# private_value = int(private_value)
 
 async def read_increment_counter():
     try :
@@ -71,7 +74,51 @@ async def read_increment_counter():
     return counter
 
 
-async def generate_key_sym():
+async def write_keys(deviceAdd, x_pub_device, y_pub_device, private_value):
+    global x_pub_server, y_pub_server
+    # delete all the existing lines in file
+    f = open("keys.txt", "w")
+    f.write("")
+    f.close()
+    # write to file
+    f = open("keys.txt", "a")
+    f.write(f'deviceAdd:{deviceAdd}\n')
+    f.write(f'x_pub_device:{x_pub_device}\n')
+    f.write(f'y_pub_device:{y_pub_device}\n')
+    f.write(f'private_value:{private_value}\n')
+    f.write(f'x_pub_server:{x_pub_server}\n')
+    f.write(f'y_pub_server:{y_pub_server}\n')
+    f.close()
+
+    print("deviceAdd : ", deviceAdd)
+    print("x_pub_device : ", x_pub_device)
+    print("y_pub_device : ", y_pub_device)
+
+
+async def generate_deviceAdd():
+    deviceAdd = hex(random.getrandbits(64))        # 64 bits identifier
+    return deviceAdd
+
+
+async def generate_key_pair():
+
+    priv_device = ec.generate_private_key(
+        ec.SECP256R1(),     # courbe elliptic 256 bits
+        backend=default_backend()
+    )
+
+    private_value = priv_device.private_numbers().private_value
+    # print("private_value :", private_value)
+
+    x_pub = format(priv_device.private_numbers().public_numbers.x, '064x')
+    y_pub = format(priv_device.private_numbers().public_numbers.y, '064x')
+    # print(f"x_pub : {x_pub} {type(x_pub)}")
+    # print(f"y_pub : {y_pub} {type(y_pub)}")
+
+    return private_value, x_pub, y_pub
+
+
+async def generate_key_sym(private_value, x_pub_server, y_pub_server):
     # use the private key of the device
     # privkey = serialization.load_pem_private_key(serialized_private_device, password=None, backend=default_backend())
     # private_value = privkey.private_numbers().private_value
@@ -104,7 +151,7 @@ async def generate_key_sym():
     return key
 
 
-async def encrypt(text, key):
+async def encrypt(key, deviceAdd, text):
     d = {
         "0000": "JoinRequest",
         "0001": "JoinResponse",
@@ -136,13 +183,13 @@ async def encrypt(text, key):
 
     msg.key = cose_key_enc
     encrypted = msg.encode()
-    print("Encrypted payload :", encrypted)
+    # print("Encrypted payload :", encrypted)
 
     return encrypted
 
 
 # Counter Signature version
-async def sign(encrypted):
+async def sign(private_value, x_pub_device, y_pub_device, encrypted):
     # privkey = serialization.load_pem_private_key(serialized_private_device, password=None, backend=default_backend())
     # bytes_key_priv = privkey.private_numbers().private_value.to_bytes(32, 'big')
 
@@ -183,7 +230,7 @@ async def sign(encrypted):
 
 
 # Counter Signature version
-async def check_signature(packet):
+async def check_signature(x_pub_server, y_pub_server, packet):
     # pubkey = serialization.load_pem_public_key(serialized_public_server, backend=default_backend())
     # x_pub = format(pubkey.public_numbers().x, '064x')
     # y_pub = format(pubkey.public_numbers().y, '064x')
@@ -226,15 +273,41 @@ async def decrypt(packet, key):
     return decrypt_decode
 
 
-async def run():
+async def run(argv):
+    global x_pub_server, y_pub_server
+
+    if len(argv) == 1 and argv[0] == "-n":
+        # print("generate new device")
+        private_value, x_pub_device, y_pub_device = await generate_key_pair()
+        deviceAdd = await generate_deviceAdd()
+        await write_keys(deviceAdd, x_pub_device, y_pub_device, private_value)
+
+    else :
+        f = open("keys.txt", "r")
+        temp = f.read().splitlines()
+        f.close()
+        if temp != []:
+            deviceAdd = str(temp[0].split(":")[1])
+            x_pub_device = str(temp[1].split(":")[1])
+            y_pub_device = str(temp[2].split(":")[1])
+            private_value = int(temp[3].split(":")[1])
+            x_pub_server = str(temp[4].split(":")[1])
+            y_pub_server = str(temp[5].split(":")[1])
+
+        else :
+            # print("generate new device")
+            private_value, x_pub_device, y_pub_device = await generate_key_pair()
+            deviceAdd = await generate_deviceAdd()
+            await write_keys(deviceAdd, x_pub_device, y_pub_device, private_value)
+
 
     message = input('Message payload : ')
 
-    key = await generate_key_sym()
+    key = await generate_key_sym(private_value, x_pub_server, y_pub_server)
 
-    encrypted = await encrypt(message, key)
+    encrypted = await encrypt(key, deviceAdd, message)
 
-    packet = await sign(encrypted)
+    packet = await sign(private_value, x_pub_device, y_pub_device, encrypted)
 
     reader, writer = await open_serial_connection(url='/dev/serial0', baudrate=115200)
 
@@ -252,11 +325,11 @@ async def run():
 
     try :
         if line_unhex != b'' and b'error' not in line_unhex :
-            signature = await check_signature(line_unhex)
+            signature = await check_signature(x_pub_server, y_pub_server, line_unhex)
 
             if signature :
                 print("Signature is correct")
-                key = await generate_key_sym()
+                # key = await generate_key_sym()
                 decrypted = await decrypt(line_unhex, key)
                 print("Payload :", decrypted)
             else :
@@ -280,14 +353,15 @@ async def run():
     return
 
 
-def main():
+def main(argv):
+
     loop = asyncio.get_event_loop()
 
     # loop.run_until_complete(start())
 
     try:
         # loop.run_forever()
-        loop.run_until_complete(run())
+        loop.run_until_complete(run(argv))
     except KeyboardInterrupt:
         pass
 
@@ -304,4 +378,4 @@ def get_key_by_value(d, reverse, value):
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
