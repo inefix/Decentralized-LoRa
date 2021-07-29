@@ -912,8 +912,8 @@ async def ws(websocket, path):
                 last_counter = int(last_msg['counter'])
                 last_gateway = last_msg['gateway']
             
-            # if counter_header > last_counter :
-            if 10 > last_counter :
+            # if int(counter_header) > last_counter :
+            if 100 > last_counter :
                 print("last_counter :", last_counter)
             
                 # verify that gateway is the same
@@ -924,7 +924,7 @@ async def ws(websocket, path):
                     last_msg = await get_last_msg(deviceAdd)
                     last_counter = int(last_msg['counter'])
                     # if the message has been processed in the meantime
-                    # if counter_header <= last_counter:
+                    # if int(counter_header) <= last_counter:
                     if 0 <= last_counter:
                         raise ValueError
 
@@ -1008,7 +1008,7 @@ async def ws(websocket, path):
             response = "error : message already processed"
             print(response)
             await websocket.send(response)
-            return
+            # return
 
 
 app = web.Application()
