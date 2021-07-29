@@ -83,6 +83,12 @@ def main():
     ).decode("utf-8")
     print("serialized_public_device :", serialized_public_device)
 
+    pub = test.public_numbers()
+
+    test2 = ec.EllipticCurvePrivateNumbers(private_value, pub)
+    print("test2 :", test2)
+    print(private_value == test2.private_value)
+
     # import private key from pem or x and y and bytes
 
 
