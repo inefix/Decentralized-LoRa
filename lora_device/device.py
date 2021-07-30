@@ -97,7 +97,7 @@ async def run(argv):
 
     except ValueError :
         print("ValueError")
-        print('the lopy is not properly connected')
+        print('the lopy is not running device.py')
     except TypeError :
         print("TypeError")
         print('error, corrupted data')
