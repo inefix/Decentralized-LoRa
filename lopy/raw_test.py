@@ -28,19 +28,10 @@ if json.loads(stored)['pybytes_autostart'] != False :
 # United States = LoRa.US915
 # more params can also be given, like frequency, tx power and spreading factor
 lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, sf=12, coding_rate=LoRa.CODING_4_7, power_mode=LoRa.ALWAYS_ON, frequency=867500000, bandwidth=LoRa.BW_125KHZ, public=True, adr=True)
-# lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, frequency=867500000, bandwidth=LoRa.BW_125KHZ, sf=12, coding_rate=LoRa.CODING_4_5)
 
 # create a raw LoRa socket
 s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
-# s.setblocking(False)
-
-# ./util_tx_test -r 1257 -f 867.5 -s 12 -c 4
-
-# in = input('Enter value: ')
-# print(in)
-# v = sys.stdin.read(1)
-# print(v)
 
 while True:
     # send some data
@@ -71,5 +62,4 @@ while True:
 
 
     # wait a random amount of time
-    #time.sleep(machine.rng() & 0x0F)
     time.sleep(5)
