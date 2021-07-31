@@ -109,7 +109,6 @@ class ProxyDatagramProtocol():
                     x_pub = format(x_pub, '064x')
                     y_pub = format(y_pub, '064x')
 
-
                     # verify signature 
                     valid = await verify_countersign(processed, x_pub, y_pub)
                     if valid != False :
@@ -195,7 +194,6 @@ class ProxyDatagramProtocol():
                     print("SystemError")
                     message = b'error, corrupted data'
                     messageQueue.put(message)
-
 
 
         if data[3] == 2 :
@@ -299,7 +297,6 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                         if message == "error : smart contract closed":
                             await websocket.send(message)
                             await websocket.send(message2['msg'])
-                        
                         else :
                             await websocket.send(message['msg'])
                         
