@@ -17,7 +17,6 @@ async def verify_omg_payment(payment_hash, remote_host, price, ether_add):
 async def verifyHash(hashed):
     body = {'id': hashed, 'jsonrpc': '2.0'}
     body = json.dumps(body)
-    # print(body)
     response = await requests.post(f'{WATCHER_INFO_URL}/transaction.get', data=body, headers= { 'Content-Type': 'application/json'})
     json_resp = response.json()
     # print(json_resp)

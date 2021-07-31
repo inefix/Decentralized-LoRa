@@ -8,8 +8,6 @@ async def url_process(url) :
     # print(len(ip6))
 
     add = url.split(":")
-    # print(add)
-    # print(len(add))
 
     # if IPv4
     if len(add) < 4 :

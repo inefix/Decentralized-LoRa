@@ -43,7 +43,6 @@ async def verify_mpc_payment(web3, client, signature, contract_add, payed_amount
                 if valid_sig :
 
                     # if a threshold of balance and time is passed, close the contract
-
                     balance_limit = balance_threshold * balance
                     time_limit = expiration - time_threshold
                     if new_amount < balance_limit and epoch_time < time_limit :

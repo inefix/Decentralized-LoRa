@@ -118,9 +118,6 @@ class ProxyDatagramProtocol():
                         hash_structure = hashlib.sha256(to_be_signed).digest()
                         signature = valid.signature
 
-                        # domain = "ip6.loramac.eth"
-                        # domainPort = 30
-
                         # analyze address
                         if domain != "":
                             print("domain")
@@ -265,9 +262,6 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                         message = await get_and_pay(remote_host, deviceAdd, counter_header)
                         print("message :", message)
 
-                        # if message != b"" and message != None :
-                        #     await websocket.send(message['msg'])
-                    
 
                     if payment_list[0] == 'MPC' :
                         signature = payment_list[1]
@@ -282,11 +276,9 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                                 if verified2 :
                                     messageQueue.put(down_message)
 
-                            # send message
                             message = await get_and_pay(remote_host, deviceAdd, counter_header)
                             print("message :", message)
-                            # if message != None :
-                            #     await websocket.send(message['msg'])
+
                         elif verified ==  "error : smart contract closed":
                             message = verified
                             # send down_message if any
@@ -362,8 +354,6 @@ async def verify_down(message):
     pType = header[0]
     counter_header = header[1]
     hostAdd = header[2]
-    # print("header :", header)
-    # print("hostAdd :", hostAdd)
 
     if hostAdd.count(":") > 1:
         # print("IPv6")
