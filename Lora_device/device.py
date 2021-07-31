@@ -83,8 +83,10 @@ async def run(argv):
         line_unhex = unhexlify(line)
         print("received :", line_unhex)
 
+        if b'success' in line_unhex :
+            print(success)
 
-        if line_unhex != b'' and b'error' not in line_unhex :
+        elif line_unhex != b'' and b'error' not in line_unhex :
             signature = await check_signature(x_pub_server, y_pub_server, line_unhex)
 
             if signature :

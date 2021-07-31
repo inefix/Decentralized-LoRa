@@ -1,25 +1,12 @@
-import os
-import zlib
-import random
 import json
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import dh
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.exceptions import InvalidSignature
 
-from binascii import unhexlify, hexlify
+from binascii import unhexlify
 
-from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, Countersign0Message
-from cose.keys import CoseKey, EC2Key, SymmetricKey
+from cose.messages import CoseMessage, Countersign0Message
+from cose.keys import CoseKey
 from cose.headers import Algorithm, KID, IV, Reserved
-from cose.algorithms import EdDSA, Es256, EcdhEsA256KW, EcdhEsA128KW, DirectHKDFAES128, EcdhSsA128KW, A128GCM, HMAC256
-from cose.keys.keyparam import KpKty, OKPKpD, OKPKpX, KpKeyOps, OKPKpCurve, EC2KpX, EC2KpY, KpAlg, KpKty, EC2KpD, EC2KpX, KpKeyOps, EC2KpCurve, EC2KpY, KpKid, SymKpK
-from cose.keys.keytype import KtyEC2, KtySymmetric, KtyOKP
-from cose.keys.keyops import SignOp, VerifyOp, DeriveKeyOp, MacCreateOp, MacVerifyOp
+from cose.algorithms import Es256
+from cose.keys.keyparam import EC2KpX, EC2KpY
 
 d = {
         "0000": "JoinRequest",
