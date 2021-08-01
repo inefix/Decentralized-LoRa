@@ -52,7 +52,6 @@ async def create_msg(request):
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
     data['date'] = date
     result = await collection_MSG.insert_one(data)
-    #return web.Response(text="Added successfuly", status=204)
     return web.json_response({'success': 'Added successfuly'})
 
 
@@ -134,7 +133,6 @@ async def get_address(request):
     
     address['total'] = counter
 
-    # print(address)
     return web.json_response(address)
 
 
@@ -147,7 +145,6 @@ async def update_payed(request):
     print(gateway)
 
     x = {"owner" : owner, "gateway": gateway}
-    # data = {"payed": True}
     data = await request.json()
     print(data)
 

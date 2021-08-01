@@ -14,7 +14,6 @@
     "bn.js": "^5.2.0",
     "ethereumjs-abi": "^0.6.8",
     "ethereumjs-tx": "^2.1.2",
-    "ethereumjs-util": "^7.1.0",
     "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0",
     "koa-router": "^10.0.0",

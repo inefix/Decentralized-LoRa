@@ -10,7 +10,6 @@ async def test(request):
     PORT = request.app['PORT']
 
     deviceAdd = "0x1145f03880d8a975"
-    # serialized_public = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEZDhmwCVlGBcPJOj7AbIzP9fvFC6q\n4JqowSK0G5BmPQzU3WQ3EDrbzoPHV4jzduZ7uKt/zHWu6TMr0gkgdyOybw==\n-----END PUBLIC KEY-----\n'.decode("utf-8")
     x_pub = "643866c0256518170f24e8fb01b2333fd7ef142eaae09aa8c122b41b90663d0c"
     y_pub = "d4dd6437103adbce83c75788f376e67bb8ab7fcc75aee9332bd209207723b26f"
     ts = str(time.time())
@@ -43,9 +42,6 @@ async def remove_all_devices(request):
 
 
 # curl -X POST -d '{"deviceAdd":"deviceAdd", "pubkey":"pubkey"}' http://163.172.130.246/devices
-# curl -X POST -d '{"deviceAdd":"0x41e9d7694004027a", "pubkey":b"-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEfXcUEiG1lHD41LaUmXdaX5A9BzfU\nNmvTKCDK+RGZuKXoP5Ja8dlU7xcgmudn8BXklXZfre/eQHW/hD69ZGWWAw==\n-----END PUBLIC KEY-----\n"}' http://163.172.130.246/devices
-# serialized_private_device : b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgbY3ljUYU0uyCLvIz\nXgibqcvad4iYdDG7kXiu8eEIFvuhRANCAAR9dxQSIbWUcPjUtpSZd1pfkD0HN9Q2\na9MoIMr5EZm4peg/klrx2VTvFyCa52fwFeSVdl+t795Adb+EPr1kZZYD\n-----END PRIVATE KEY-----\n'
-# serialized_public_device : b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEfXcUEiG1lHD41LaUmXdaX5A9BzfU\nNmvTKCDK+RGZuKXoP5Ja8dlU7xcgmudn8BXklXZfre/eQHW/hD69ZGWWAw==\n-----END PUBLIC KEY-----\n'
 async def create_device(request):
     collection_DEVICE = request.app['collection_DEVICE']
     ADDR_int = request.app['ADDR_int']
@@ -144,13 +140,9 @@ async def generate_device(request):
     ADDR_int = request.app['ADDR_int']
     PORT = request.app['PORT']
     deviceAdd = await generate_deviceAdd()
-    # privkey, pubkey = await generate_key_pair()
-    # privkey, x_pub, y_pub = await generate_key_pair()
     private_value, x_pub, y_pub = await generate_key_pair()
     ts = str(time.time())
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
-    # responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "privkey": privkey, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
-    # stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
     responded = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "private_value": private_value, "ts": ts, "date": date, "name": deviceAdd, "serverAdd": ADDR_int, "port": PORT}
     stored = {"_id" : deviceAdd, "deviceAdd": deviceAdd, "x_pub": x_pub, "y_pub": y_pub, "ts": ts, "date": date, "name": deviceAdd, "port": PORT}
 

@@ -15,8 +15,6 @@ import bodyParser from "koa-bodyparser";
 import cors from "@koa/cors";
 
 import abi from "ethereumjs-abi";
-import util from 'ethereumjs-util'
-import EthereumTx from "ethereumjs-tx"
 
 const app = new Koa();
 const router = new Router();
@@ -202,3 +200,5 @@ app
   .use(router.allowedMethods());
 
 app.listen(3000);
+
+console.log("Payment microservice started")

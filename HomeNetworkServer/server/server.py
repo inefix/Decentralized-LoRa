@@ -1,5 +1,4 @@
 """UDP server"""
-# https://gist.github.com/vxgmichel/b2cf8536363275e735c231caef35a5df
 # https://docs.python.org/3/library/asyncio-protocol.html
 
 import json
@@ -19,15 +18,10 @@ from msg import get_all_msg, get_multiple_msg, remove_all_msg, create_msg, get_o
 from gateway import get_one_gateway, delete_one_gateway, create_gateway, update_gateway
 from down import get_all_down, remove_all_down, create_down, get_one_down, get_one_down_f, update_down, remove_down, pay_down
 
-# import web3s
-# import requests_async as requests
 
 ADDR = "163.172.130.246"
 # ADDR = "2001:0620:0000:0000:0211:24FF:FE80:C12C"
 PORT = 9999
-
-ADDR_int = ADDR
-ADDR_type = None
 
 # payment_method can be 'OMG' or 'MPC'
 payment_method = 'OMG'  
@@ -36,22 +30,33 @@ message_price = 100
 automatic_pay = True
 automatic_response = True
 
+
+serialized_private_server = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
+# serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
+x_pub_server = "c29769136166eec1299e1b5d56c48de1787a3f72f0e8ee5c14357ef5b78fc6ea"
+y_pub_server = "7666b00c308248cf824c8e224dd8ffcc4ccd1362c822f2ea82f5b01f79e1b49a"
+
+client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@lora.j8ycs.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
+
+
+
+ADDR_int = ADDR
+ADDR_type = None
+
 if ADDR.count(":") > 1:
     print("IPv6")
     ADDR_int = int(ipaddress.IPv6Address(ADDR))
     ADDR_type = "IPv6"
-    print(ADDR_int)
+    # print(ADDR_int)
 elif ADDR[0].isdigit() and ADDR[len(ADDR)-1].isdigit() :
     print("IPv4")
     ADDR_int = int(ipaddress.IPv4Address(ADDR))
     ADDR_type = "IPv4"
-    print(ADDR_int)
+    # print(ADDR_int)
 else :
     print("domain")
     ADDR_type = "domain"
 
-
-client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@lora.j8ycs.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
 
 db = client['lora_db']
 collection_DEVICE = db['DEVICE']
@@ -59,22 +64,7 @@ collection_MSG = db['MSG']
 collection_GATEWAY = db['GATEWAY']
 collection_DOWN = db['DOWN']
 
-
-# infura_url = "https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
-# web3 = web3s.Web3s(web3s.Web3s.HTTPProvider(infura_url))
-
-# abi_lora = json.loads('[{"inputs":[{"internalType":"uint64","name":"","type":"uint64"}],"name":"devices","outputs":[{"internalType":"uint32","name":"ipv4Addr","type":"uint32"},{"internalType":"uint128","name":"ipv6Addr","type":"uint128"},{"internalType":"string","name":"domain","type":"string"},{"internalType":"uint16","name":"ipv4Port","type":"uint16"},{"internalType":"uint16","name":"ipv6Port","type":"uint16"},{"internalType":"uint16","name":"domainPort","type":"uint16"},{"internalType":"address","name":"owner","type":"address"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"","type":"string"}],"name":"domainServers","outputs":[{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint32","name":"","type":"uint32"}],"name":"ipv4Servers","outputs":[{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint128","name":"","type":"uint128"}],"name":"ipv6Servers","outputs":[{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint64","name":"loraAddr","type":"uint64"},{"internalType":"string","name":"domain","type":"string"},{"internalType":"uint16","name":"port","type":"uint16"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerDomainDevice","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"domain","type":"string"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerDomainServer","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint64","name":"loraAddr","type":"uint64"},{"internalType":"uint32","name":"server","type":"uint32"},{"internalType":"uint16","name":"port","type":"uint16"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv4Device","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint32","name":"ipv4Addr","type":"uint32"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv4Server","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint64","name":"loraAddr","type":"uint64"},{"internalType":"uint128","name":"server","type":"uint128"},{"internalType":"uint16","name":"port","type":"uint16"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv6Device","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint128","name":"ipv6Addr","type":"uint128"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv6Server","outputs":[],"stateMutability":"nonpayable","type":"function"}]')
-# contract_addr_lora = "0x4a9fF7c806231fF7d4763c1e83E8B131467adE61"
-# contract_lora = web3.eth.contract(contract_addr_lora, abi=abi_lora)
-
-
 add = "0.0.0.0"     # localhost does not work ! https://stackoverflow.com/questions/15734219/simple-python-udp-server-trouble-receiving-packets-from-clients-other-than-loca/15734249
-
-serialized_private_server = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
-serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
-x_pub_server = "c29769136166eec1299e1b5d56c48de1787a3f72f0e8ee5c14357ef5b78fc6ea"
-y_pub_server = "7666b00c308248cf824c8e224dd8ffcc4ccd1362c822f2ea82f5b01f79e1b49a"
-
 
 
 async def ws(websocket, path):
@@ -129,8 +119,6 @@ async def ws(websocket, path):
                 if verified :
 
                     down, down_id, price = await check_if_down(deviceAdd)
-
-                    # down, down_id, price = await process_hash(hash_structure, signature, deviceAdd, counter_header, gateway_add)
 
                     payment_receipt = None
                     if payment_method == 'OMG' :
@@ -214,7 +202,6 @@ async def process(message, hash_structure, gateway, down):
     print("counter :", counter)
 
     x_pub, y_pub = await get_pubkey(deviceAdd)
-    # print("pubkey :", pubkey)
 
     if x_pub != "error" and y_pub != "error":
 
@@ -240,20 +227,8 @@ async def process(message, hash_structure, gateway, down):
                 id = str(time.time())
                 date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
 
-                # device = await contract_lora.functions.devices(int(deviceAdd, 0)).call()
-                # ipv4Addr = device[0]
-                # ipv6Addr = device[1]
-                # domain = device[2]
-                # ipv4Port = device[3]
-                # ipv6Port = device[4]
-                # domainPort = device[5]
-                # owner = device[6]
-                # not necessary to do all that just for the owner --> ADDR_int
-
                 x = {"_id" : id, "date" : date, "owner" : ADDR_int, "gateway" : gateway, "payed" : automatic_pay, "pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd, "payload" : decrypted}
                 await collection_MSG.insert_one(x)
-
-                #print("pType :", pType)
 
                 # return response to send back if no previous down sent by user
                 if down == b"down_message" and automatic_response == True and payment_method != 'OMG':
@@ -310,7 +285,6 @@ async def read_increment_counter():
         counter = 0
     else :
         counter = int(counter) + 1
-    # print(counter)
     # update the counter
     f = open("counter.txt", "w")
     f.write(str(counter))
@@ -400,7 +374,6 @@ async def mpc_pay(deviceAdd, counter_header, gateway_add, price):
     if gateway_document == None :
         # deploy smart contract 
         amount_creation = 100 * price
-        # amount_creation = 0
         duration = 30 * 24 * 60 * 60
         epoch_time = int(time.time())
         expiration = epoch_time + duration
@@ -501,11 +474,11 @@ app['PORT'] = PORT
 def main(add=add, port=PORT):
     loop = asyncio.get_event_loop()
 
-    print("Starting websocket server...")
+    print("Starting the Websocket server...")
     start_server = websockets.serve(ws, "0.0.0.0", 8765)
     loop.run_until_complete(start_server)
 
-    print("Start HTTP server...")
+    print("Starting the HTTP server...")
     loop.run_until_complete(web.run_app(app, port=8080))
 
     try:

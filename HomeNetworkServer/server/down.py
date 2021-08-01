@@ -37,7 +37,6 @@ async def create_down(request):
     data['date'] = date
     data['payed'] = False
     result = await collection_DOWN.insert_one(data)
-    #return web.Response(text="Added successfuly", status=204)
     return web.json_response({'success': 'Added successfuly'})
 
 

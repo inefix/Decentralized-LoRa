@@ -52,89 +52,27 @@ async def generate_key_pair():
         backend=default_backend()
     )
 
-    # serialized_private_device = priv_device.private_bytes(
-    #     encoding=serialization.Encoding.PEM,        # also DER
-    #     format=serialization.PrivateFormat.PKCS8,   # also TraditionalOpenSSL or PKCS8
-    #     encryption_algorithm=serialization.NoEncryption()
-    # ).decode("utf-8")
-    # print("serialized_private_device :", serialized_private_device)
-
     private_value = priv_device.private_numbers().private_value
     private_value = str(private_value)
     print("private_value :", private_value)
 
     x_pub = format(priv_device.private_numbers().public_numbers.x, '064x')
     y_pub = format(priv_device.private_numbers().public_numbers.y, '064x')
-    print(f"x_pub : {x_pub} {type(x_pub)}")
-    print(f"y_pub : {y_pub} {type(y_pub)}")
+    # print(f"x_pub : {x_pub} {type(x_pub)}")
+    # print(f"y_pub : {y_pub} {type(y_pub)}")
 
-    # private_value = priv_device.private_numbers().private_value
-    # print("private_value :", private_value)
-
-
-
-
-    # pub_device = priv_device.public_key()
-
-    # serialized_public_device = pub_device.public_bytes(
-    #     encoding=serialization.Encoding.PEM, 
-    #     format=serialization.PublicFormat.SubjectPublicKeyInfo
-    # ).decode("utf-8")
-    # print("serialized_public_device :", serialized_public_device)
-    # x_pub = format(pub_device.public_numbers().x, '064x')
-    # y_pub = format(pub_device.public_numbers().y, '064x')
-    
-
-    # return serialized_private_device, serialized_public_device
-    # return serialized_private_device, x_pub, y_pub
     return private_value, x_pub, y_pub
 
 
 async def get_header(packet):
     decoded = CoseMessage.decode(packet)
-    # decoded = CoseMessage.decode(decoded.payload)
-    #print(f'phdr {decoded.phdr} {type(decoded.phdr)}')
     header_decode = json.loads(decoded.phdr[Reserved])
     header_decode[0] = d[header_decode[0]]
-    #source = header_decode[2]
-    #print(f'source : {source} {type(source)}')
     return header_decode
-
-
-# COSE Sign1
-# async def check_signature(packet, pubkey):
-#     pubkey = pubkey.encode("utf-8")
-#     pubkey = serialization.load_pem_public_key(pubkey)
-#     x_pub = format(pubkey.public_numbers().x, '064x')
-#     y_pub = format(pubkey.public_numbers().y, '064x')
-
-#     pub_key_attribute_dict = {
-#             'KTY': 'EC2',
-#             'CURVE': 'P_256',
-#             'ALG': 'ES256',
-#             EC2KpX : unhexlify(x_pub),
-#             EC2KpY : unhexlify(y_pub)
-#     }
-#     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
-
-#     decoded = CoseMessage.decode(packet)
-#     decoded.key = pub_cose_key
-
-#     if decoded.verify_signature() :
-#         #print("Signature is correct")
-#         return True
-#     else :
-#         #print("Signature is not correct")
-#         return False
 
 
 # Counter Signature version
 async def check_signature(packet, x_pub, y_pub):
-    # pubkey = pubkey.encode("utf-8")
-    # pubkey = serialization.load_pem_public_key(pubkey)
-    # x_pub = format(pubkey.public_numbers().x, '064x')
-    # y_pub = format(pubkey.public_numbers().y, '064x')
-
     pub_key_attribute_dict = {
             'KTY': 'EC2',
             'CURVE': 'P_256',
@@ -146,7 +84,6 @@ async def check_signature(packet, x_pub, y_pub):
 
     decoded = Countersign0Message(
         # phdr = {Algorithm: Es256},
-        # payload = 'signed message'.encode('utf-8')
         payload = packet
     )
     decoded.key = pub_cose_key
@@ -162,8 +99,6 @@ async def check_signature(packet, x_pub, y_pub):
 async def generate_key_sym(privkey, x_pub, y_pub):
     privkey = serialization.load_pem_private_key(privkey, password=None)
 
-    # pubkey = pubkey.encode("utf-8")
-    # pubkey = serialization.load_pem_public_key(pubkey)
     x_pub_int = int(x_pub, 16)
     y_pub_int = int(y_pub, 16)
     pubkey = ec.EllipticCurvePublicNumbers(x_pub_int, y_pub_int, ec.SECP256R1()).public_key()
@@ -188,11 +123,9 @@ async def decrypt(packet, key):
 
     decoded = CoseMessage.decode(packet)
 
-    # decoded = CoseMessage.decode(decoded.payload)
     decoded.key = cose_key_dec
     decrypt = decoded.decrypt()
     decrypt_decode = decrypt.decode("utf-8")
-    # print("Payload :", decrypt_decode) 
 
     return decrypt_decode
 
@@ -209,38 +142,8 @@ async def encrypt(header, plaintext, key):
 
     msg.key = cose_key_enc
     encrypted = msg.encode()
-    #print("Encrypted payload :", encrypted)
 
     return encrypted
-
-
-# COSE Sign1
-# async def sign(encrypted, privkey):
-#     privkey = serialization.load_pem_private_key(privkey, password=None)
-#     bytes_key_priv = privkey.private_numbers().private_value.to_bytes(32, 'big')
-#     x = format(privkey.private_numbers().public_numbers.x, '064x')
-#     y = format(privkey.private_numbers().public_numbers.y, '064x')
-
-#     key_attribute_dict = {
-#         'KTY': 'EC2',
-#         'CURVE': 'P_256',
-#         'ALG': 'ES256',
-#         EC2KpX : unhexlify(x),
-#         EC2KpY : unhexlify(y),
-#         'D': bytes_key_priv
-#     }
-#     cose_key = CoseKey.from_dict(key_attribute_dict)
-
-#     msg = Sign1Message(
-#         phdr = {Algorithm: Es256},
-#         payload = encrypted
-#     )
-
-#     msg.key = cose_key
-#     packet = msg.encode()
-#     #print("Packet :", packet)
-    
-#     return packet
 
 
 # Counter Signature version
@@ -267,21 +170,16 @@ async def sign(encrypted, privkey):
 
     msg.key = cose_key
     packet = msg.encode()
-    #print("Packet :", packet)
     
     return packet
 
 
 def verify_signature_hash(x_pub, y_pub, data, signature) :
-    # pubkey = serialization.load_pem_public_key(pubkey.encode("utf-8"))
-    # x_pub = format(pubkey.public_numbers().x, '064x')
-    # y_pub = format(pubkey.public_numbers().y, '064x')
     p = Point(curve=NIST256p.curve, x=int(x_pub, 16), y=int(y_pub, 16))
 
     vk = VerifyingKey.from_public_point(p, NIST256p, sha256)
 
     try:
-        # return vk.verify(signature=signature, data=data, hashfunc=sha256)
         return vk.verify_digest(signature=signature, digest=data)
     except BadSignatureError:
         return False
