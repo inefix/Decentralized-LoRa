@@ -2,24 +2,11 @@ import React from "react";
 import axios from 'axios';
 import './Style.css';
 import { Button, Card, Modal, Row, Col, Form, Spinner } from 'react-bootstrap';
-// import Web3 from 'web3';
 import { ethers } from 'ethers'
 import { loraResolverAbi } from './abis';
-// import BigNumber from 'bn.js';
 import bigInt from 'big-integer';
 
-// const web3 = new Web3(Web3.givenProvider);
-// const contractAddr = '0xc3C5B3159dE1d2f348Ff952a7175648E77Af23c7';
-// ropsten
-// const contractAddr = '0xCd862ceF6D5EDd348854e4a280b62d51F7F62a65';    
-// rinkeby
 const contractAddr = '0x4a9fF7c806231fF7d4763c1e83E8B131467adE61';
-// const SimpleContract = new web3.eth.Contract(simpleStorageAbi, contractAddr);
-
-// const serverAdd = 2745991926
-// const x_pub_server = "c29769136166eec1299e1b5d56c48de1787a3f72f0e8ee5c14357ef5b78fc6ea"
-// const y_pub_server = "7666b00c308248cf824c8e224dd8ffcc4ccd1362c822f2ea82f5b01f79e1b49a"
-
 
 class Devices extends React.Component {
 
@@ -54,15 +41,6 @@ class Devices extends React.Component {
     this.setState({ deviceAdd: "" })
     this.setState({ x_pub: "" })
     this.setState({ y_pub: "" })
-
-    // const url = 'http://163.172.130.246:8080/devices/' + this.state.deviceAdd;
-    // axios.delete(url).then(response => response.data)
-    // .then((data) => {
-
-    //  })
-    // .catch(function (error) {
-    //   console.log(error);
-    // });
   }
 
   handleModal2ShowHide() {
@@ -124,12 +102,11 @@ class Devices extends React.Component {
     }
   }
 
-  openModal = (name, deviceAdd, pubkey) => () => {
+  openModal = (name, deviceAdd) => () => {
     //console.log(name);
     this.setState({ modal: !this.state.modal })
     this.setState({ name: name })
     this.setState({ deviceAdd: deviceAdd })
-    this.setState({ pubkey: pubkey })
   };
 
   openModalSend = (name, deviceAdd) => () => {
@@ -141,25 +118,11 @@ class Devices extends React.Component {
 
   createDevice(){
     this.setState({ showHide: !this.state.showHide })
-    
-    // const url = 'http://163.172.130.246:8080/generate';
-    // axios.get(url).then(response => response.data)
-    // .then((data) => {
-    //   this.setState({ add: data })
-    //   //console.log(this.state.add)
-    //  })
-    // .catch(function (error) {
-    //   console.log(error);
-    // });
   }
 
   async closeAndReload(){
     this.setState({ showHide: !this.state.showHide })
-    // console.log(this.state.add.deviceAdd);
-    // console.log(this.state.add.serverAdd);
-    // console.log(this.state.add.port);
 
-    //console.log(this.state.val2);
     if(this.state.val2 !== "" && this.state.deviceAdd !== "" && this.state.x_pub !== "" && this.state.y_pub !== ""){
       // update server
       const url = 'http://163.172.130.246:8080/devices';
@@ -168,23 +131,25 @@ class Devices extends React.Component {
         this.componentDidMount()
         // console.log(data)
         this.handleSet(this.state.deviceAdd, data["serverAdd"], data["port"], "0x" + this.state.x_pub, "0x" + this.state.y_pub)
+
+        this.setState({ val2: "" })
+        this.setState({ deviceAdd: "" })
+        this.setState({ x_pub: "" })
+        this.setState({ y_pub: "" })
       })
       .catch(function (error) {
         console.log(error);
+        this.setState({ val2: "" })
+        this.setState({ deviceAdd: "" })
+        this.setState({ x_pub: "" })
+        this.setState({ y_pub: "" })
       });
-      this.setState({ val2: "" })
-      this.setState({ deviceAdd: "" })
-      this.setState({ x_pub: "" })
-      this.setState({ y_pub: "" })
     } else {
       this.componentDidMount()
-      // this.handleSet(this.state.add.deviceAdd, this.state.add.serverAdd, this.state.add.port, "0x" + this.state.add.x_pub, "0x" + this.state.add.y_pub)
     }
   }
 
   deleteClick = value => () => {
-    // console.log(value);
-
     const items = this.state.devices.filter(item => item.deviceAdd !== value);
     this.setState({ devices: items });
 
@@ -196,12 +161,10 @@ class Devices extends React.Component {
     .catch(function (error) {
       console.log(error);
     });
-
-    //this.componentDidMount()
   };
 
+
   delete(value) {
-    // console.log(value);
 
     const items = this.state.devices.filter(item => item.deviceAdd !== value);
     this.setState({ devices: items });
@@ -209,17 +172,14 @@ class Devices extends React.Component {
     const url = 'http://163.172.130.246:8080/devices/' + value;
     axios.delete(url).then(response => response.data)
     .then((data) => {
-
+      this.componentDidMount()
      })
     .catch(function (error) {
       console.log(error);
     });
-
-    //this.componentDidMount()
   };
 
   componentDidMount() {
-    //console.log("reload");
     const url = 'http://163.172.130.246:8080/devices';
     axios.get(url).then(response => response.data)
     .then((data) => {
@@ -259,13 +219,10 @@ class Devices extends React.Component {
         if (server['ADDR_type'] === "IPv6"){
           console.log("get IPv6")
           var num = bigInt(server["ADDR_int"])
-          // console.log(num)
           data = await contract.ipv6Servers(num.value);
-          // console.log('data: ', data)
         }
         if (server['ADDR_type'] === "domain"){
           data = await contract.domainServers(server["ADDR_int"]);
-          // console.log('data: ', data)
         }
 
         if (data['owner'] === "0x0000000000000000000000000000000000000000"){
@@ -321,37 +278,9 @@ class Devices extends React.Component {
     }
   }
 
-
-
-  // handleGet = async (e) => {
-  //   e.preventDefault();
-  //   const result = await SimpleContract.methods.get().call();
-  //   // setGetNumber(result);
-  //   console.log(result);
-  // };
-
-  // request access to the user's MetaMask account
-  // async requestAccount() {
-  //   await window.ethereum.request({ method: 'eth_requestAccounts' });
-  // }
-
-  async handleGet() {
-    if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
-      const provider = new ethers.providers.Web3Provider(window.ethereum)
-      const contract = new ethers.Contract(contractAddr, loraResolverAbi, provider)
-      try {
-        const data = await contract.devices("0xd454ddb830bee4cf");
-        // const data = await contract.publicstoredData()
-        console.log('data: ', data)
-      } catch (err) {
-        console.log("Error: ", err)
-      }
-    }    
-  }
-
   // call the smart contract, send an update
   async handleSet(deviceAdd, serverAddr, port, x_pub, y_pub) {
-    // console.log(serverAddr);
+    console.log(deviceAdd);
     // console.log(port);
     if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
       try{
@@ -381,6 +310,7 @@ class Devices extends React.Component {
         this.setState({willShowLoader: false});
       } catch(e) {
         console.log(e);
+        console.log(deviceAdd);
         this.delete(deviceAdd)
       }
       
@@ -390,13 +320,6 @@ class Devices extends React.Component {
     }
   }
 
-  // async handleGet() {
-  //   // e.preventDefault();
-  //   const result = await SimpleContract.methods.get().call();
-  //   // setGetNumber(result);
-  //   console.log(result);
-  // }
-  
   render() {
     return (
       <div className="container">
@@ -416,10 +339,7 @@ class Devices extends React.Component {
                 <p className="pspinner">TX PENDING</p><Spinner className="spinner" animation="border" />
               </div>:
               <p></p>}
-              {/* <Spinner className="spinner" animation="border" /> */}
             </div>
-            {/* <Button variant="secondary" onClick={this.handleGet}>Get</Button> */}
-            {/* <Button variant="secondary" onClick={this.handleSet}>Set</Button> */}
             <Button variant="secondary" onClick={this.componentDidMount}>Reload</Button>
             <Button variant="primary" onClick={() => this.createDevice()}>Add device</Button>
 
@@ -428,16 +348,13 @@ class Devices extends React.Component {
               show={this.state.showHide}
               onHide={() => this.handleModalShowHide()}
             >
-                    {/* <Modal.Header closeButton onClick={() => this.handleModalShowHide()}> */}
                     <Modal.Header>
-                      {/* <Modal.Title className="modal-test">{this.state.add.name}</Modal.Title> */}
                       <Modal.Title className="modal-test">Add a new device</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <h5>Name :</h5>
                         <Form>
                           <Form.Group controlId="formBasicName">
-                            {/* <Form.Control type="name" placeholder={this.state.name} /> */}
                             <Form.Control
                               placeholder="name"
                               value={this.state.val2}
@@ -451,7 +368,6 @@ class Devices extends React.Component {
                         <h5>deviceAdd :</h5>
                         <Form>
                           <Form.Group controlId="formBasicName">
-                            {/* <Form.Control type="name" placeholder={this.state.name} /> */}
                             <Form.Control
                               placeholder="deviceAdd"
                               value={this.state.deviceAdd}
@@ -465,7 +381,6 @@ class Devices extends React.Component {
                         <h5>Public key :</h5>
                         <Form>
                           <Form.Group controlId="formBasicName">
-                            {/* <Form.Control type="name" placeholder={this.state.name} /> */}
                             <Form.Control
                               placeholder="x_pub"
                               value={this.state.x_pub}
@@ -477,7 +392,6 @@ class Devices extends React.Component {
                         </Form>
                         <Form>
                           <Form.Group controlId="formBasicName">
-                            {/* <Form.Control type="name" placeholder={this.state.name} /> */}
                             <Form.Control
                               placeholder="y_pub"
                               value={this.state.y_pub}
@@ -516,7 +430,7 @@ class Devices extends React.Component {
                 <Col>
                 <div>
                   <Button className="mybutton_device" variant="success" onClick={this.openModalSend(device.name, device.deviceAdd)}>Send</Button>
-                  <Button className="mybutton_device" variant="secondary" onClick={this.openModal(device.name, device.deviceAdd, device.pubkey)}>Modify</Button>
+                  <Button className="mybutton_device" variant="secondary" onClick={this.openModal(device.name, device.deviceAdd)}>Modify</Button>
                   <Button className="mybutton_device2" variant="danger" onClick={this.deleteClick(device.deviceAdd)}>Delete</Button>
                 </div>
                 </Col>
@@ -528,7 +442,6 @@ class Devices extends React.Component {
             show={this.state.modal}
             onHide={() => this.handleModal2ShowHide()}
           >
-                {/* <Modal.Header closeButton onClick={() => this.handleModal2ShowHide()}> */}
                 <Modal.Header>
                   <Modal.Title className="modal-test">{this.state.name}</Modal.Title>
                   <Modal.Title className="modal-test">{this.state.deviceAdd}</Modal.Title>
@@ -537,8 +450,6 @@ class Devices extends React.Component {
                 <h5>Name :</h5>
                 <Form>
                   <Form.Group controlId="formBasicName">
-                    {/* <Form.Label>Name</Form.Label> */}
-                    {/* <Form.Control type="name" placeholder={this.state.name} /> */}
                     <Form.Control
                       placeholder={this.state.name}
                       value={this.state.val}
@@ -563,7 +474,6 @@ class Devices extends React.Component {
             show={this.state.modal_resp}
             onHide={() => this.handleModal3ShowHide()}
           >
-                {/* <Modal.Header closeButton onClick={() => this.handleModal2ShowHide()}> */}
                 <Modal.Header>
                   <Modal.Title className="modal-test">{this.state.name}</Modal.Title>
                   <Modal.Title className="modal-test">{this.state.deviceAdd}</Modal.Title>
@@ -572,8 +482,6 @@ class Devices extends React.Component {
                 <h5>Message to send :</h5>
                 <Form>
                   <Form.Group controlId="formBasicName">
-                    {/* <Form.Label>Name</Form.Label> */}
-                    {/* <Form.Control type="name" placeholder={this.state.name} /> */}
                     <Form.Control
                       placeholder="payload"
                       value={this.state.down}

@@ -5,30 +5,19 @@ import { Button, Card, Row, Col, Modal, Form } from 'react-bootstrap';
 import { ethers } from 'ethers'
 
 import Web3 from "web3";
-// import '@metamask/legacy-web3';
 import { ChildChain, OmgUtil } from "@omisego/omg-js";
 import BigNumber from 'bn.js';
-// import JSONBigNumber from 'omg-json-bigint';
-// import { bufferToHex } from 'ethereumjs-util';
 import { orderBy } from 'lodash';
-// import { WebWalletError } from 'services/errorService';
 
 const web3_provider_url = 'https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6';
 const plasmaContractAddress = '0xb43f53394d86deab35bc2d8356d6522ced6429b5';  // CONTRACT_ADDRESS_PLASMA_FRAMEWORK RINKEBY
 const watcherUrl = 'https://watcher-info.rinkeby.v1.omg.network';  // WATCHER_INFO_URL
 // const watcherUrl = 'https://watcher.rinkeby.v1.omg.network';  // WATCHER_URL
 const web3 = new Web3(new Web3.providers.HttpProvider(web3_provider_url));
-// const rootChain = new RootChain({ web3, plasmaContractAddress });
 const childChain = new ChildChain({ watcherUrl, plasmaContractAddress });
-// const childChain = new ChildChain({
-//   watcherUrl: watcherInfoUrl,
-//   watcherProxyUrl: '',
-//   plasmaContractAddress: plasmaContractAddress
-// });
 
 const erc20ContractAddress = "0xd92e713d051c37ebb2561803a3b5fbabc4962431";
 const aliceAddress = "0x8cb0de6206f459812525f2ba043b14155c2230c0";
-
 
 
 class Messages extends React.Component {
@@ -67,14 +56,12 @@ class Messages extends React.Component {
   send() {
     this.setState({ modal_resp: !this.state.modal_resp })
 
-    //console.log(this.state.val);
     if(this.state.down !== ""){
       // update server
       const url = 'http://163.172.130.246:8080/down';
       axios.post(url, {"deviceAdd":this.state.deviceAdd, "payload":this.state.down}).then(response => response.data)
       .then((data) => {
         // this.componentDidMount()
-        // console.log("send")
       })
       .catch(function (error) {
         console.log(error);
@@ -105,8 +92,6 @@ class Messages extends React.Component {
     .catch(function (error) {
       console.log(error);
     });
-
-    //this.componentDidMount()
   };
 
   async payM(){
@@ -160,28 +145,22 @@ class Messages extends React.Component {
       const signer = provider.getSigner();
       const address = await signer.getAddress();
       this.setState({address: address});
-      // console.log(address);
 
       const url = 'http://163.172.130.246:8080/msgs/' + address;
       axios.get(url).then(response => response.data)
       .then((data) => {
         this.setState({ messages: data })
-        // console.log(this.state.messages)
 
         const url = 'http://163.172.130.246:8080/pay/' + address;
         axios.get(url).then(response => response.data)
         .then((data) => {
-          // console.log(data)
           this.setState({pay: data});
           const total = data["total"]
-          // console.log(total)
           this.setState({total: total});
         })
         .catch(function (error) {
           console.log(error);
         });
-
-
       })
       .catch(function (error) {
         console.log(error);
@@ -192,14 +171,11 @@ class Messages extends React.Component {
 
 
   async retrieveChildChainBalance() {
-
     await window.ethereum.request({ method: 'eth_requestAccounts' });
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
     const address = await signer.getAddress();
 
-
-  
     const childchainBalanceArray = await childChain.getBalance(address);
     
     const childchainBalance = childchainBalanceArray.map((i) => {
@@ -233,16 +209,12 @@ class Messages extends React.Component {
             web3.utils.toBN(i.amount).toString()
       };
     });
-    // console.log(childchainBalance)
     const amount = childchainBalance[0]['amount']
-    // console.log(amount)
     const wei = web3.utils.toWei(amount, "ether")
-    // console.log(wei)
     return wei;
   }
 
   async retrieveRootChainErc20Balance() {
-  
     const rootchainBalance = await web3.eth.getBalance(aliceAddress);
     const rootchainBalances = [
       {
@@ -265,25 +237,7 @@ class Messages extends React.Component {
 
   // normalize signing methods across wallet providers
   async signTypedData (typedData, signer) {
-
-    // console.log(typedData)
-
-    // const domain = {
-    //   name: 'OMG Network',
-    //   version: '1',
-    //   verifyingContract: '',
-    //   // verifyingContract: plasmaContractAddress,
-    //   salt: '0xfad5c7f626d80f9256ef01929f3beb96e058b8b4b0e3fe52d84f054c0e2a7a83'
-    // };
-
-
     const types = {
-      // EIP712Domain: [
-      //     { name: 'name', type: 'string' },
-      //     { name: 'version', type: 'string' },
-      //     { name: 'verifyingContract', type: 'address' },
-      //     { name: 'salt', type: 'bytes32' }
-      // ],
       Transaction: [
           { name: 'txType', type: 'uint256' },
           { name: 'input0', type: 'Input' },
@@ -311,7 +265,6 @@ class Messages extends React.Component {
     };
 
     const signature = await signer._signTypedData(typedData.domain, types, typedData.message);
-    // console.log(signature);
     return signature;
   }
 
@@ -326,13 +279,10 @@ class Messages extends React.Component {
 
 
   async transfer(receiverAdd, value) {
-    // const receiverAdd = '0x956015029B53403D6F39cf1A37Db555F03FD74dc';
-
     await window.ethereum.request({ method: 'eth_requestAccounts' });
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = provider.getSigner();
     const address = await signer.getAddress();
-    // console.log(address)
 
     const _utxos = await childChain.getUtxos(address);
     const utxos = orderBy(_utxos, i => i.amount, 'desc');
@@ -342,9 +292,6 @@ class Messages extends React.Component {
     if (!feeInfo) {
       console.log("fee error")
     }
-    // const feeInfo = 1;
-
-    // var value = 100
 
     const payments = [ {
       owner: receiverAdd,
@@ -378,9 +325,7 @@ class Messages extends React.Component {
     console.log("Waiting for transaction to be recorded by the Watcher...");
     // while amount in receiving account != expected amount
     const receiverBalance = await this.retrieveOMGBalance(receiverAdd);
-    // console.log(receiverBalance)
     const expectedAmount = parseInt(receiverBalance) + value;
-    // console.log(expectedAmount)
 
     var intermediateBalance = await this.retrieveOMGBalance(receiverAdd);
     while (parseInt(intermediateBalance) !== expectedAmount){
@@ -430,9 +375,6 @@ class Messages extends React.Component {
                 }
               })()}
             </div>
-            {/* <Button variant="secondary" onClick={() => this.transfer()}>Transfer</Button> */}
-            {/* <Button variant="secondary" onClick={async () => {await this.transfer();} }>Transfer</Button> */}
-            {/* <Button variant="secondary" onClick={this.getOMGtransaction}>OMG balance</Button> */}
             <Button variant="secondary" onClick={this.componentDidMount}>Reload</Button>
           </div>
           {this.state.messages.map((message, i) => (
@@ -450,7 +392,6 @@ class Messages extends React.Component {
               <Col>
               <div>
               <Button className="mybutton_message" variant="success" onClick={this.openModalSend(message.deviceAdd)}>Respond</Button>
-              {/* <Button variant="secondary" onClick={this.componentDidMount}>Modify</Button> */}
               <Button className="mybutton_message2" variant="danger" onClick={this.deleteClick(message._id)}>Delete</Button>
               </div>
               </Col>
@@ -463,17 +404,13 @@ class Messages extends React.Component {
             show={this.state.modal_resp}
             onHide={() => this.handleModalShowHide()}
           >
-                {/* <Modal.Header closeButton onClick={() => this.handleModal2ShowHide()}> */}
                 <Modal.Header>
-                  {/* <Modal.Title className="modal-test">{this.state.name}</Modal.Title> */}
                   <Modal.Title className="modal-test">{this.state.deviceAdd}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                 <h5>Message to send :</h5>
                 <Form>
                   <Form.Group controlId="formBasicName">
-                    {/* <Form.Label>Name</Form.Label> */}
-                    {/* <Form.Control type="name" placeholder={this.state.name} /> */}
                     <Form.Control
                       placeholder="payload"
                       value={this.state.down}
