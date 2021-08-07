@@ -11,6 +11,7 @@ import websockets
 from aiohttp import web
 import aiohttp_cors
 import motor.motor_asyncio
+import requests_async as requests   # pip3 install requests-async
 
 from lora import generate_deviceAdd, generate_key_pair, get_header, check_signature, generate_key_sym, decrypt, encrypt, sign, verify_signature_hash
 from device import test, get_all_devices, remove_all_devices, create_device, get_one_device, update_device, remove_device, generate_device, get_pubkey
@@ -24,7 +25,7 @@ ADDR = "163.172.130.246"
 PORT = 9999
 
 # payment_method can be 'OMG' or 'MPC'
-payment_method = 'OMG'  
+payment_method = 'MPC'
 message_price = 100
 
 automatic_pay = True
@@ -87,7 +88,7 @@ async def ws(websocket, path):
 
             # verify that counter_header not already registred 
             # get last counter_header for this device in msg DB
-            last_msg = await get_last_msg(deviceAdd)
+            last_msg = await get_last_msg(deviceAdd, collection_MSG)
             if last_msg == None :
                 last_counter = -1
                 last_gateway = gateway_add
@@ -97,14 +98,14 @@ async def ws(websocket, path):
             
             if int(counter_header) > last_counter :
             # if 100 > last_counter :
-                print("last_counter :", last_counter)
+                print("Last counter from this device :", last_counter)
             
                 # verify that gateway is the same
                 if gateway_add != last_gateway:
                 # if "gateway_add" != last_gateway:
-                    print("sleep")
+                    print("Sleep")
                     await asyncio.sleep(10)
-                    last_msg = await get_last_msg(deviceAdd)
+                    last_msg = await get_last_msg(deviceAdd, collection_MSG)
                     last_counter = int(last_msg['counter'])
                     # if the message has been processed in the meantime
                     if int(counter_header) <= last_counter:
@@ -129,7 +130,7 @@ async def ws(websocket, path):
                     if "error" not in payment_receipt and payment_receipt != None:
 
                         if down != b"down_message" :
-                            await pay_down(down_id)
+                            await pay_down(down_id, collection_DOWN)
 
                         await websocket.send(payment_receipt)
                         await websocket.send(down)
@@ -155,14 +156,14 @@ async def ws(websocket, path):
                             print(message)
                             response = b"payment error"
 
-                        print("response :", response)
+                        print("Response :", response)
 
                         if down == b"down_message" and response != b"nothing" and b"error" not in response and payment_method != 'OMG':
-                            print("send response")
+                            print("Send response")
 
                             # pay for the message if it is actual content
                             payment_receipt = "nothing"
-                            print("pay")
+                            # print("pay")
                             if payment_method == 'MPC' :
                                 payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, message_price)
                             await websocket.send(payment_receipt)
@@ -197,11 +198,11 @@ async def process(message, hash_structure, gateway, down):
     pType = header[0]
     counter = header[1]
     deviceAdd = header[2]
-    print("header :", header)
-    print("deviceAdd :", deviceAdd)
-    print("counter :", counter)
+    # print("header :", header)
+    # print("deviceAdd :", deviceAdd)
+    # print("counter :", counter)
 
-    x_pub, y_pub = await get_pubkey(deviceAdd)
+    x_pub, y_pub = await get_pubkey(deviceAdd, collection_DEVICE)
 
     if x_pub != "error" and y_pub != "error":
 
@@ -209,12 +210,12 @@ async def process(message, hash_structure, gateway, down):
 
         if valid != False :
             print("Signature is correct")
-            print(valid)
+            # print(valid)
 
             to_be_signed = valid._sig_structure
             message_hash = hashlib.sha256(to_be_signed).digest()
-            print(to_be_signed)
-            print(message_hash)
+            # print(to_be_signed)
+            # print(message_hash)
 
             if hash_structure == message_hash :
                 print("Hash is correct")
@@ -248,7 +249,7 @@ async def process(message, hash_structure, gateway, down):
                         return b"nothing"    
                 
                 else :
-                    print("nothing to send")
+                    # print("nothing to send")
                     return b"nothing"
 
             else :
@@ -300,7 +301,7 @@ async def start(request):
 
 async def down_message(deviceAdd, x_pub, y_pub):
     key = await generate_key_sym(serialized_private_server, x_pub, y_pub)
-    payload_respond = await get_one_down_f(deviceAdd)
+    payload_respond = await get_one_down_f(deviceAdd, collection_DOWN)
     if payload_respond != None :
         print("payload_respond :", payload_respond['payload'])
         counter = await read_increment_counter()
@@ -315,7 +316,7 @@ async def down_message(deviceAdd, x_pub, y_pub):
 async def close_contract(gateway_add):
     # verifies that the smart contract has been closed
     # get the contract_add
-    gateway_document = await get_one_gateway(gateway_add)
+    gateway_document = await get_one_gateway(gateway_add, collection_GATEWAY)
     contract_add = gateway_document['contract']
     # wait a moment
     await asyncio.sleep(20)
@@ -323,14 +324,14 @@ async def close_contract(gateway_add):
     # print("balance :", balance)
     if balance == 0:
         # delete the gateway
-        await delete_one_gateway(gateway_add)
+        await delete_one_gateway(gateway_add, collection_GATEWAY)
 
 
 async def verify_hash(hash_structure, signature, deviceAdd):
     try :
-        x_pub, y_pub = await get_pubkey(deviceAdd)
+        x_pub, y_pub = await get_pubkey(deviceAdd, collection_DEVICE)
         verified = verify_signature_hash(x_pub, y_pub, hash_structure, signature)
-        print("verified :", verified)
+        print("Hash is valid ?", verified)
 
         return verified
 
@@ -339,7 +340,7 @@ async def verify_hash(hash_structure, signature, deviceAdd):
 
 
 async def check_if_down(deviceAdd):
-    x_pub, y_pub = await get_pubkey(deviceAdd)
+    x_pub, y_pub = await get_pubkey(deviceAdd, collection_DEVICE)
 
     # check if there is a down_message to send back
     down = b"down_message"
@@ -369,8 +370,8 @@ async def omg_pay(deviceAdd, counter_header, gateway_add, price):
 
 async def mpc_pay(deviceAdd, counter_header, gateway_add, price):
     # verifies that gateway is already stored in GATEWAY DB
-    gateway_document = await get_one_gateway(gateway_add)
-    print("gateway_document :", gateway_document)
+    gateway_document = await get_one_gateway(gateway_add, collection_GATEWAY)
+    # print("gateway_document :", gateway_document)
     if gateway_document == None :
         # deploy smart contract 
         amount_creation = 100 * price
@@ -383,7 +384,7 @@ async def mpc_pay(deviceAdd, counter_header, gateway_add, price):
         contract_add = request.text
         # store gateway_add, contract_add, amount_creation, expiration
         amount_payed = 0
-        await create_gateway(gateway_add, contract_add, amount_payed, amount_creation, expiration)
+        await create_gateway(gateway_add, contract_add, amount_payed, amount_creation, expiration, collection_GATEWAY)
     else :
         contract_add = gateway_document['contract']
         amount_payed = gateway_document['amount_payed']
@@ -391,7 +392,7 @@ async def mpc_pay(deviceAdd, counter_header, gateway_add, price):
     
     # pay for the message --> amount_payed + price
     new_amount = amount_payed + price
-    print("new_amount :", new_amount)
+    print("New amount :", new_amount)
     if amount_creation > new_amount :
 
         body = {'contractAddress': contract_add, 'amount': new_amount}
@@ -400,7 +401,7 @@ async def mpc_pay(deviceAdd, counter_header, gateway_add, price):
         signature = request.text
 
         # update amount in GATEWAY DB
-        await update_gateway(gateway_add, new_amount)
+        await update_gateway(gateway_add, new_amount, collection_GATEWAY)
 
         # return respone --> MPC,signature,contract_add,price
         response = payment_method + ',' + signature + ',' + contract_add + ',' + str(price)

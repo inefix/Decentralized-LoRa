@@ -107,8 +107,7 @@ async def remove_msg(request):
     return web.Response(status=204)
 
 
-async def get_last_msg(deviceAdd):
-    collection_MSG = request.app['collection_MSG']
+async def get_last_msg(deviceAdd, collection_MSG):
     x = {"deviceAdd" : deviceAdd, "payed" : True}
 
     document = await collection_MSG.find_one(x, sort=[('counter', -1)])

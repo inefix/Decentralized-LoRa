@@ -13,7 +13,7 @@ from cryptography.exceptions import InvalidSignature
 
 from binascii import unhexlify, hexlify
 
-from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, Countersign0Message
+from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, CountersignMessage
 from cose.keys import CoseKey, EC2Key, SymmetricKey
 from cose.headers import Algorithm, KID, IV, Reserved
 from cose.algorithms import EdDSA, Es256, EcdhEsA256KW, EcdhEsA128KW, DirectHKDFAES128, EcdhSsA128KW, A128GCM, HMAC256
@@ -82,7 +82,7 @@ async def check_signature(packet, x_pub, y_pub):
     }
     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
 
-    decoded = Countersign0Message(
+    decoded = CountersignMessage(
         # phdr = {Algorithm: Es256},
         payload = packet
     )
@@ -163,7 +163,7 @@ async def sign(encrypted, privkey):
     }
     cose_key = CoseKey.from_dict(key_attribute_dict)
 
-    msg = Countersign0Message(
+    msg = CountersignMessage(
         phdr = {Algorithm: Es256},
         payload = encrypted
     )
