@@ -54,8 +54,7 @@ async def get_one_down(request):
     return web.json_response(document)
 
 
-async def get_one_down_f(deviceAdd):
-    collection_DOWN = request.app['collection_DOWN']
+async def get_one_down_f(deviceAdd, collection_DOWN):
     x = {"deviceAdd" : deviceAdd, "payed" : False}
 
     document = await collection_DOWN.find_one(x, sort=[('_id', 1)])
@@ -101,8 +100,7 @@ async def remove_down(request):
     return web.Response(status=204)
 
 
-async def pay_down(id) :
-    collection_DOWN = request.app['collection_DOWN']
+async def pay_down(id, collection_DOWN) :
     data = {"payed" : True}
     x = {"_id" : id}
 

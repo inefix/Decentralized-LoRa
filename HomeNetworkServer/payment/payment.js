@@ -86,7 +86,8 @@ async function payment(ctx) {
 
     const signedTypedData = childChain.buildSignedTransaction(typedData, signatures);  
     const receipt = await childChain.submitTransaction(signedTypedData);
-    console.log('Transaction submitted: ', receipt.txhash)
+    // console.log('Transaction submitted: ', receipt.txhash)
+    console.log('Transaction submitted')
 
     
     ctx.body = receipt.txhash;

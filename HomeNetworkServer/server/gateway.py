@@ -1,18 +1,15 @@
-async def get_one_gateway(gateway_add):
-    collection_GATEWAY = request.app['collection_GATEWAY']
+async def get_one_gateway(gateway_add, collection_GATEWAY):
     x = {"_id" : gateway_add}
     document = await collection_GATEWAY.find_one(x)
     return document
 
 
-async def delete_one_gateway(gateway_add):
-    collection_GATEWAY = request.app['collection_GATEWAY']
+async def delete_one_gateway(gateway_add, collection_GATEWAY):
     x = {"_id" : gateway_add}
     await collection_GATEWAY.delete_many(x)
 
 
-async def create_gateway(gateway_add, contract_add, amount_payed, amount_creation, expiration):
-    collection_GATEWAY = request.app['collection_GATEWAY']
+async def create_gateway(gateway_add, contract_add, amount_payed, amount_creation, expiration, collection_GATEWAY):
     # check unique id
     x = {"_id" : gateway_add}
     document = await collection_GATEWAY.find_one(x)
@@ -21,8 +18,7 @@ async def create_gateway(gateway_add, contract_add, amount_payed, amount_creatio
         result = await collection_GATEWAY.insert_one(data)
 
 
-async def update_gateway(gateway_add, new_amount):
-    collection_GATEWAY = request.app['collection_GATEWAY']
+async def update_gateway(gateway_add, new_amount, collection_GATEWAY):
     x = {"_id" : gateway_add}
     data = {"amount_payed" : new_amount}
 
