@@ -25,11 +25,13 @@ ADDR = "163.172.130.246"
 PORT = 9999
 
 # payment_method can be 'OMG' or 'MPC'
-payment_method = 'MPC'
-message_price = 100
+payment_method = 'OMG'
+message_price = 3000000000000       # in whei = 0,000003 eth = 0.1 usd
 
 automatic_pay = True
 automatic_response = True
+
+ether_add = '0x5E8138098a133B6424AEC09232674E253909B3Fb'
 
 
 serialized_private_server = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
@@ -183,7 +185,8 @@ async def ws(websocket, path):
 
 
         except websockets.exceptions.ConnectionClosed as e:
-            print(e)
+            # print(e)
+            print("Connection closed\n")
             return
 
         except ValueError:
@@ -228,7 +231,7 @@ async def process(message, hash_structure, gateway, down):
                 id = str(time.time())
                 date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
 
-                x = {"_id" : id, "date" : date, "owner" : ADDR_int, "gateway" : gateway, "payed" : automatic_pay, "pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd, "payload" : decrypted}
+                x = {"_id" : id, "date" : date, "owner" : ether_add, "gateway" : gateway, "payed" : automatic_pay, "pType" : pType, "counter" : counter, "deviceAdd" : deviceAdd, "payload" : decrypted}
                 await collection_MSG.insert_one(x)
 
                 # return response to send back if no previous down sent by user
@@ -303,7 +306,7 @@ async def down_message(deviceAdd, x_pub, y_pub):
     key = await generate_key_sym(serialized_private_server, x_pub, y_pub)
     payload_respond = await get_one_down_f(deviceAdd, collection_DOWN)
     if payload_respond != None :
-        print("payload_respond :", payload_respond['payload'])
+        print("Payload of the response :", payload_respond['payload'])
         counter = await read_increment_counter()
         header_respond = ["DataUnconfirmedDown", counter, ADDR]
         encrypted = await encrypt(header_respond, payload_respond['payload'], key)
@@ -362,7 +365,7 @@ async def omg_pay(deviceAdd, counter_header, gateway_add, price):
     # print(body)
     request = await requests.post('http://163.172.130.246:3000/payment/', data=body, headers= { 'Content-Type': 'application/json'})
     payment_hash = request.text
-    print("payment hash :", payment_hash)
+    print("Payment hash :", payment_hash)
     response = payment_method + ',' + payment_hash
 
     return response
