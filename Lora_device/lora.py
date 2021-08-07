@@ -8,7 +8,7 @@ from cryptography.hazmat.backends import default_backend
 
 from binascii import unhexlify
 
-from cose.messages import CoseMessage, Enc0Message, Countersign0Message
+from cose.messages import CoseMessage, Enc0Message, CountersignMessage
 from cose.keys import CoseKey, SymmetricKey
 from cose.headers import Algorithm, KID, IV, Reserved
 from cose.algorithms import Es256, A128GCM
@@ -106,7 +106,7 @@ async def sign(private_value, x_pub_device, y_pub_device, encrypted):
 
     bytes_key_priv = private_value.to_bytes(32, 'big')
 
-    msg2 = Countersign0Message(
+    msg2 = CountersignMessage(
         phdr = {Algorithm: Es256},
         payload = encrypted
     )
@@ -139,7 +139,7 @@ async def check_signature(x_pub_server, y_pub_server, packet):
     }
     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
 
-    decoded = Countersign0Message(
+    decoded = CountersignMessage(
         # phdr = {Algorithm: Es256},
         payload = packet
     )
