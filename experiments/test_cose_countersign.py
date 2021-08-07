@@ -14,7 +14,7 @@ from cbor2 import dumps, loads
 
 from binascii import unhexlify, hexlify
 
-from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, Countersign0Message
+from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, CountersignMessage
 from cose.keys import CoseKey, EC2Key, SymmetricKey
 from cose.headers import Algorithm, KID, IV, Reserved
 from cose.algorithms import EdDSA, Es256, EcdhEsA256KW, EcdhEsA128KW, DirectHKDFAES128, EcdhSsA128KW, A128GCM, HMAC256
@@ -210,7 +210,7 @@ def main():
     # verified = counterVerify(pub_device, encrypted, signature)
     # print("verified ?", verified)
 
-    msg2 = Countersign0Message(
+    msg2 = CountersignMessage(
         phdr = {Algorithm: Es256},
         uhdr = {KID: b'kid2'},
         #payload = 'signed message'.encode('utf-8')
@@ -305,7 +305,7 @@ def main():
         }
         pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
 
-        decoded = Countersign0Message(
+        decoded = CountersignMessage(
             # phdr = {Algorithm: Es256},
             #payload = 'signed message'.encode('utf-8')
             payload = packet
@@ -356,7 +356,7 @@ def main():
         }
         pub_cose_key2 = CoseKey.from_dict(pub_key_attribute_dict2)
 
-        decoded2 = Countersign0Message(
+        decoded2 = CountersignMessage(
             # phdr = {Algorithm: Es256},
             #payload = 'signed message'.encode('utf-8')
             payload = packet
