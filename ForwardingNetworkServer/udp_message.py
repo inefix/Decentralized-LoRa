@@ -27,8 +27,8 @@ async def message_process(data) :
                     json_obj = json.loads(string)
                     final = json_obj['rxpk'][0]['data']
                     processed = b64decode(final)
-                    print("final :", final)
-                    print("processed :", processed)
+                    # print("final :", final)
+                    print("Received message :", processed)
 
                     return processed
 
