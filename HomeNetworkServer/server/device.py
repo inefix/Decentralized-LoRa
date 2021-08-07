@@ -155,8 +155,7 @@ async def generate_device(request):
         return web.json_response({'error': 'Device already created'}, status=404)
 
 
-async def get_pubkey(id):
-    collection_DEVICE = request.app['collection_DEVICE']
+async def get_pubkey(id, collection_DEVICE):
     x = {"_id" : id}
 
     document = await collection_DEVICE.find_one(x)
