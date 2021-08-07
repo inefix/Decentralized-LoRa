@@ -48,7 +48,7 @@ message = b'error, no server response'
 messageQueue = queue.Queue()
 packet_forwarder_response_add = 0
 
-message_price = 100
+message_price = 3000000000000       # in whei = 0,000003 eth = 0.1 usd
 # balance_threshold is indicated in percent --> if > balance_threshold, close the contract
 balance_threshold = 0.8
 # time_threshold is indicated in seconds --> if < time_threshold remaining, close the contract
@@ -108,6 +108,8 @@ class ProxyDatagramProtocol():
 
                     x_pub = format(x_pub, '064x')
                     y_pub = format(y_pub, '064x')
+                    print("x_pub : ", x_pub)
+                    print("y_pub : ", y_pub)
 
                     # verify signature 
                     valid = await verify_countersign(processed, x_pub, y_pub)
@@ -239,7 +241,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                             # verify down
                             verified = await verify_down(down_message)
                             if verified :
-                                print("down signature is valid")
+                                print("Down signature is valid")
                                 price = message_price * 2
                                 messageQueue.put(down_message)
                         else :
@@ -247,18 +249,21 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
 
                         payment_hash = payment_list[1]
                         # sleep 2 minutes
-                        print("sleep for 2 minutes")
+                        print("Sleep for 2 minutes")
                         await asyncio.sleep(120)
                         metadata = await verify_omg_payment(payment_hash, remote_host, price, ether_add)
                         # get value from metadata
                             # split ,
-                        meta_list = metadata.split(",")
-                        counter_header = meta_list[1]
-                        deviceAdd = meta_list[2]
+                        if metadata != None :
+                            meta_list = metadata.split(",")
+                            counter_header = meta_list[1]
+                            deviceAdd = meta_list[2]
 
-                        # get and pay message
-                        message = await get_and_pay(remote_host, deviceAdd, counter_header)
-                        # print("message :", message)
+                            # get and pay message
+                            message = await get_and_pay(remote_host, deviceAdd, counter_header)
+                            # print("message :", message)
+                        else :
+                            message = None
 
 
                     if payment_list[0] == 'MPC' :
@@ -283,7 +288,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                             if down_message != b"down_message" and payed_amount == 2*message_price:
                                 verified = await verify_down(down_message)
                                 if verified :
-                                    print("down signature is valid")
+                                    print("Down signature is valid")
                                     messageQueue.put(down_message)
 
                             # send message
@@ -300,7 +305,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                         else :
                             await websocket.send(message['msg'])
                         
-                        print("message sent to server")
+                        print("Message sent to server")
 
                         if down_message == b"down_message" and payment_list[0] != 'OMG':
 
@@ -320,7 +325,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                                     if verified != False and response != "nothing":
                                         verified2 = await verify_down(response)
                                         if verified2 :
-                                            print("down signature is valid")
+                                            print("Down signature is valid")
                                             messageQueue.put(response)
                                             if verified == "error : smart contract closed":
                                                 await websocket.send("error : smart contract closed")
