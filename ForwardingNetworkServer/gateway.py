@@ -90,13 +90,13 @@ class ProxyDatagramProtocol():
                     pType = header[0]
                     counter_header = header[1]
                     deviceAdd = header[2]
-                    print("header :", header)
-                    print("deviceAdd :", deviceAdd)
+                    # print("header :", header)
+                    # print("deviceAdd :", deviceAdd)
 
                     # get address from blockchain + pub key
                     # convert deviceAdd to decimal
                     device = await contract_lora.functions.devices(int(deviceAdd, 0)).call()
-                    print(device)
+                    # print(device)
                     ipv4Addr = device[0]
                     ipv6Addr = device[1]
                     domain = device[2]
@@ -112,6 +112,7 @@ class ProxyDatagramProtocol():
                     # verify signature 
                     valid = await verify_countersign(processed, x_pub, y_pub)
                     if valid != False :
+                        print("Signature is correct")
                         # get the hash and the signature to send
                         to_be_signed = valid._sig_structure
                         hash_structure = hashlib.sha256(to_be_signed).digest()
@@ -170,8 +171,7 @@ class ProxyDatagramProtocol():
                             remote_host = str(ipaddress.IPv6Address(ipv6Addr))
                             remote_port = ipv6Port
 
-                        print(remote_host)
-                        print(remote_port)
+                        print(f"Send message to server : {remote_host} on port : {remote_port}")
 
                         await save_msg(processed, pType, counter_header, deviceAdd, remote_host, remote_port)
 
@@ -207,7 +207,7 @@ class ProxyDatagramProtocol():
 
                 message = messageQueue.get()
                 response = await generate_response(message)
-                print("response :", response)
+                print("Response to the device :", response)
                 self.transport.sendto(response, addr)
 
 
@@ -219,7 +219,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
             try :
 
                 packet = deviceAdd + "," + counter_header + "," + ether_add
-                print("packet :", packet)
+                # print("packet :", packet)
 
                 await websocket.send(hash_structure)
                 await websocket.send(signature)
@@ -228,8 +228,8 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                 payment_receipt = await websocket.recv()
                 if "error" not in payment_receipt:
                     down_message = await websocket.recv()
-                    print("payment_receipt :", payment_receipt)
-                    print("down_message :", down_message)
+                    print("Payment receipt :", payment_receipt)
+                    print("Down message :", down_message)
 
                     payment_list = payment_receipt.split(',')
                     if payment_list[0] == 'OMG' :
@@ -258,7 +258,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
 
                         # get and pay message
                         message = await get_and_pay(remote_host, deviceAdd, counter_header)
-                        print("message :", message)
+                        # print("message :", message)
 
 
                     if payment_list[0] == 'MPC' :
@@ -275,7 +275,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                                     messageQueue.put(down_message)
 
                             message = await get_and_pay(remote_host, deviceAdd, counter_header)
-                            print("message :", message)
+                            # print("message :", message)
 
                         elif verified ==  "error : smart contract closed":
                             message = verified
@@ -288,7 +288,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
 
                             # send message
                             message2 = await get_and_pay(remote_host, deviceAdd, counter_header)
-                            print("message2 :", message2)
+                            # print("message2 :", message2)
 
                         else :
                             message = None
@@ -398,7 +398,7 @@ async def get_and_pay(host, deviceAdd, counter_header) :
 
 
 async def start_datagram_proxy(bind, port):
-    print("web3 is connected :", await web3.isConnected())
+    print("Web3 is connected ?", await web3.isConnected())
     loop = asyncio.get_event_loop()
     return await loop.create_datagram_endpoint(
         lambda: ProxyDatagramProtocol(),
@@ -411,13 +411,13 @@ def main(bind=local_addr, port=local_port):
     # print("Starting UDP proxy server...")
     coro = start_datagram_proxy(bind, port)
     transport, _ = loop.run_until_complete(coro)
-    print("UDP server is running...")
+    print("UDP server is running...\n")
 
     try:
         loop.run_forever()
     except KeyboardInterrupt:
         pass
-    print("Closing transport...")
+    print("\nClosing transport...")
     transport.close()
     loop.close()
 

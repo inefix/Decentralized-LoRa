@@ -2,7 +2,7 @@ import json
 
 from binascii import unhexlify
 
-from cose.messages import CoseMessage, Countersign0Message
+from cose.messages import CoseMessage, CountersignMessage
 from cose.keys import CoseKey
 from cose.headers import Algorithm, KID, IV, Reserved
 from cose.algorithms import Es256
@@ -30,13 +30,13 @@ async def verify_countersign(packet, x_pub, y_pub) :
         EC2KpY : unhexlify(y_pub)
     }
     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
-    decoded = Countersign0Message(
+    decoded = CountersignMessage(
         # phdr = {Algorithm: Es256},
         payload = packet
     )
     decoded.key = pub_cose_key
     if decoded.verify_signature() :
-        #print("Signature is correct")
+        # print("Signature is correct")
         # return True
         return decoded
     else :
