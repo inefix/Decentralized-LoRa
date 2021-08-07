@@ -39,7 +39,6 @@ class Down extends React.Component {
   send() {
     this.setState({ modal_resp: !this.state.modal_resp })
 
-    //console.log(this.state.val);
     if(this.state.down !== ""){
       // update server
       const url = 'http://163.172.130.246:8080/down/' + this.state.id;
@@ -60,8 +59,6 @@ class Down extends React.Component {
   }
 
   deleteClick = value => () => {
-    // console.log(value);
-
     const items = this.state.messages.filter(item => item._id !== value);
     this.setState({ messages: items });
 
@@ -74,23 +71,18 @@ class Down extends React.Component {
       console.log(error);
     });
 
-    //this.componentDidMount()
   };
-
 
   async componentDidMount() {
     const url = 'http://163.172.130.246:8080/down';
     axios.get(url).then(response => response.data)
     .then((data) => {
       this.setState({ messages: data })
-      // console.log(this.state.messages)
     })
     .catch(function (error) {
       console.log(error);
     });
   }
-
-
 
   
   render() {

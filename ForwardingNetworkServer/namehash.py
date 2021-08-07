@@ -1,9 +1,6 @@
 import codecs
 import functools
 
-# from sha3 import sha3_256
-# from sha3 import keccak_256 as sha3_256
-# import hashlib
 from Crypto.Hash import keccak
 import idna
 
@@ -21,9 +18,6 @@ def compose(*functions):
 
 
 def sha3(value):
-    # return hashlib.sha3_256(value).digest()
-    # return sha3_256(value).digest()
-    # value = value.decode("utf8")
     k = keccak.new(digest_bits=256)
     k.update(value)
     return k.digest()
