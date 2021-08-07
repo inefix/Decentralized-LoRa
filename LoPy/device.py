@@ -51,7 +51,7 @@ try :
             # get the response
             counter = 0
             waiting_ack = True
-            while waiting_ack and counter < 90 :
+            while waiting_ack and counter < 120 :
                 data = s.recv(512)
 
                 if len(data) > 0 :
