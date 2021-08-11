@@ -1,0 +1,35 @@
+{
+	"gateway_conf": {
+		"gateway_ID": "B827EBFFFEA86FB9",
+		"keepalive_interval": 10,
+		"stat_interval": 60,
+		"push_timeout_ms": 100,
+		"autoquit_threshold": 0,
+		"forward_crc_valid": true,
+		"forward_crc_error": true,
+		"forward_crc_disabled": true,
+
+		/* GPS reference coordinates */
+		"ref_latitude": 0.0,
+		"ref_longitude": 0.0,
+		"ref_altitude": 0
+
+		/* GPS configuration */
+		/*
+		"gps_tty_path": "/dev/ttyAMA0",
+		"fake_gps": false
+		*/
+
+		/* Beaconing parameters */
+		/*
+		"beacon_period": 128,
+		"beacon_freq_hz": 869525000,
+		"beacon_freq_nb": 1,
+		"beacon_freq_step": 0,
+		"beacon_datarate": 9,
+		"beacon_bw_hz": 125000,
+		"beacon_power": 14,
+		"beacon_infodesc": 0,
+		*/
+	}
+}

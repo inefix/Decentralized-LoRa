@@ -77,10 +77,10 @@ async def encrypt(key, deviceAdd, text):
     }
     reverse = {}
 
-    pType = await get_key_by_value(d, reverse, "DataConfirmedUp")
+    mType = await get_key_by_value(d, reverse, "DataConfirmedUp")
     counter = await read_increment_counter()
     plaintext = text
-    header = [pType, str(counter), deviceAdd]
+    header = [mType, str(counter), deviceAdd]
 
     msg = Enc0Message(
         phdr = {Algorithm: A128GCM, IV: b'000102030405060708090a0b0c', Reserved: json.dumps(header)},
@@ -98,12 +98,6 @@ async def encrypt(key, deviceAdd, text):
 
 # Counter Signature version
 async def sign(private_value, x_pub_device, y_pub_device, encrypted):
-    privkey2 = ec.derive_private_key(
-        private_value,
-        ec.SECP256R1(),     # elliptic curve 256 bits
-        backend=default_backend()
-    )
-
     bytes_key_priv = private_value.to_bytes(32, 'big')
 
     msg2 = CountersignMessage(

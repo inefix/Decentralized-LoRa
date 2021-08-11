@@ -22,7 +22,7 @@ try :
         print("Please restart your device to ensure that pybytes did not autostart")
 
 
-    # initialise LoRa in LORA mode
+    # initialize LoRa in LORA mode
     lora = LoRa(mode=LoRa.LORA, region=LoRa.EU868, sf=12, coding_rate=LoRa.CODING_4_7, power_mode=LoRa.ALWAYS_ON, frequency=867500000, bandwidth=LoRa.BW_125KHZ, public=True, adr=True)
 
     # create a raw LoRa socket

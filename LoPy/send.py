@@ -20,7 +20,7 @@ if json.loads(stored)['pybytes_autostart'] != False :
     print("Please restart your device to ensure that pybytes did not autostart")
 
 
-# initialise LoRa in LORA mode
+# initialize LoRa in LORA mode
 # Please pick the region that matches where you are using the device:
 # Asia = LoRa.AS923
 # Australia = LoRa.AU915

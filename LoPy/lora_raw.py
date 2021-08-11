@@ -3,7 +3,7 @@ import socket
 import machine
 import time
 
-# initialise LoRa in LORA mode
+# initialize LoRa in LORA mode
 # Please pick the region that matches where you are using the device:
 # Asia = LoRa.AS923
 # Australia = LoRa.AU915
