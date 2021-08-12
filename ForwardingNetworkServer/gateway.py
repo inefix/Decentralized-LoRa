@@ -111,7 +111,7 @@ class ProxyDatagramProtocol():
                     print("x_pub : ", x_pub)
                     print("y_pub : ", y_pub)
 
-                    # verify signature 
+                    # verify signature
                     valid = await verify_countersign(processed, x_pub, y_pub)
                     if valid != False :
                         print("Signature is correct")
@@ -188,7 +188,7 @@ class ProxyDatagramProtocol():
                     print("TypeError")
                     message = b'error, corrupted data'
                     messageQueue.put(message)
-                except AttributeError : 
+                except AttributeError :
                     print("AttributeError")
                     message = b'error, corrupted data'
                     messageQueue.put(message)
@@ -304,7 +304,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                             await websocket.send(message2['msg'])
                         else :
                             await websocket.send(message['msg'])
-                        
+
                         print("Message sent to server")
 
                         if down_message == b"down_message" and payment_list[0] != 'OMG':
@@ -376,7 +376,7 @@ async def verify_down(message):
         x_pub = format(x_pub, '064x')
         y_pub = format(y_pub, '064x')
 
-        # verify signature 
+        # verify signature
         valid = await verify_countersign(message, x_pub, y_pub)
 
         return valid
