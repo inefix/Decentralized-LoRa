@@ -147,6 +147,8 @@ def main():
     print("HKDF keys :")
 
     print("Device key :", key_device)
+    print("length of test :", len("test"))
+    print("Symmetric key length :", len(key_device))
     print("Server key :", key_server)
 
     #print("################################################")

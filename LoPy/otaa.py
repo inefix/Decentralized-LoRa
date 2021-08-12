@@ -3,7 +3,7 @@ import socket
 import time
 import ubinascii
 
-# Initialise LoRa in LORAWAN mode.
+# Initialize LoRa in LORAWAN mode.
 # Please pick the region that matches where you are using the device:
 # Asia = LoRa.AS923
 # Australia = LoRa.AU915
