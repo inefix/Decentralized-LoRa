@@ -67,7 +67,6 @@ collection_MSG = db['MSG']
 collection_GATEWAY = db['GATEWAY']
 collection_DOWN = db['DOWN']
 
-add = "0.0.0.0"     # localhost does not work ! https://stackoverflow.com/questions/15734219/simple-python-udp-server-trouble-receiving-packets-from-clients-other-than-loca/15734249
 
 
 async def ws(websocket, path):
@@ -88,7 +87,7 @@ async def ws(websocket, path):
             # verifies unique counter
             # get last message document from this device
 
-            # verify that counter_header not already registred 
+            # verify that counter_header not already registred
             # get last counter_header for this device in msg DB
             last_msg = await get_last_msg(deviceAdd, collection_MSG)
             if last_msg == None :
@@ -97,11 +96,11 @@ async def ws(websocket, path):
             else :
                 last_counter = int(last_msg['counter'])
                 last_gateway = last_msg['gateway']
-            
+
             if int(counter_header) > last_counter :
             # if 100 > last_counter :
                 print("Last counter from this device :", last_counter)
-            
+
                 # verify that gateway is the same
                 if gateway_add != last_gateway:
                 # if "gateway_add" != last_gateway:
@@ -173,7 +172,7 @@ async def ws(websocket, path):
                             success = await websocket.recv()
                             if success == "error : smart contract closed":
                                 await close_contract(gateway_add)
-                    
+
                     else :
                         await websocket.send("error : payment error")
 
@@ -225,7 +224,7 @@ async def process(message, hash_structure, gateway, down):
 
                 key = await generate_key_sym(serialized_private_server, x_pub, y_pub)
                 decrypted = await decrypt(message, key)
-                print("Payload :", decrypted) 
+                print("Payload :", decrypted)
 
                 # store decrypted message into db + header + owner
                 id = str(time.time())
@@ -246,11 +245,11 @@ async def process(message, hash_structure, gateway, down):
                         packet = await sign(encrypted, serialized_private_server)
 
                         return packet
-                    
+
                     else :
                         print("no DataConfirmedUp")
-                        return b"nothing"    
-                
+                        return b"nothing"
+
                 else :
                     # print("nothing to send")
                     return b"nothing"
@@ -261,7 +260,7 @@ async def process(message, hash_structure, gateway, down):
         else :
             print("signature is not correct")
             return b"error2 : signature is not correct"
-    else: 
+    else:
         print("device not registered")
         return b"error1 : device not registered"
 
@@ -353,7 +352,7 @@ async def check_if_down(deviceAdd):
     down, down_id = await down_message(deviceAdd, x_pub, y_pub)
     if down != b"down_message":
         price = message_price * 2
-    
+
     return down, down_id, price
 
 
@@ -376,7 +375,7 @@ async def mpc_pay(deviceAdd, counter_header, gateway_add, price):
     gateway_document = await get_one_gateway(gateway_add, collection_GATEWAY)
     # print("gateway_document :", gateway_document)
     if gateway_document == None :
-        # deploy smart contract 
+        # deploy smart contract
         amount_creation = 100 * price
         duration = 30 * 24 * 60 * 60
         epoch_time = int(time.time())
@@ -392,7 +391,7 @@ async def mpc_pay(deviceAdd, counter_header, gateway_add, price):
         contract_add = gateway_document['contract']
         amount_payed = gateway_document['amount_payed']
         amount_creation = gateway_document['amount_creation']
-    
+
     # pay for the message --> amount_payed + price
     new_amount = amount_payed + price
     print("New amount :", new_amount)
@@ -412,7 +411,7 @@ async def mpc_pay(deviceAdd, counter_header, gateway_add, price):
     else :
         response = "error5 : not enough money in the smart contract"
         print(response)
-        
+
         # deploy new smart contract and update DB
 
     return response
@@ -475,11 +474,11 @@ app['ADDR_int'] = ADDR_int
 app['PORT'] = PORT
 
 
-def main(add=add, port=PORT):
+def main():
     loop = asyncio.get_event_loop()
 
     print("Starting the Websocket server...")
-    start_server = websockets.serve(ws, "0.0.0.0", 8765)
+    start_server = websockets.serve(ws, "0.0.0.0", PORT)
     loop.run_until_complete(start_server)
 
     print("Starting the HTTP server...")
@@ -489,7 +488,7 @@ def main(add=add, port=PORT):
         loop.run_forever()
     except KeyboardInterrupt:
         pass
-    print("Closing UDP server...")
+    print("Closing Websocket server...")
     print("Closing HTTP server...")
     transport.close()
     loop.close()

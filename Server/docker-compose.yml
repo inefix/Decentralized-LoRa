@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  
+
   server:
     container_name: HomeNetworkServer
     build:
@@ -11,9 +11,9 @@ services:
       # notice : this will delete the pycose git repo from the container
       - ./HomeNetworkServer:/app
     ports:
-      - 9999:9999/udp
+      # - 9999:9999/udp
       - 8080:8080
-      - 8765:8765
+      - 9999:9999
     # networks:
     #   - udpclient_some-net
     #command: tail -f
@@ -23,7 +23,7 @@ services:
 
   frontend:
     container_name: ApplicationServer
-    build: 
+    build:
       context: ./ApplicationServer
       dockerfile: Dockerfile
     volumes:
@@ -40,12 +40,12 @@ services:
     depends_on:
       - HomeNetworkServer
     #command: tail -f
-    command: npm start    
-    
-  
+    command: npm start
+
+
   payment:
     container_name: Payment
-    build: 
+    build:
       context: ./Payment
       dockerfile: Dockerfile
     volumes:

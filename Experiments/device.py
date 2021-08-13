@@ -20,7 +20,7 @@ from cryptography.exceptions import InvalidSignature
 from binascii import unhexlify, hexlify
 
 # pip3 install cose
-from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, Countersign0Message
+from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, CountersignMessage
 from cose.keys import CoseKey, EC2Key, SymmetricKey
 from cose.headers import Algorithm, KID, IV, Reserved
 from cose.algorithms import EdDSA, Es256, EcdhEsA256KW, EcdhEsA128KW, DirectHKDFAES128, EcdhSsA128KW, A128GCM, HMAC256
@@ -40,10 +40,11 @@ serialized_public = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQ
 pubkey = serialization.load_pem_public_key(serialized_public, backend=default_backend())
 x_pub = format(pubkey.public_numbers().x, '064x')
 y_pub = format(pubkey.public_numbers().y, '064x')
-x_pub = pubkey.public_numbers().x
-y_pub = pubkey.public_numbers().y
 print(f"x_pub : {x_pub} {type(x_pub)}")
 print(f"y_pub : {y_pub} {type(y_pub)}")
+x_pub = pubkey.public_numbers().x
+y_pub = pubkey.public_numbers().y
+
 
 serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
 
@@ -75,7 +76,7 @@ async def generate_key_sym():
 
 async def encrypt(text, key):
     d = {
-        "0000": "JoinRequest", 
+        "0000": "JoinRequest",
         "0001": "JoinResponse",
         "0010": "JoinAccept",
         "0011": "DataConfirmedUp",
@@ -116,7 +117,7 @@ async def encrypt(text, key):
 #     bytes_key_priv = privkey.private_numbers().private_value.to_bytes(32, 'big')
 #     x = format(privkey.private_numbers().public_numbers.x, '064x')
 #     y = format(privkey.private_numbers().public_numbers.y, '064x')
-    
+
 #     msg2 = Sign1Message(
 #         phdr = {Algorithm: Es256},
 #         #payload = 'signed message'.encode('utf-8')
@@ -174,8 +175,8 @@ async def sign(encrypted):
     bytes_key_priv = privkey.private_numbers().private_value.to_bytes(32, 'big')
     x = format(privkey.private_numbers().public_numbers.x, '064x')
     y = format(privkey.private_numbers().public_numbers.y, '064x')
-    
-    msg2 = Countersign0Message(
+
+    msg2 = CountersignMessage(
         phdr = {Algorithm: Es256},
         #payload = 'signed message'.encode('utf-8')
         payload = encrypted
@@ -215,7 +216,7 @@ async def check_signature(packet, pubkey):
     }
     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
 
-    decoded = Countersign0Message(
+    decoded = CountersignMessage(
         # phdr = {Algorithm: Es256},
         #payload = 'signed message'.encode('utf-8')
         payload = packet
@@ -239,7 +240,7 @@ async def decrypt(packet, key):
     decoded.key = cose_key_dec
     decrypt = decoded.decrypt()
     decrypt_decode = decrypt.decode("utf-8")
-    #print("Payload :", decrypt_decode) 
+    #print("Payload :", decrypt_decode)
 
     return decrypt_decode
 
@@ -252,7 +253,7 @@ class EchoClientProtocol:
 
     def connection_made(self, transport):
         loop = asyncio.get_event_loop()
-        loop.create_task(self.connection_made_async(transport)) 
+        loop.create_task(self.connection_made_async(transport))
 
     async def connection_made_async(self, transport):
         self.transport = transport
@@ -270,8 +271,8 @@ class EchoClientProtocol:
     def datagram_received(self, data, addr):
         loop = asyncio.get_event_loop()
         loop.create_task(self.datagram_received_async(data, addr))
-        
-    
+
+
     async def datagram_received_async(self, data, addr):
         #print("Received:", data.decode())
         print("Received:", data)
@@ -288,7 +289,7 @@ class EchoClientProtocol:
 
         print("Close the socket")
         self.transport.close()
-        
+
 
     def error_received(self, exc):
         print('Error received:', exc)
