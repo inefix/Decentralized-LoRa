@@ -478,7 +478,7 @@ def main():
     loop = asyncio.get_event_loop()
 
     print("Starting the Websocket server...")
-    start_server = websockets.serve(ws, "0.0.0.0", PORT)
+    start_server = websockets.serve(ws, "0.0.0.0", 8765)
     loop.run_until_complete(start_server)
 
     print("Starting the HTTP server...")
