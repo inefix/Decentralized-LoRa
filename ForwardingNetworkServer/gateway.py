@@ -48,7 +48,7 @@ message = b'error, no server response'
 messageQueue = queue.Queue()
 packet_forwarder_response_add = 0
 
-message_price = 3000000000000       # in whei = 0,000003 eth = 0.1 usd
+message_price = 3000000000000       # in Wei = 0,000003 eth = 0.1 usd
 # balance_threshold is indicated in percent --> if > balance_threshold, close the contract
 balance_threshold = 0.8
 # time_threshold is indicated in seconds --> if < time_threshold remaining, close the contract
@@ -307,7 +307,7 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
 
                         print("Message sent to server")
 
-                        if down_message == b"down_message" and payment_list[0] != 'OMG':
+                        if down_message == b"down_message" and payment_list[0] == 'MPC':
 
                             payment_receipt = await websocket.recv()
                             response = await websocket.recv()

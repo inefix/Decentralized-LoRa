@@ -187,7 +187,7 @@ class Devices extends React.Component {
       //console.log(this.state.devices)
      })
     .catch(function (error) {
-      console.log(error); 
+      console.log(error);
     });
 
     // get the ip of the server
@@ -199,7 +199,7 @@ class Devices extends React.Component {
       this.getDeviceBlockchain(data)
      })
     .catch(function (error) {
-      console.log(error); 
+      console.log(error);
     });
   }
 
@@ -235,14 +235,14 @@ class Devices extends React.Component {
             this.store_pubkey(server, data)
           })
           .catch(function (error) {
-            console.log(error); 
+            console.log(error);
           });
 
         }
       } catch (err) {
         console.log("Error: ", err)
       }
-    } 
+    }
   }
 
   async store_pubkey(server, pubkey){
@@ -313,7 +313,7 @@ class Devices extends React.Component {
         console.log(deviceAdd);
         this.delete(deviceAdd)
       }
-      
+
     } else {
       // console.log("Error, no Metamask");
       this.setState({error: true});
@@ -327,14 +327,14 @@ class Devices extends React.Component {
           <div className="header">
             <h1>Devices</h1>
             <div>
-              {this.state.error ? 
+              {this.state.error ?
               <div className="d-flex align-items-center">
                 <p className="error">Error, no Metamask</p>
               </div>:
               <p></p>}
             </div>
             <div>
-              {this.state.willShowLoader ? 
+              {this.state.willShowLoader ?
               <div className="d-flex align-items-center">
                 <p className="pspinner">TX PENDING</p><Spinner className="spinner" animation="border" />
               </div>:
@@ -343,7 +343,7 @@ class Devices extends React.Component {
             <Button variant="secondary" onClick={this.componentDidMount}>Reload</Button>
             <Button variant="primary" onClick={() => this.createDevice()}>Add device</Button>
 
-            <Modal 
+            <Modal
               dialogClassName="my-modal"
               show={this.state.showHide}
               onHide={() => this.handleModalShowHide()}
@@ -365,7 +365,7 @@ class Devices extends React.Component {
                           </Form.Group>
                         </Form>
 
-                        <h5>deviceAdd :</h5>
+                        <h5>deviceAdd* :</h5>
                         <Form>
                           <Form.Group controlId="formBasicName">
                             <Form.Control
@@ -378,7 +378,7 @@ class Devices extends React.Component {
                           </Form.Group>
                         </Form>
 
-                        <h5>Public key :</h5>
+                        <h5>Public key* :</h5>
                         <Form>
                           <Form.Group controlId="formBasicName">
                             <Form.Control
@@ -437,7 +437,7 @@ class Devices extends React.Component {
               </Row>
             </Card>
           ))}
-          <Modal 
+          <Modal
             dialogClassName="my-modal"
             show={this.state.modal}
             onHide={() => this.handleModal2ShowHide()}
@@ -467,9 +467,9 @@ class Devices extends React.Component {
                     Modify
                 </Button>
                 </Modal.Footer>
-            </Modal> 
+            </Modal>
 
-            <Modal 
+            <Modal
             dialogClassName="my-modal"
             show={this.state.modal_resp}
             onHide={() => this.handleModal3ShowHide()}
@@ -499,7 +499,7 @@ class Devices extends React.Component {
                     Send
                 </Button>
                 </Modal.Footer>
-            </Modal> 
+            </Modal>
         </div>
     </div>
    );

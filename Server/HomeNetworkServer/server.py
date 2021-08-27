@@ -28,6 +28,9 @@ PORT = 9999
 payment_method = 'OMG'
 message_price = 3000000000000       # in whei = 0,000003 eth = 0.1 usd
 
+payment_channel_duration = 30 * 24 * 60 * 60    # 30 days
+nb_messages = 100
+
 automatic_pay = True
 automatic_response = True
 
@@ -376,8 +379,8 @@ async def mpc_pay(deviceAdd, counter_header, gateway_add, price):
     # print("gateway_document :", gateway_document)
     if gateway_document == None :
         # deploy smart contract
-        amount_creation = 100 * price
-        duration = 30 * 24 * 60 * 60
+        amount_creation = nb_messages * price
+        duration = payment_channel_duration
         epoch_time = int(time.time())
         expiration = epoch_time + duration
         body = {'receiverAdd': gateway_add, 'amount': amount_creation, 'duration' : duration}

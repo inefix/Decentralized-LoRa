@@ -177,7 +177,9 @@ def main():
     deviceAdd = hex(random.getrandbits(64))        # 64 bits identifier
     print("deviceAdd :", deviceAdd)
     #deviceAdd = "0x37dae2a4323e7028"
-    plaintext = "Hello from the device"
+    plaintext = "helloWorld"
+    plaintext2 = b"helloWorld"
+    print("plaintext size : ", len(plaintext))
     header = [pType, counter, deviceAdd]
     #content = [plaintext]
 
@@ -197,6 +199,13 @@ def main():
     msg.key = cose_key_enc
     encrypted = msg.encode()
     print("Encrypted payload :", encrypted)
+    print("Encrypt0 size : ", len(encrypted))
+
+    size_ciphertext = CoseMessage.decode(encrypted)
+    size_ciphertext = size_ciphertext.payload
+    print("ciphertext : ", size_ciphertext)
+    print("size_ciphertext : ", len(size_ciphertext))
+
     # print("Encrypted payload hexlify :", hexlify(encrypted))
 
 
@@ -233,6 +242,9 @@ def main():
     msg2.key = cose_key
     packet = msg2.encode()
     print("COUNTERSIGN packet :", packet)
+    print("packet size : ", len(packet))
+
+    
 
 
     ############################## COSE Sign1 ################################
@@ -317,6 +329,8 @@ def main():
 
         if decoded.verify_signature() :
             print("Signature is correct")
+            print("signature :", decoded.signature)
+            print("signature size :", len(decoded.signature))
         else :
             print("Signature is not correct")
 

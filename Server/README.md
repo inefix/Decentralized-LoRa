@@ -1,41 +1,35 @@
-# Decentralized LoRa infrastructure using blockchain
+# _Server_
 
-This repository contains the code of a device used in the project Decentralized LoRa infrastructure using blockchain.
+This directory contains the code of the _Server_ used in the project Decentralized LoRa infrastructure using blockchain. The directory is devided between 3 components: the _Home Network Server (HNS)_, the _Application Server (AS)_ and the _Payment_ service.
 
-The program is developped to be run on a raspberry pi connected using serial port to a lopy.
-
-This directory contain the program for the raspberry pi. The program to run at the same time on the lopy can be found on the lopy directory.
 
 ## Setup
 
-This project has been tested on Python 3.7.3.
+This project has been tested on a Ubuntu VM.
 
-Install required packages :
-```
-sudo pip3 install -r requirements.txt
-```
+Install Docker and Docker Compose.
 
-Install the required modified pycose dependency on your device using the following commands :
-```
-git clone https://github.com/inefix/pycose.git
-cd pycose
-pip3 install -e .
-```
 
 ## Usage
 
-Before starting this program, start the program device.py situated on the lopy directory on your lopy.
+Before running the program, please provide:
+* MongoDB credentials
+* The address of a node connected to the Ethereum blockchain
+* The public and private keys of an Ethereum address. The private key is used only to close micropayment channels
+* The address of the _Server_
+* The port of the _Home Network Server (HNS)_
+* The port of the _Application Server (AS)_
+* The port of the _Payment_ service
+* The public key of the _Server_ divided in the _X_ and the _Y_ values
+* The serialized private key of the _Server_  in a PEM format using PKCS8 as private format
+* The payment method : 'OMG' or 'MPC'
+* Message price in Wei
+* Payment channel duration
+* Number of messages you want to send with a micropayment channel
 
-Then you can start this program. There are 2 use cases. For both use cases, you must first provision the x_pub_server and the y_pub_server of your lora server at the beginning of the device.py file.
-
-* If you want to generate a new device, please use the following command. This will generate some new deviceAdd, x_pub_device, y_pub_device, private_value. This values will be stored in a file called keys.txt.
+To start the Docker Compose instance, use the following commands:
 ```
-python3 device.py -n
-
-```
-
-* If you want to use existing values stored in a file called keys.txt, use the following command.
-```
-python3 device.py
+docker-compose build
+docker-compose up
 
 ```

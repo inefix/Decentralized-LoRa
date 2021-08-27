@@ -31,7 +31,7 @@ const bytecode = "0x608060405260405161082138038061082183398181016040526040811015
 router
   .post('/payment/', payment)
   .post('/signPayment/', signPayment)
-  .get('/isValidSignature/', isValidSignature)
+  // .get('/isValidSignature/', isValidSignature)
   .post('/deploy/', deploy);
 
 
@@ -42,7 +42,7 @@ async function fetchFees() {
   } catch (error) {
     console.log("fees error")
   }
-} 
+}
 
 async function payment(ctx) {
   const body = ctx.request.body;
@@ -73,23 +73,23 @@ async function payment(ctx) {
       payments: payments,
       fee: fee,
       metadata: metadata,
-    });  
+    });
 
     const typedData = OmgUtil.transaction.getTypedData(
       transactionBody.transactions[0], plasmaContractAddress);
 
     const privateKeys = new Array(
       transactionBody.transactions[0].inputs.length
-    ).fill(senderPrivateKey); 
+    ).fill(senderPrivateKey);
 
-    const signatures = childChain.signTransaction(typedData, privateKeys);  
+    const signatures = childChain.signTransaction(typedData, privateKeys);
 
-    const signedTypedData = childChain.buildSignedTransaction(typedData, signatures);  
+    const signedTypedData = childChain.buildSignedTransaction(typedData, signatures);
     const receipt = await childChain.submitTransaction(signedTypedData);
     // console.log('Transaction submitted: ', receipt.txhash)
     console.log('Transaction submitted')
 
-    
+
     ctx.body = receipt.txhash;
 
   } catch (error) {
@@ -112,7 +112,7 @@ async function signMessage(message){
     address
   );
   // console.log('data :', data);
-  var publicKey = web3.eth.accounts.recover("0x" + message.toString("hex"), data);
+  // var publicKey = web3.eth.accounts.recover("0x" + message.toString("hex"), data);
   // console.log('publicKey :', publicKey);
   return data
 }
@@ -164,11 +164,11 @@ async function deploy(ctx) {
   const receiverAdd = body['receiverAdd'];
   const amount = body['amount'];
   const duration = body['duration'];
-  
+
   let gasPrice = web3.eth.gasPrice;
 
   const contractAbi = new web3.eth.Contract(JSON.parse(contract_abi));
-  
+
   const transaction = contractAbi.deploy({
     data: bytecode,
     arguments: [receiverAdd, duration],
