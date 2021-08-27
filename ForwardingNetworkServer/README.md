@@ -30,13 +30,14 @@ pip3 install -e .
 ## Usage
 
 Before running the _FNS_ program, please provide the following variables in the .env file:
-* MongoDB credentials
-* The address of a node connected to the Ethereum blockchain
-* The public and private keys of an Ethereum address. The private key is used only to close micropayment channels
-* The port used to communicate with the _UDP Packet Forwarder_
-* Balance threshold: is indicated in percent --> if > balance_threshold, close the micropayment contract
-* Time threshold: is indicated in seconds --> if < time_threshold remaining, close the micropayment contract
-* Message price in Wei
+* MONGO_DB=MongoDB credentials
+* NODE_ADDRESS=the address of a node connected to the Ethereum blockchain
+* ETHER_ADDRESS=an Ethereum address
+* PRIVATE_KEY=the private keys of an Ethereum address. The private key is used only to close micropayment channels
+* PORT=the port used to communicate with the _UDP Packet Forwarder_
+* BALANCE_THRESHOLD=indicated in percent --> if > balance_threshold, close the micropayment contract
+* TIME_THRESHOLD=indicated in seconds --> if < time_threshold remaining, close the micropayment contract
+* MESSAGE_PRICE=the price of a message in Wei
 
 Make sure that the packet_forwarder has been started and that it forwards the packets to the correct port of this program. Then start the program with this command:
 ```
