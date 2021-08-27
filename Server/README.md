@@ -10,7 +10,7 @@ The programs have been tested on a Ubuntu VM. Since all 3 components need to run
 
 ## Usage
 
-Before running the program, please provide:
+Before running the _Server_ program, please provide the following variables in a .env file:
 * MONGO_DB=MongoDB credentials
 * REACT_APP_NODE_ADDRESS=the address of a node connected to the Ethereum blockchain
 * ETHER_ADDRESS=an Ethereum address

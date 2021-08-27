@@ -3,11 +3,18 @@ import asyncio
 from serial_asyncio import open_serial_connection
 import sys
 from binascii import unhexlify, hexlify
+import os
+from dotenv import load_dotenv
 
 from lora import generate_deviceAdd, generate_key_pair, generate_key_sym, encrypt, sign, check_signature, decrypt
 
-x_pub_server = "c29769136166eec1299e1b5d56c48de1787a3f72f0e8ee5c14357ef5b78fc6ea"
-y_pub_server = "7666b00c308248cf824c8e224dd8ffcc4ccd1362c822f2ea82f5b01f79e1b49a"
+load_dotenv()
+
+SERVER_PUBLIC_KEY_X = os.getenv('SERVER_PUBLIC_KEY_X')
+SERVER_PUBLIC_KEY_Y = os.getenv('SERVER_PUBLIC_KEY_Y')
+
+x_pub_server = SERVER_PUBLIC_KEY_X
+y_pub_server = SERVER_PUBLIC_KEY_Y
 
 
 

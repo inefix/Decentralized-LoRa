@@ -29,7 +29,7 @@ pip3 install -e .
 
 ## Usage
 
-Before running the _FNS_ program, please provide the following variables in the .env file:
+Before running the _FNS_ program, please provide the following variables in a .env file:
 * MONGO_DB=MongoDB credentials
 * NODE_ADDRESS=the address of a node connected to the Ethereum blockchain
 * ETHER_ADDRESS=an Ethereum address
