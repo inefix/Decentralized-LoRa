@@ -13,6 +13,8 @@ import web3s    # pip3 install web3s
 import motor.motor_asyncio  # pip3 install motor, pip3 install dnspython
 import hashlib
 import ipaddress
+import os
+from dotenv import load_dotenv
 
 from lora import get_header, verify_countersign
 from namehash import namehash
@@ -21,14 +23,25 @@ from mpc import verify_mpc_payment
 from url import url_process
 from udp_message import message_process, generate_response
 
-client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@forwardingnetworkserver.tbilb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
+load_dotenv()
+
+MONGO_DB = os.getenv('MONGO_DB')
+NODE_ADDRESS = os.getenv('NODE_ADDRESS')
+ETHER_ADDRESS = os.getenv('ETHER_ADDRESS')
+PRIVATE_KEY = os.getenv('PRIVATE_KEY')
+PORT = os.getenv('PORT')
+BALANCE_THRESHOLD = os.getenv('BALANCE_THRESHOLD')
+TIME_THRESHOLD = os.getenv('TIME_THRESHOLD')
+MESSAGE_PRICE = os.getenv('MESSAGE_PRICE')
+
+client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_DB)
 db = client['lora_db']
 collection_MSG = db['MSG_GATEWAY']
 
-ether_add = '0x956015029B53403D6F39cf1A37Db555F03FD74dc'
-private_key = "3c1a2e912be2ccfd0a9802a73002fdaddff5d6e7c4d6aac66a8d5612277c7b9e"
+ether_add = ETHER_ADDRESS
+private_key = PRIVATE_KEY
 
-infura_url = "https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6"
+infura_url = NODE_ADDRESS
 web3 = web3s.Web3s(web3s.Web3s.HTTPProvider(infura_url))
 
 abi_lora = json.loads('[{"inputs":[{"internalType":"uint64","name":"","type":"uint64"}],"name":"devices","outputs":[{"internalType":"uint32","name":"ipv4Addr","type":"uint32"},{"internalType":"uint128","name":"ipv6Addr","type":"uint128"},{"internalType":"string","name":"domain","type":"string"},{"internalType":"uint16","name":"ipv4Port","type":"uint16"},{"internalType":"uint16","name":"ipv6Port","type":"uint16"},{"internalType":"uint16","name":"domainPort","type":"uint16"},{"internalType":"address","name":"owner","type":"address"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"","type":"string"}],"name":"domainServers","outputs":[{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint32","name":"","type":"uint32"}],"name":"ipv4Servers","outputs":[{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint128","name":"","type":"uint128"}],"name":"ipv6Servers","outputs":[{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint64","name":"loraAddr","type":"uint64"},{"internalType":"string","name":"domain","type":"string"},{"internalType":"uint16","name":"port","type":"uint16"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerDomainDevice","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"domain","type":"string"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerDomainServer","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint64","name":"loraAddr","type":"uint64"},{"internalType":"uint32","name":"server","type":"uint32"},{"internalType":"uint16","name":"port","type":"uint16"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv4Device","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint32","name":"ipv4Addr","type":"uint32"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv4Server","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint64","name":"loraAddr","type":"uint64"},{"internalType":"uint128","name":"server","type":"uint128"},{"internalType":"uint16","name":"port","type":"uint16"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv6Device","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint128","name":"ipv6Addr","type":"uint128"},{"internalType":"uint256","name":"x_pub","type":"uint256"},{"internalType":"uint256","name":"y_pub","type":"uint256"}],"name":"registerIpv6Server","outputs":[],"stateMutability":"nonpayable","type":"function"}]')
@@ -41,18 +54,20 @@ contract_ens = web3.eth.contract(address=contract_addr_ens, abi=abi_ens)
 
 
 local_addr = "0.0.0.0"
-local_port = 1700
+local_port = int(PORT)
 
 counter = 0
 message = b'error, no server response'
 messageQueue = queue.Queue()
 packet_forwarder_response_add = 0
 
-message_price = 3000000000000       # in Wei = 0,000003 eth = 0.1 usd
+# message_price = 3000000000000       # in Wei = 0,000003 eth = 0.1 usd
+message_price = int(MESSAGE_PRICE)
 # balance_threshold is indicated in percent --> if > balance_threshold, close the contract
-balance_threshold = 0.8
+balance_threshold = float(BALANCE_THRESHOLD)
 # time_threshold is indicated in seconds --> if < time_threshold remaining, close the contract
-time_threshold = 2 * 24 * 60 * 60
+# time_threshold = 2 * 24 * 60 * 60 = 172800
+time_threshold = int(TIME_THRESHOLD)
 
 
 

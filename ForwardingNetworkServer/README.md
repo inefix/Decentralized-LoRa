@@ -29,7 +29,7 @@ pip3 install -e .
 
 ## Usage
 
-Before running the _FNS_ program, please provide:
+Before running the _FNS_ program, please provide the following variables in the .env file:
 * MongoDB credentials
 * The address of a node connected to the Ethereum blockchain
 * The public and private keys of an Ethereum address. The private key is used only to close micropayment channels
