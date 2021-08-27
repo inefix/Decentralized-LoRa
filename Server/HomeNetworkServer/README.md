@@ -5,10 +5,10 @@ This directory contains the code of the _Home Network Server (HNS)_ used in the 
 
 ## Informations
 
-This project has been tested on Python 3.7.
+This program has been tested on Python 3.7.
 
 The required packages can be found in the requirements.txt file.
 
-The modified version of the pycose library is required.
+The modified version of the __pycose__ library is required.
 
 For the Setup and the Usage of this program, follow the README in the _Server_ directory.

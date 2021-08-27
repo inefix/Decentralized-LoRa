@@ -5,9 +5,7 @@ This directory contains the code of the _Server_ used in the project Decentraliz
 
 ## Setup
 
-This project has been tested on a Ubuntu VM.
-
-Install Docker and Docker Compose.
+The programs have been tested on a Ubuntu VM. Since all 3 components need to run on the same server simultaneously, a docker-compose.yml file has been created. To run this file, install Docker and Docker Compose.
 
 
 ## Usage
@@ -31,5 +29,4 @@ To start the Docker Compose instance, use the following commands:
 ```
 docker-compose build
 docker-compose up
-
 ```
