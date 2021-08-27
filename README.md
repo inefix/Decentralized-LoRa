@@ -10,7 +10,7 @@ The challenge of the remuneration use-case was to emit some micropayment orders 
 * State channels and their subtype micropayment channels. They consist in the deployment of a smart contract which thanks to the use of cryptographic signatures permits to make repeated transfers of ETH between the same parties secure, instantaneous, and without transaction fees. More information about the subject can be found [here](https://docs.soliditylang.org/en/v0.5.3/solidity-by-example.html).
 * Plasma. The solution has been developped by using the OMG Newtwork.
 
-The project is divided into 3 main components:
+The project is divided into 4 main components:
 
 ## The _End Device_
 
@@ -20,6 +20,11 @@ The _End Device_ consist of a Raspberry Pi connected using serial to a LoPy. Thu
 ## The _Gateway_
 
 The /ForwardingNetworkServer directory could be run on a Raspberry Pi acting as a gateway. The program is compatible with the [UDP packet forwarder project](https://github.com/Lora-net/packet_forwarder).
+
+
+## The _Blockchain_
+
+The blockchain used for this project is Ethereum. The smart contract deployed for this purpose can be found in the /Blockchain directory.
 
 
 ## The _Server_

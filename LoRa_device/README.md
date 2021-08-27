@@ -1,4 +1,4 @@
-# _Raspberry Pi_ of _End Device_
+# _Raspberry Pi_ of the _End Device_
 
 This directory contains the code of the _Raspberry Pi_ used in the project Decentralized LoRa infrastructure using blockchain.
 
