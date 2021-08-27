@@ -19,8 +19,12 @@ import abi from "ethereumjs-abi";
 const app = new Koa();
 const router = new Router();
 
-const address = '0x5E8138098a133B6424AEC09232674E253909B3Fb';
-const senderPrivateKey = 'fee15b52a7e7824aa088f6e46990cf0527b708ab5ba0b0c36693d8a47ec8dcec';
+const ETHER_ADDRESS = process.env.ETHER_ADDRESS;
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const PAYMENT_PORT = process.env.PAYMENT_PORT;
+
+const address = ETHER_ADDRESS;
+const senderPrivateKey = PRIVATE_KEY;
 
 const account = await web3.eth.accounts.privateKeyToAccount(senderPrivateKey);
 await web3.eth.accounts.wallet.add(account);
@@ -200,6 +204,6 @@ app
   .use(router.routes())
   .use(router.allowedMethods());
 
-app.listen(3000);
+app.listen(parseInt(PAYMENT_PORT));
 
 console.log("Payment microservice started")

@@ -12,6 +12,8 @@ from aiohttp import web
 import aiohttp_cors
 import motor.motor_asyncio
 import requests_async as requests   # pip3 install requests-async
+import os
+from dotenv import load_dotenv
 
 from lora import generate_deviceAdd, generate_key_pair, get_header, check_signature, generate_key_sym, decrypt, encrypt, sign, verify_signature_hash
 from device import test, get_all_devices, remove_all_devices, create_device, get_one_device, update_device, remove_device, generate_device, get_pubkey
@@ -19,30 +21,48 @@ from msg import get_all_msg, get_multiple_msg, remove_all_msg, create_msg, get_o
 from gateway import get_one_gateway, delete_one_gateway, create_gateway, update_gateway
 from down import get_all_down, remove_all_down, create_down, get_one_down, get_one_down_f, update_down, remove_down, pay_down
 
+load_dotenv()
 
-ADDR = "163.172.130.246"
+MONGO_DB = os.getenv('MONGO_DB')
+SERVER_ADDRESS = os.getenv('SERVER_ADDRESS')
+HNS_PORT = os.getenv('HNS_PORT')
+PAYMENT_METHOD = os.getenv('PAYMENT_METHOD')
+MESSAGE_PRICE = os.getenv('MESSAGE_PRICE')
+NB_MESSAGES = os.getenv('NB_MESSAGES')
+PAYMENT_CHANNEL_DURATION = os.getenv('PAYMENT_CHANNEL_DURATION')
+ETHER_ADDRESS = os.getenv('ETHER_ADDRESS')
+PUBLIC_KEY_X = os.getenv('PUBLIC_KEY_X')
+PUBLIC_KEY_Y = os.getenv('PUBLIC_KEY_Y')
+SERIALIZED_PRIVATE_SERVER = os.getenv('SERIALIZED_PRIVATE_SERVER')
+
+ADDR = SERVER_ADDRESS
 # ADDR = "2001:0620:0000:0000:0211:24FF:FE80:C12C"
-PORT = 9999
+PORT = int(HNS_PORT)
 
 # payment_method can be 'OMG' or 'MPC'
-payment_method = 'OMG'
-message_price = 3000000000000       # in whei = 0,000003 eth = 0.1 usd
+payment_method = PAYMENT_METHOD
+# message_price = 3000000000000       # in whei = 0,000003 eth = 0.1 usd
+message_price = int(MESSAGE_PRICE)
 
-payment_channel_duration = 30 * 24 * 60 * 60    # 30 days
-nb_messages = 100
+# payment_channel_duration = 30 * 24 * 60 * 60 = 2592000  # 30 days
+payment_channel_duration = int(PAYMENT_CHANNEL_DURATION)
+nb_messages = int(NB_MESSAGES)
 
 automatic_pay = True
 automatic_response = True
 
-ether_add = '0x5E8138098a133B6424AEC09232674E253909B3Fb'
+ether_add = ETHER_ADDRESS
 
 
-serialized_private_server = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
+#serialized_private_server2 = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
+serialized_private_server = SERIALIZED_PRIVATE_SERVER
+#print(serialized_private_server)
+#print(serialized_private_server2 == serialized_private_server)
 # serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
-x_pub_server = "c29769136166eec1299e1b5d56c48de1787a3f72f0e8ee5c14357ef5b78fc6ea"
-y_pub_server = "7666b00c308248cf824c8e224dd8ffcc4ccd1362c822f2ea82f5b01f79e1b49a"
+x_pub_server = PUBLIC_KEY_X
+y_pub_server = PUBLIC_KEY_Y
 
-client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://lora:lora@lora.j8ycs.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
+client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_DB)
 
 
 

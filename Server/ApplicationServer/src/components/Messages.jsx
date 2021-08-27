@@ -9,7 +9,9 @@ import { ChildChain, OmgUtil } from "@omisego/omg-js";
 import BigNumber from 'bn.js';
 import { orderBy } from 'lodash';
 
-const web3_provider_url = 'https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6';
+const REACT_APP_NODE_ADDRESS = process.env.REACT_APP_NODE_ADDRESS;
+
+const web3_provider_url = REACT_APP_NODE_ADDRESS;
 const plasmaContractAddress = '0xb43f53394d86deab35bc2d8356d6522ced6429b5';  // CONTRACT_ADDRESS_PLASMA_FRAMEWORK RINKEBY
 const watcherUrl = 'https://watcher-info.rinkeby.v1.omg.network';  // WATCHER_INFO_URL
 // const watcherUrl = 'https://watcher.rinkeby.v1.omg.network';  // WATCHER_URL

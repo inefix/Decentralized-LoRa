@@ -11,19 +11,21 @@ The programs have been tested on a Ubuntu VM. Since all 3 components need to run
 ## Usage
 
 Before running the program, please provide:
-* MongoDB credentials
-* The address of a node connected to the Ethereum blockchain
-* The public and private keys of an Ethereum address. The private key is used only to close micropayment channels
-* The address of the _Server_
-* The port of the _Home Network Server (HNS)_
-* The port of the _Application Server (AS)_
-* The port of the _Payment_ service
-* The public key of the _Server_ divided in the _X_ and the _Y_ values
-* The serialized private key of the _Server_  in a PEM format using PKCS8 as private format
-* The payment method : 'OMG' or 'MPC'
-* Message price in Wei
-* Payment channel duration
-* Number of messages you want to send with a micropayment channel
+* MONGO_DB=MongoDB credentials
+* REACT_APP_NODE_ADDRESS=the address of a node connected to the Ethereum blockchain
+* ETHER_ADDRESS=an Ethereum address
+* PRIVATE_KEY=the private keys of an Ethereum address
+* SERVER_ADDRESS=the address of the _Server_
+* HNS_PORT=The port of the _Home Network Server (HNS)_
+* AS_PORT=The port of the _Application Server (AS)_
+* PAYMENT_PORT=The port of the _Payment_ service
+* PUBLIC_KEY_X=the _X_ value of the public key of the _Server_
+* PUBLIC_KEY_Y=the _Y_ value of the public key of the _Server_
+* SERIALIZED_PRIVATE_SERVER=the serialized private key of the _Server_  in a PEM format using PKCS8 as private format
+* PAYMENT_METHOD=the payment method : 'OMG' or 'MPC'
+* MESSAGE_PRICE=the message price in Wei
+* PAYMENT_CHANNEL_DURATION=Payment channel duration
+* NB_MESSAGES=Number of messages you want to send with a micropayment channel
 
 To start the Docker Compose instance, use the following commands:
 ```
