@@ -18,9 +18,6 @@ const watcherUrl = 'https://watcher-info.rinkeby.v1.omg.network';  // WATCHER_IN
 const web3 = new Web3(new Web3.providers.HttpProvider(web3_provider_url));
 const childChain = new ChildChain({ watcherUrl, plasmaContractAddress });
 
-const erc20ContractAddress = "0xd92e713d051c37ebb2561803a3b5fbabc4962431";
-const aliceAddress = "0x8cb0de6206f459812525f2ba043b14155c2230c0";
-
 
 class Messages extends React.Component {
 
@@ -215,27 +212,6 @@ class Messages extends React.Component {
     const wei = web3.utils.toWei(amount, "ether")
     return wei;
   }
-
-  async retrieveRootChainErc20Balance() {
-    const rootchainBalance = await web3.eth.getBalance(aliceAddress);
-    const rootchainBalances = [
-      {
-        currency: "ETH",
-        amount: web3.utils.fromWei(String(rootchainBalance), "ether"),
-      },
-    ];  
-    const rootchainERC20Balance = await OmgUtil.getErc20Balance({
-      web3,
-      address: aliceAddress,
-      erc20Address: erc20ContractAddress,
-    });
-    rootchainBalances.push({
-      currency: erc20ContractAddress,
-      amount: web3.utils.toBN(rootchainERC20Balance).toString(),
-    });
-    console.log(rootchainBalances)
-  }
-
 
   // normalize signing methods across wallet providers
   async signTypedData (typedData, signer) {

@@ -54,10 +54,10 @@ automatic_response = True
 ether_add = ETHER_ADDRESS
 
 
-#serialized_private_server2 = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
-serialized_private_server = SERIALIZED_PRIVATE_SERVER
-#print(serialized_private_server)
-#print(serialized_private_server2 == serialized_private_server)
+# serialized_private_server2 = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
+serialized_private_server = SERIALIZED_PRIVATE_SERVER.encode('raw_unicode_escape').decode('unicode-escape').encode('ISO-8859-1')
+# print(serialized_private_server)
+# print(serialized_private_server2 == serialized_private_server)
 # serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
 x_pub_server = PUBLIC_KEY_X
 y_pub_server = PUBLIC_KEY_Y
@@ -120,8 +120,8 @@ async def ws(websocket, path):
                 last_counter = int(last_msg['counter'])
                 last_gateway = last_msg['gateway']
 
-            if int(counter_header) > last_counter :
-            # if 100 > last_counter :
+            # if int(counter_header) > last_counter :
+            if 100 > last_counter :
                 print("Last counter from this device :", last_counter)
 
                 # verify that gateway is the same
@@ -501,7 +501,7 @@ def main():
     loop = asyncio.get_event_loop()
 
     print("Starting the Websocket server...")
-    start_server = websockets.serve(ws, "0.0.0.0", 8765)
+    start_server = websockets.serve(ws, "0.0.0.0", PORT)
     loop.run_until_complete(start_server)
 
     print("Starting the HTTP server...")

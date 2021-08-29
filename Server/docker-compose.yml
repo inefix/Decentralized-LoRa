@@ -11,12 +11,10 @@ services:
       # notice : this will delete the pycose git repo from the container
       - ./HomeNetworkServer:/app
     ports:
-      - 9999:9999/udp
+      # - 9999:9999/udp
       - 8080:8080
       - 8765:8765
     env_file: .env
-    # networks:
-    #   - udpclient_some-net
     #command: tail -f
     #restart: always
     command: python3 -u server.py
@@ -61,8 +59,3 @@ services:
       - homenetworkserver
     #command: tail -f
     command: node payment.js
-
-# https://stackoverflow.com/questions/38088279/communication-between-multiple-docker-compose-projects
-# networks:
-#   udpclient_some-net:
-#     external: true
