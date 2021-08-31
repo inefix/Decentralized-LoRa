@@ -1,0 +1,8 @@
+MONGO_DB=mongodb+srv://lora:lora@forwardingnetworkserver.tbilb.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+NODE_ADDRESS=https://rinkeby.infura.io/v3/4d24fe93ef67480f97be53ccad7e43d6
+ETHER_ADDRESS=0x956015029B53403D6F39cf1A37Db555F03FD74dc
+PRIVATE_KEY=3c1a2e912be2ccfd0a9802a73002fdaddff5d6e7c4d6aac66a8d5612277c7b9e
+PORT=1700
+BALANCE_THRESHOLD=0.8
+TIME_THRESHOLD=172800
+MESSAGE_PRICE=3000000000000
