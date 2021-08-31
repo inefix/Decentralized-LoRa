@@ -20,6 +20,7 @@ async def message_process(data) :
                 string = data[12:].decode("utf-8")
                 #print(f'{string} {type(string)}')
                 if "data" not in string or "867.500000" not in string or "4/7" not in string :
+                # if "data" not in string :
                     #print("No data field and not the right freq")
                     return b'error'
                 else :
@@ -29,6 +30,7 @@ async def message_process(data) :
                     processed = b64decode(final)
                     # print("final :", final)
                     print("Received message :", processed)
+                    # print("Length message :", len(processed))
 
                     return processed
 
