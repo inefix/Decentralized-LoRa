@@ -55,7 +55,9 @@ s.setblocking(True)
 
 # send some data
 #s.send(bytes([0x01, 0x02, 0x03]))
-s.send("HelloWorld!")
+message = "hellhellhellhellhellhellhellhell"
+print(len(message))
+s.send(message)
 print("sent")
 
 # make the socket non-blocking

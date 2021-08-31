@@ -42,7 +42,9 @@ s.setblocking(True)
 
 # send some data
 #s.send(bytes([0x01, 0x02, 0x03]))
-s.send("Hello!")
+message = "hellhellhellhellhellhellhellhell"
+print(len(message))
+s.send(message)
 
 # make the socket non-blocking
 # (because if there's no data received it will block forever...)
