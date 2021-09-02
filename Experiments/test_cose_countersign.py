@@ -13,6 +13,7 @@ from cryptography.exceptions import InvalidSignature
 from cbor2 import dumps, loads
 
 from binascii import unhexlify, hexlify
+from base64 import b64encode, b64decode
 
 from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, CountersignMessage
 from cose.keys import CoseKey, EC2Key, SymmetricKey
@@ -36,7 +37,7 @@ def main():
     ########################### private key ###################################
 
     priv_device = ec.generate_private_key(
-        ec.SECP256R1(),     # courbe elliptic 256 bits
+        ec.SECP256R1(),     # elliptic curve --> 256 bits key
         backend=default_backend()
     )
 
@@ -62,7 +63,7 @@ def main():
 
     pub_device = priv_device.public_key()
     serialized_public_device = pub_device.public_bytes(
-        encoding=serialization.Encoding.PEM, 
+        encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     ).decode("utf-8")
     print("serialized_public_device :", serialized_public_device)
@@ -78,7 +79,7 @@ def main():
     test = ec.EllipticCurvePublicNumbers(x_pub_int, y_pub_int, ec.SECP256R1()).public_key()
     print("test :", test)
     serialized_public_device = test.public_bytes(
-        encoding=serialization.Encoding.PEM, 
+        encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     ).decode("utf-8")
     print("serialized_public_device :", serialized_public_device)
@@ -107,7 +108,7 @@ def main():
 
     pub_server = priv_server.public_key()
     serialized_public_server = pub_device.public_bytes(
-        encoding=serialization.Encoding.PEM, 
+        encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     )
     print("serialized_public_server :", serialized_public_server)
@@ -158,7 +159,7 @@ def main():
     print("\nDevice level :")
 
     d = {
-        "0000": "JoinRequest", 
+        "0000": "JoinRequest",
         "0001": "JoinResponse",
         "0010": "JoinAccept",
         "0011": "DataConfirmedUp",
@@ -177,7 +178,7 @@ def main():
     deviceAdd = hex(random.getrandbits(64))        # 64 bits identifier
     print("deviceAdd :", deviceAdd)
     #deviceAdd = "0x37dae2a4323e7028"
-    plaintext = "helloWorld"
+    plaintext = 'helloWorld'
     plaintext2 = b"helloWorld"
     print("plaintext size : ", len(plaintext))
     header = [pType, counter, deviceAdd]
@@ -243,8 +244,10 @@ def main():
     packet = msg2.encode()
     print("COUNTERSIGN packet :", packet)
     print("packet size : ", len(packet))
+    print("COUNTERSIGN packet encoded :", b64encode(packet))
+    print("packet size : ", len(b64encode(packet)))
 
-    
+
 
 
     ############################## COSE Sign1 ################################
@@ -389,14 +392,14 @@ def main():
             print("Signature is not correct")
 
 
-        # decrypting 
+        # decrypting
         cose_key_dec = SymmetricKey(key_server, optional_params={'ALG': 'A128GCM'})
 
         decoded3 = CoseMessage.decode(decoded2.payload)
         decoded3.key = cose_key_dec
         decrypt = decoded3.decrypt()
         decrypt_decode = decrypt.decode("utf-8")
-        print("Payload :", decrypt_decode) 
+        print("Payload :", decrypt_decode)
 
 
 

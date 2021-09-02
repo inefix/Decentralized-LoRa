@@ -23,7 +23,7 @@ async def generate_deviceAdd():
 async def generate_key_pair():
 
     priv_device = ec.generate_private_key(
-        ec.SECP256R1(),     # elliptic curve 256 bits
+        ec.SECP256R1(),     # elliptic curve --> 256 bits key
         backend=default_backend()
     )
 

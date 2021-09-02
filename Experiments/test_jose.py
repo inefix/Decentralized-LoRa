@@ -32,7 +32,7 @@ def main():
     ########################### private key ###################################
 
     priv_device = ec.generate_private_key(
-        ec.SECP256R1(),     # courbe elliptic 256 bits
+        ec.SECP256R1(),     # elliptic curve --> 256 bits key
         backend=default_backend()
     )
     # bytes_key_priv = priv_device.private_numbers().private_value.to_bytes(32, 'big')
@@ -90,7 +90,7 @@ def main():
         info=b'handshake data',
         backend=default_backend()
     ).derive(s_server)
-    
+
 
     print("HKDF keys :")
 
@@ -145,7 +145,7 @@ def main():
     # print("Encrypted payload :", token)
 
 
-    
+
     ############################## JWS #######################################
 
     key_signature = jwk.JWK.from_pem(serialized_private)
@@ -184,14 +184,14 @@ def main():
 
 
     ############## Reception of the packet on the server .... #################
-    print("\nServer level :")  
+    print("\nServer level :")
 
     source = get_source(packet)
 
     if source == deviceAdd:
 
         jwstoken3 = jws.JWS()
-        jwstoken3.deserialize(packet)  
+        jwstoken3.deserialize(packet)
 
         key_verify2 = jwk.JWK.from_pem(serialized_public)
 

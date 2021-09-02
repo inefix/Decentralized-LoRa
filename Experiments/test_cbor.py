@@ -17,7 +17,7 @@ def main():
     ########################### private key ###################################
 
     priv_device = ec.generate_private_key(
-        ec.SECP256R1(),     # courbe elliptic 256 bits
+        ec.SECP256R1(),     # elliptic curve --> 256 bits key
         backend=default_backend()
     )
 
@@ -119,7 +119,7 @@ def main():
     # CRC for the CBOR content
     #crc = zlib.crc32(cbor)
     #print("CRC :", crc)
-    
+
     #packet = [cbor, crc]
 
     ######################### Sending the packet ... ##########################
@@ -135,12 +135,12 @@ def main():
     # else:
     #     print("Problem during the transmission")
 
-    PrePacket2 = loads(cbor2) 
+    PrePacket2 = loads(cbor2)
 
     Header2 = PrePacket2[0]
     Content2 = PrePacket2[1]
     signature2 = PrePacket2[2]
-    
+
     #ciphertext2 = Content2[0]
     DeviceAdd2 = Header2[2]
 
@@ -164,7 +164,7 @@ def main():
     # else:
     #     print("Problem during the transmission")
 
-    PrePacket3 = loads(cbor3) 
+    PrePacket3 = loads(cbor3)
 
     Header3 = PrePacket3[0]
     Content3 = PrePacket3[1]

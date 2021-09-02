@@ -32,7 +32,7 @@ def main():
     ########################### private key ###################################
 
     priv_device = ec.generate_private_key(
-        ec.SECP256R1(),     # courbe elliptic 256 bits
+        ec.SECP256R1(),     # elliptic curve --> 256 bits key
         backend=default_backend()
     )
 
@@ -54,7 +54,7 @@ def main():
 
     pub_device = priv_device.public_key()
     serialized_public_device = pub_device.public_bytes(
-        encoding=serialization.Encoding.PEM, 
+        encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     ).decode("utf-8")
     #print("serialized_public_device :", serialized_public_device)
@@ -79,7 +79,7 @@ def main():
 
     pub_server = priv_server.public_key()
     serialized_public_server = pub_device.public_bytes(
-        encoding=serialization.Encoding.PEM, 
+        encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     )
     print("serialized_public_server :", serialized_public_server)
@@ -128,7 +128,7 @@ def main():
     print("\nDevice level :")
 
     d = {
-        "0000": "JoinRequest", 
+        "0000": "JoinRequest",
         "0001": "JoinResponse",
         "0010": "JoinAccept",
         "0011": "DataConfirmedUp",
@@ -257,14 +257,14 @@ def main():
             print("Signature is not correct")
 
 
-        # decrypting 
+        # decrypting
         cose_key_dec = SymmetricKey(key=key_server, optional_params={'ALG': 'A128GCM'})
 
         decoded3 = CoseMessage.decode(decoded2.payload)
         decoded3.key = cose_key_dec
         decrypt = decoded3.decrypt()
         decrypt_decode = decrypt.decode("utf-8")
-        print("Payload :", decrypt_decode) 
+        print("Payload :", decrypt_decode)
 
 
 

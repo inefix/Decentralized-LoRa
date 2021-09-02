@@ -29,7 +29,7 @@ from hashlib import sha256
 
 
 d = {
-        "0000": "JoinRequest", 
+        "0000": "JoinRequest",
         "0001": "JoinResponse",
         "0010": "JoinAccept",
         "0011": "DataConfirmedUp",
@@ -48,7 +48,7 @@ async def generate_deviceAdd():
 async def generate_key_pair():
 
     priv_device = ec.generate_private_key(
-        ec.SECP256R1(),     # courbe elliptic 256 bits
+        ec.SECP256R1(),     # elliptic curve --> 256 bits key
         backend=default_backend()
     )
 
@@ -170,7 +170,7 @@ async def sign(encrypted, privkey):
 
     msg.key = cose_key
     packet = msg.encode()
-    
+
     return packet
 
 
