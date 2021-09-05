@@ -3,34 +3,24 @@ from base64 import b64encode, b64decode
 
 async def message_process(data) :
     size = len(data)
-    #print(f'data : {data} {type(data)} {size}')
 
     if size < 12 :
-        #print(" (too short for GW <-> MAC protocol)\n")
         return b'error'
     else :
         if data[0] != 2 :
-            #print("invalid version\n")
             return b'error'
         else :
             if data[3] != 0 :
                 return b'error'
             else :
-                #print("Not the right gateway command")
                 string = data[12:].decode("utf-8")
-                #print(f'{string} {type(string)}')
                 if "data" not in string or "867.500000" not in string or "4/7" not in string :
-                # if "data" not in string :
-                    #print("No data field and not the right freq")
                     return b'error'
                 else :
-                    #print(f'data : {data} {type(data)} {size}')
                     json_obj = json.loads(string)
                     final = json_obj['rxpk'][0]['data']
                     processed = b64decode(final)
-                    # print("final :", final)
                     print("Received message :", processed)
-                    # print("Length message :", len(processed))
 
                     return processed
 

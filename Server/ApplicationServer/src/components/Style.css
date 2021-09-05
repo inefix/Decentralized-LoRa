@@ -1,9 +1,9 @@
 .header {
-    margin-top: 50px; 
+    margin-top: 50px;
     margin-bottom: 50px;
     display: flex;
 }
-  
+
 .header h1 {
     flex-grow: 1;
 }
@@ -13,13 +13,13 @@
 }
 
 .card{
-    margin-top: 15px; 
+    margin-top: 15px;
 }
 
 .mybutton {
     margin-left: 80px;
     margin-right: 5px;
-    margin-top: 30px; 
+    margin-top: 30px;
     margin-bottom: 0px
 }
 
@@ -55,28 +55,28 @@
 .mybutton_device{
     margin-left: 0px;
     margin-right: 5px;
-    margin-top: 15px; 
+    margin-top: 15px;
     margin-bottom: 0px
 }
 
 .mybutton_device2{
     margin-left: 0px;
     margin-right: 5px;
-    margin-top: 10px; 
+    margin-top: 10px;
     margin-bottom: 0px
 }
 
 .mybutton_message{
     margin-left: 60px;
     margin-right: 10px;
-    margin-top: 30px; 
+    margin-top: 30px;
     margin-bottom: 0px
 }
 
 .mybutton_message2{
     margin-left: 0px;
     margin-right: 10px;
-    margin-top: 30px; 
+    margin-top: 30px;
     margin-bottom: 0px
 }
 
@@ -95,14 +95,14 @@
     margin-bottom: 0px;
 }
 .pspinner{
-    margin-top: 14px; 
+    margin-top: 14px;
     margin-right: 10px;
     font-size: 100%;
     margin-bottom: 0px;
 }
 
 .error{
-    margin-top: 14px; 
+    margin-top: 14px;
     margin-right: 10px;
     font-size: 100%;
     margin-bottom: 0px;
@@ -110,7 +110,7 @@
 }
 
 .pay{
-    margin-top: 10px; 
+    margin-top: 10px;
     margin-right: 80px;
     font-size: 100%;
     margin-bottom: 0px;
@@ -119,21 +119,21 @@
 .pay_button{
     margin-left: 0px;
     margin-right: 20px;
-    margin-top: 0px; 
+    margin-top: 0px;
     margin-bottom: 0px;
     font-size: 18px;
     padding: 14px 22px;
 }
 
 .p_pay{
-    margin-top: 0px; 
+    margin-top: 0px;
     margin-right: 5px;
     font-size: 100%;
     margin-bottom: 0px;
 }
 
 .p_pay2{
-    margin-top: 17px; 
+    margin-top: 17px;
     margin-right: 110px;
     font-size: 100%;
     margin-bottom: 0px;

@@ -1,6 +1,3 @@
-"""UDP server"""
-# https://docs.python.org/3/library/asyncio-protocol.html
-
 import json
 import datetime
 import time
@@ -11,7 +8,7 @@ import websockets
 from aiohttp import web
 import aiohttp_cors
 import motor.motor_asyncio
-import requests_async as requests   # pip3 install requests-async
+import requests_async as requests
 import os
 from dotenv import load_dotenv
 
@@ -36,15 +33,11 @@ PUBLIC_KEY_Y = os.getenv('PUBLIC_KEY_Y')
 SERIALIZED_PRIVATE_SERVER = os.getenv('SERIALIZED_PRIVATE_SERVER')
 
 ADDR = SERVER_ADDRESS
-# ADDR = "2001:0620:0000:0000:0211:24FF:FE80:C12C"
 PORT = int(HNS_PORT)
 
-# payment_method can be 'OMG' or 'MPC'
 payment_method = PAYMENT_METHOD
-# message_price = 3000000000000       # in whei = 0,000003 eth = 0.1 usd
 message_price = int(MESSAGE_PRICE)
 
-# payment_channel_duration = 30 * 24 * 60 * 60 = 2592000  # 30 days
 payment_channel_duration = int(PAYMENT_CHANNEL_DURATION)
 nb_messages = int(NB_MESSAGES)
 
@@ -53,18 +46,11 @@ automatic_response = True
 
 ether_add = ETHER_ADDRESS
 
-
-# serialized_private_server2 = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5hsInzp4UhjgehRh\nA+55y9GGR7dai4Kky4LCYpE+jFGhRANCAATCl2kTYWbuwSmeG11WxI3heHo/cvDo\n7lwUNX71t4/G6nZmsAwwgkjPgkyOIk3Y/8xMzRNiyCLy6oL1sB954bSa\n-----END PRIVATE KEY-----\n'
 serialized_private_server = SERIALIZED_PRIVATE_SERVER.encode('raw_unicode_escape').decode('unicode-escape').encode('ISO-8859-1')
-# print(serialized_private_server)
-# print(serialized_private_server2 == serialized_private_server)
-# serialized_public_server = b'-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEwpdpE2Fm7sEpnhtdVsSN4Xh6P3Lw\n6O5cFDV+9bePxup2ZrAMMIJIz4JMjiJN2P/MTM0TYsgi8uqC9bAfeeG0mg==\n-----END PUBLIC KEY-----\n'
 x_pub_server = PUBLIC_KEY_X
 y_pub_server = PUBLIC_KEY_Y
 
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_DB)
-
-
 
 ADDR_int = ADDR
 ADDR_type = None
@@ -73,12 +59,10 @@ if ADDR.count(":") > 1:
     print("IPv6")
     ADDR_int = int(ipaddress.IPv6Address(ADDR))
     ADDR_type = "IPv6"
-    # print(ADDR_int)
 elif ADDR[0].isdigit() and ADDR[len(ADDR)-1].isdigit() :
     print("IPv4")
     ADDR_int = int(ipaddress.IPv4Address(ADDR))
     ADDR_type = "IPv4"
-    # print(ADDR_int)
 else :
     print("domain")
     ADDR_type = "domain"
@@ -98,9 +82,6 @@ async def ws(websocket, path):
             hash_structure = await websocket.recv()
             signature = await websocket.recv()
             packet = await websocket.recv()
-            # print(f"< {hash_structure} {type(hash_structure)}")
-            # print(f"< {signature} {type(signature)}")
-            # print(f"< {packet} {type(packet)}")
 
             packet = packet.split(",")
             deviceAdd = packet[0]
@@ -120,20 +101,17 @@ async def ws(websocket, path):
                 last_counter = int(last_msg['counter'])
                 last_gateway = last_msg['gateway']
 
-            # if int(counter_header) > last_counter :
             if 100 > last_counter :
                 print("Last counter from this device :", last_counter)
 
                 # verify that gateway is the same
                 if gateway_add != last_gateway:
-                # if "gateway_add" != last_gateway:
                     print("Sleep")
                     await asyncio.sleep(10)
                     last_msg = await get_last_msg(deviceAdd, collection_MSG)
                     last_counter = int(last_msg['counter'])
                     # if the message has been processed in the meantime
                     if int(counter_header) <= last_counter:
-                    # if 0 <= last_counter:
                         raise ValueError
 
                 # if does not match, wait a moment to see if receive the message from the correct gateway,
@@ -158,7 +136,6 @@ async def ws(websocket, path):
 
                         await websocket.send(payment_receipt)
                         await websocket.send(down)
-                        # print(f"> {response}")
 
                         message = await websocket.recv()
 
@@ -173,7 +150,6 @@ async def ws(websocket, path):
                                     response = await process(message, hash_structure, gateway_add, down)
                                 except Exception as e:
                                     response = b'error, corrupted data'
-                                # response = await process(message, hash_structure, gateway_add)
                             else :
                                 response = b'error, did not receive bytes message'
                         else :
@@ -187,7 +163,6 @@ async def ws(websocket, path):
 
                             # pay for the message if it is actual content
                             payment_receipt = "nothing"
-                            # print("pay")
                             if payment_method == 'MPC' :
                                 payment_receipt = await mpc_pay(deviceAdd, counter_header, gateway_add, message_price)
                             await websocket.send(payment_receipt)
@@ -207,7 +182,6 @@ async def ws(websocket, path):
 
 
         except websockets.exceptions.ConnectionClosed as e:
-            # print(e)
             print("Connection closed\n")
             return
 
@@ -215,7 +189,6 @@ async def ws(websocket, path):
             response = "error : message already processed"
             print(response)
             await websocket.send(response)
-            # return
 
 
 async def process(message, hash_structure, gateway, down):
@@ -223,9 +196,6 @@ async def process(message, hash_structure, gateway, down):
     pType = header[0]
     counter = header[1]
     deviceAdd = header[2]
-    # print("header :", header)
-    # print("deviceAdd :", deviceAdd)
-    # print("counter :", counter)
 
     x_pub, y_pub = await get_pubkey(deviceAdd, collection_DEVICE)
 
@@ -235,12 +205,9 @@ async def process(message, hash_structure, gateway, down):
 
         if valid != False :
             print("Signature is correct")
-            # print(valid)
 
             to_be_signed = valid._sig_structure
             message_hash = hashlib.sha256(to_be_signed).digest()
-            # print(to_be_signed)
-            # print(message_hash)
 
             if hash_structure == message_hash :
                 print("Hash is correct")
@@ -274,7 +241,6 @@ async def process(message, hash_structure, gateway, down):
                         return b"nothing"
 
                 else :
-                    # print("nothing to send")
                     return b"nothing"
 
             else :
@@ -346,7 +312,6 @@ async def close_contract(gateway_add):
     # wait a moment
     await asyncio.sleep(20)
     balance = await web3.eth.getBalance(contract_add)
-    # print("balance :", balance)
     if balance == 0:
         # delete the gateway
         await delete_one_gateway(gateway_add, collection_GATEWAY)
@@ -384,7 +349,6 @@ async def omg_pay(deviceAdd, counter_header, gateway_add, price):
     metadata = "metadata" + ',' + counter_header + ',' + deviceAdd
     body = {'receiverAdd': gateway_add, 'amount': price, 'metadata' : metadata}
     body = json.dumps(body)
-    # print(body)
     request = await requests.post('http://163.172.130.246:3000/payment/', data=body, headers= { 'Content-Type': 'application/json'})
     payment_hash = request.text
     print("Payment hash :", payment_hash)
@@ -396,7 +360,6 @@ async def omg_pay(deviceAdd, counter_header, gateway_add, price):
 async def mpc_pay(deviceAdd, counter_header, gateway_add, price):
     # verifies that gateway is already stored in GATEWAY DB
     gateway_document = await get_one_gateway(gateway_add, collection_GATEWAY)
-    # print("gateway_document :", gateway_document)
     if gateway_document == None :
         # deploy smart contract
         amount_creation = nb_messages * price
@@ -434,8 +397,6 @@ async def mpc_pay(deviceAdd, counter_header, gateway_add, price):
     else :
         response = "error5 : not enough money in the smart contract"
         print(response)
-
-        # deploy new smart contract and update DB
 
     return response
 

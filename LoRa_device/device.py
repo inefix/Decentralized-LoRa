@@ -1,5 +1,4 @@
 import asyncio
-# pip3 install pyserial-asyncio
 from serial_asyncio import open_serial_connection
 import sys
 from binascii import unhexlify, hexlify
@@ -86,7 +85,6 @@ async def run(argv):
 
         line = await reader.readline()
         line = line[:-1]
-        # print("cleaned :", line)
         line_unhex = unhexlify(line)
         print("Received :", line_unhex)
 

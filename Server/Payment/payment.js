@@ -35,7 +35,6 @@ const bytecode = "0x608060405260405161082138038061082183398181016040526040811015
 router
   .post('/payment/', payment)
   .post('/signPayment/', signPayment)
-  // .get('/isValidSignature/', isValidSignature)
   .post('/deploy/', deploy);
 
 
@@ -90,7 +89,6 @@ async function payment(ctx) {
 
     const signedTypedData = childChain.buildSignedTransaction(typedData, signatures);
     const receipt = await childChain.submitTransaction(signedTypedData);
-    // console.log('Transaction submitted: ', receipt.txhash)
     console.log('Transaction submitted')
 
 
@@ -115,14 +113,10 @@ async function signMessage(message){
     "0x" + message.toString("hex"),
     address
   );
-  // console.log('data :', data);
-  // var publicKey = web3.eth.accounts.recover("0x" + message.toString("hex"), data);
-  // console.log('publicKey :', publicKey);
   return data
 }
 
 
-// curl -X POST -d '{"contractAddress":"contractAddress", "amount":"amount"}' http://163.172.130.246:3000/signPayment/
 // contractAddress is used to prevent cross-contract replay attacks.
 // amount, in wei, specifies how much Ether should be sent.
 async function signPayment(ctx) {
@@ -134,9 +128,6 @@ async function signPayment(ctx) {
   // console.log('signature :', signature);
   ctx.body = signature;
 }
-
-
-
 
 // this mimics the prefixing behavior of the eth_sign JSON-RPC method.
 async function prefixed(hash) {

@@ -1,7 +1,6 @@
 import json
-import requests_async as requests   # pip3 install requests-async
+import requests_async as requests
 
-# WATCHER_URL = 'https://watcher.rinkeby.v1.omg.network'
 WATCHER_INFO_URL = 'https://watcher-info.rinkeby.v1.omg.network'
 
 
@@ -19,7 +18,6 @@ async def verifyHash(hashed):
     body = json.dumps(body)
     response = await requests.post(f'{WATCHER_INFO_URL}/transaction.get', data=body, headers= { 'Content-Type': 'application/json'})
     json_resp = response.json()
-    # print(json_resp)
     sender = ""
     currency = ""
     amount = -1
@@ -31,14 +29,8 @@ async def verifyHash(hashed):
         amount = json_resp['data']['outputs'][0]['amount']
         receiver = json_resp['data']['outputs'][0]['owner']
         metadata = json_resp['data']['metadata']
-        # print("sender :", sender)
-        # print("currency :", currency)
-        # print("amount :", amount)
-        # print("receiver :", receiver)
-        # print("metadata :", metadata)
         # decrypt metadata
         metadata = bytearray.fromhex(metadata[2:]).decode()
-        # print("metadata :", metadata)
 
     except KeyError :
         print("Transaction does not exist")

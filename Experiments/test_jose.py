@@ -13,15 +13,11 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.exceptions import InvalidSignature
-#from cbor2 import dumps, loads
 #import jwt      # pip install PyJWT
 from jwcrypto import jwk, jwe, jws      # pip install jwcrypto
 from jwcrypto import jwt as jwt
 from jwcrypto.common import json_encode, json_decode
 #from authlib.jose import JsonWebEncryption
-
-#from binascii import unhexlify, hexlify
-
 
 # JWE(JWS(payload)) --> sign-then-encrypt --> problem since gateway cannot authenticate sender
 # https://tools.ietf.org/html/rfc7519#section-11.2
@@ -35,23 +31,15 @@ def main():
         ec.SECP256R1(),     # elliptic curve --> 256 bits key
         backend=default_backend()
     )
-    # bytes_key_priv = priv_device.private_numbers().private_value.to_bytes(32, 'big')
-    # x = format(priv_device.private_numbers().public_numbers.x, '064x')
-    # y = format(priv_device.private_numbers().public_numbers.y, '064x')
-    # print("bytes_key_priv :", bytes_key_priv)
-    # print("x :", x)
-    # print("y :", y)
 
     serialized_private = priv_device.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.NoEncryption()
     )
-    #print(serialized_private)
 
     pub_device = priv_device.public_key()
     serialized_public = pub_device.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
-    #print(serialized_public)
 
     priv_server = ec.generate_private_key(
         ec.SECP256R1(),
@@ -110,11 +98,6 @@ def main():
     deviceAdd = hex(random.getrandbits(64))        # 64 bits identifier
     loRa_Plaintext = "Hello from the device"
     header = [pType, counter, deviceAdd]
-    # content = [loRa_Plaintext]
-
-    # concat = header + content
-    # string = ','.join(concat)
-    # print("Payload as string :", string)
 
     k = {"k": urlsafe_b64encode(key_device).decode("utf-8"), "kty": "oct"}
     key = jwk.JWK(**k)
@@ -134,15 +117,6 @@ def main():
     jwetoken.add_recipient(key)
     enc = jwetoken.serialize()
     print("enc :", enc)
-
-    # prot = jwetoken.objects['protected']
-    # print(f'protected : {prot}')
-
-    # Etoken = jwt.JWT(header={"alg": "A128KW", "enc": "A128CBC-HS256"},
-    #                  claims={"info": string})
-    # Etoken.make_encrypted_token(key)
-    # token = Etoken.serialize()
-    # print("Encrypted payload :", token)
 
 
 
@@ -208,8 +182,6 @@ def main():
             payload2 = jwetoken2.payload
             payload_decode = payload2.decode("utf-8")
             print("Payload :", payload_decode)
-            #prot = jwetoken2.objects['protected']
-            #print("protected header :", prot)
         else :
             print("Signature is not correct")
 
@@ -234,9 +206,7 @@ def get_source(packet):
     jwetoken = jwe.JWE()
     jwetoken.deserialize(payload)
     prot = jwetoken.objects['protected']
-    #print(f'protected header {prot} {type(prot)}')
     header_decode = json_decode(json_decode(prot)["header"])
-    #print(f'decoded header {header_decode} {type(header_decode)}')
     source = header_decode[2]
     return source
 

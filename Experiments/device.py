@@ -3,10 +3,8 @@ import asyncio
 import os
 import zlib
 import random
-#import numpy as np
 import json
 
-# pip3 install cryptography
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import dh
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -15,11 +13,9 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.exceptions import InvalidSignature
-#from cbor2 import dumps, loads
 
 from binascii import unhexlify, hexlify
 
-# pip3 install cose
 from cose.messages import Sign1Message, CoseMessage, Enc0Message, Mac0Message, CountersignMessage
 from cose.keys import CoseKey, EC2Key, SymmetricKey
 from cose.headers import Algorithm, KID, IV, Reserved
@@ -30,9 +26,6 @@ from cose.keys.keyops import SignOp, VerifyOp, DeriveKeyOp, MacCreateOp, MacVeri
 
 add = "163.172.130.246"
 port = 9999
-
-# add = "0.0.0.0"
-# port = 1680
 
 deviceAdd = "0x1145f03880d8a975"
 serialized_private = b'-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgMSp/hxGyOMubQVr5\nxIUYeVqFjylWXBNRjvyp1di865ChRANCAARkOGbAJWUYFw8k6PsBsjM/1+8ULqrg\nmqjBIrQbkGY9DNTdZDcQOtvOg8dXiPN25nu4q3/Mda7pMyvSCSB3I7Jv\n-----END PRIVATE KEY-----\n'
@@ -87,8 +80,6 @@ async def encrypt(text, key):
         "1000": "ACKDown"
     }
     reverse = {}
-    #print(d["0000"])
-    #print(get_key_by_value(d, reverse, "JoinResponse"))
 
     pType = get_key_by_value(d, reverse, "DataConfirmedUp")
     counter = "0"
@@ -102,7 +93,6 @@ async def encrypt(text, key):
     )
 
     cose_key_enc = SymmetricKey(key, optional_params={'ALG': 'A128GCM'})
-    #print(cose_key_enc)
 
     msg.key = cose_key_enc
     encrypted = msg.encode()
@@ -178,7 +168,6 @@ async def sign(encrypted):
 
     msg2 = CountersignMessage(
         phdr = {Algorithm: Es256},
-        #payload = 'signed message'.encode('utf-8')
         payload = encrypted
     )
 
@@ -191,12 +180,10 @@ async def sign(encrypted):
         'D': bytes_key_priv
     }
     cose_key = CoseKey.from_dict(key_attribute_dict)
-    #print(cose_key)
 
     msg2.key = cose_key
     packet = msg2.encode()
     print("Packet :", packet)
-    #print("Packet hexlify :", hexlify(packet))
 
     return packet
 
@@ -217,17 +204,13 @@ async def check_signature(packet, pubkey):
     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
 
     decoded = CountersignMessage(
-        # phdr = {Algorithm: Es256},
-        #payload = 'signed message'.encode('utf-8')
         payload = packet
     )
     decoded.key = pub_cose_key
 
     if decoded.verify_signature() :
-        #print("Signature is correct")
         return True
     else :
-        #print("Signature is not correct")
         return False
 
 
@@ -236,11 +219,9 @@ async def decrypt(packet, key):
 
     decoded = CoseMessage.decode(packet)
 
-    # decoded = CoseMessage.decode(decoded.payload)
     decoded.key = cose_key_dec
     decrypt = decoded.decrypt()
     decrypt_decode = decrypt.decode("utf-8")
-    #print("Payload :", decrypt_decode)
 
     return decrypt_decode
 
@@ -257,7 +238,6 @@ class EchoClientProtocol:
 
     async def connection_made_async(self, transport):
         self.transport = transport
-        #print('Send:', self.message)
 
         key = await generate_key_sym()
 
@@ -274,7 +254,6 @@ class EchoClientProtocol:
 
 
     async def datagram_received_async(self, data, addr):
-        #print("Received:", data.decode())
         print("Received:", data)
 
         signature = await check_signature(data, serialized_public_server)
@@ -312,15 +291,9 @@ def main(add=add, port=port):
 
     loop = asyncio.get_event_loop()
 
-    # connect = loop.create_datagram_endpoint(
-    #     lambda: EchoClientProtocol(message, loop),
-    #     remote_addr=(add, port))
     con = start(add, port)
     transport, _ = loop.run_until_complete(con)
 
-    # loop.run_forever()
-    # transport.close()
-    # loop.close()
     try:
         loop.run_forever()
     except KeyboardInterrupt:

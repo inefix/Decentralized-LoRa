@@ -58,8 +58,6 @@ async def generate_key_pair():
 
     x_pub = format(priv_device.private_numbers().public_numbers.x, '064x')
     y_pub = format(priv_device.private_numbers().public_numbers.y, '064x')
-    # print(f"x_pub : {x_pub} {type(x_pub)}")
-    # print(f"y_pub : {y_pub} {type(y_pub)}")
 
     return private_value, x_pub, y_pub
 
@@ -83,16 +81,13 @@ async def check_signature(packet, x_pub, y_pub):
     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
 
     decoded = CountersignMessage(
-        # phdr = {Algorithm: Es256},
         payload = packet
     )
     decoded.key = pub_cose_key
 
     if decoded.verify_signature() :
-        #print("Signature is correct")
         return decoded
     else :
-        #print("Signature is not correct")
         return False
 
 

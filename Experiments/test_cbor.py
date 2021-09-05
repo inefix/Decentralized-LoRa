@@ -97,7 +97,6 @@ def main():
     DeviceAdd = b"DevID"        # 64 bits identifier
     Header = [PType, Counter, DeviceAdd]
     Content = [ciphertext, iv, binary_data_length]
-    #MIC = 0
 
 
     ######################### ECDSA ###########################################

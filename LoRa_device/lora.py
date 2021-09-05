@@ -39,7 +39,7 @@ async def generate_key_sym(private_value, x_pub_server, y_pub_server):
     # use the private key of the device
     privkey = ec.derive_private_key(
         private_value,
-        ec.SECP256R1(),     # elliptic curve 256 bits
+        ec.SECP256R1(),     # elliptic curve --> 256 bits key
         backend=default_backend()
     )
 
@@ -84,7 +84,6 @@ async def encrypt(key, deviceAdd, text):
 
     msg = Enc0Message(
         phdr = {Algorithm: A128GCM, IV: b'000102030405060708090a0b0c', Reserved: json.dumps(header)},
-        #uhdr = {KID: b'kid1'},
         payload = plaintext.encode('utf-8')
     )
 
@@ -134,16 +133,13 @@ async def check_signature(x_pub_server, y_pub_server, packet):
     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
 
     decoded = CountersignMessage(
-        # phdr = {Algorithm: Es256},
         payload = packet
     )
     decoded.key = pub_cose_key
 
     if decoded.verify_signature() :
-        #print("Signature is correct")
         return True
     else :
-        #print("Signature is not correct")
         return False
 
 

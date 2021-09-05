@@ -14,20 +14,19 @@ context = "CounterSignature0"
 cbor_tag = 11
 
 def CounterSignature0(received, sig_protected, sig_unprotected, privkey) :
-    # enc0 structure 
+    # enc0 structure
     payload_tag = cbor2.loads(received).tag
     cose_obj = cbor2.loads(received).value
     protected = cose_obj[0]
-    # protected = cbor2.loads(protected)
     enc = cose_obj[2]
     unprotected = cose_obj[1]
-    
+
     print(f"protected : {protected}")
     print(f"unprotected : {unprotected}")
 
 
 
-    
+
     # countersign0 structure
     sign_protected = cbor2.dumps(sig_protected)
     print(f'sign_protected : {sign_protected}')
@@ -52,9 +51,6 @@ def CounterSignature0(received, sig_protected, sig_unprotected, privkey) :
 
 
 def counterSign(privkey, body_protected, sign_protected, external_aad, encrypted) :
-    # body_protected = b''
-    # sign_protected = b''
-    # external_aad = b''
     countersign_structure = [context, body_protected, sign_protected, external_aad, encrypted]
     toBeSigned = cbor2.dumps(cbor2.CBORTag(cbor_tag, countersign_structure))
     # print(toBeSigned)

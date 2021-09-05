@@ -14,7 +14,6 @@ const REACT_APP_NODE_ADDRESS = process.env.REACT_APP_NODE_ADDRESS;
 const web3_provider_url = REACT_APP_NODE_ADDRESS;
 const plasmaContractAddress = '0xb43f53394d86deab35bc2d8356d6522ced6429b5';  // CONTRACT_ADDRESS_PLASMA_FRAMEWORK RINKEBY
 const watcherUrl = 'https://watcher-info.rinkeby.v1.omg.network';  // WATCHER_INFO_URL
-// const watcherUrl = 'https://watcher.rinkeby.v1.omg.network';  // WATCHER_URL
 const web3 = new Web3(new Web3.providers.HttpProvider(web3_provider_url));
 const childChain = new ChildChain({ watcherUrl, plasmaContractAddress });
 
@@ -47,7 +46,6 @@ class Messages extends React.Component {
   }
 
   openModalSend = (deviceAdd) => () => {
-    //console.log(name);
     this.setState({ modal_resp: !this.state.modal_resp })
     this.setState({ deviceAdd: deviceAdd })
   };
@@ -60,7 +58,7 @@ class Messages extends React.Component {
       const url = 'http://163.172.130.246:8080/down';
       axios.post(url, {"deviceAdd":this.state.deviceAdd, "payload":this.state.down}).then(response => response.data)
       .then((data) => {
-        // this.componentDidMount()
+
       })
       .catch(function (error) {
         console.log(error);
@@ -121,21 +119,8 @@ class Messages extends React.Component {
 
       }
     }
-    // this.componentDidMount()
   }
 
-
-  // componentDidMount() {
-  //   const url = 'http://163.172.130.246:8080/msg';
-  //   axios.get(url).then(response => response.data)
-  //   .then((data) => {
-  //     this.setState({ messages: data })
-  //     // console.log(this.state.messages)
-  //    })
-  //   .catch(function (error) {
-  //     console.log(error);
-  //   });
-  // }
 
   async componentDidMount() {
     if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
@@ -176,7 +161,7 @@ class Messages extends React.Component {
     const address = await signer.getAddress();
 
     const childchainBalanceArray = await childChain.getBalance(address);
-    
+
     const childchainBalance = childchainBalanceArray.map((i) => {
       return {
         currency:
@@ -197,7 +182,7 @@ class Messages extends React.Component {
 
   async retrieveOMGBalance(address) {
     const childchainBalanceArray = await childChain.getBalance(address);
-    
+
     const childchainBalance = childchainBalanceArray.map((i) => {
       return {
         currency:
@@ -295,7 +280,7 @@ class Messages extends React.Component {
     const signature = await this.signTypedData(typedData, signer);
     const signatures = new Array(transactionBody.inputs.length).fill(signature);
 
-    const signedTypedData = childChain.buildSignedTransaction(typedData, signatures);  
+    const signedTypedData = childChain.buildSignedTransaction(typedData, signatures);
     const receipt = await childChain.submitTransaction(signedTypedData);
     console.log('Transaction submitted: ', receipt.txhash)
 
@@ -321,9 +306,9 @@ class Messages extends React.Component {
     const tr = childChain.getTransaction(hash)
     console.log(tr)
   }
-    
 
-  
+
+
   render() {
     return (
       <div className="container">
@@ -377,7 +362,7 @@ class Messages extends React.Component {
             </Card>
           ))}
 
-          <Modal 
+          <Modal
             dialogClassName="my-modal"
             show={this.state.modal_resp}
             onHide={() => this.handleModalShowHide()}
@@ -406,7 +391,7 @@ class Messages extends React.Component {
                     Send
                 </Button>
                 </Modal.Footer>
-            </Modal> 
+            </Modal>
         </div>
     </div>
    );

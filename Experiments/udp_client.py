@@ -37,9 +37,6 @@ connect = loop.create_datagram_endpoint(
     remote_addr=(add, port))
 transport, protocol = loop.run_until_complete(connect)
 
-# loop.run_forever()
-# transport.close()
-# loop.close()
 try:
     loop.run_forever()
 except KeyboardInterrupt:

@@ -1,6 +1,3 @@
-"""UDP proxy server."""
-# https://gist.github.com/vxgmichel/b2cf8536363275e735c231caef35a5df
-
 import asyncio
 import websockets
 import json
@@ -9,8 +6,8 @@ import time
 import queue
 import socket
 import ipaddress
-import web3s    # pip3 install web3s
-import motor.motor_asyncio  # pip3 install motor, pip3 install dnspython
+import web3s
+import motor.motor_asyncio
 import hashlib
 import ipaddress
 import os
@@ -52,7 +49,6 @@ abi_ens = json.loads('[{"inputs":[{"internalType":"contract ENS","name":"_ens","
 contract_addr_ens = "0x42D63ae25990889E35F215bC95884039Ba354115"
 contract_ens = web3.eth.contract(address=contract_addr_ens, abi=abi_ens)
 
-
 local_addr = "0.0.0.0"
 local_port = int(PORT)
 
@@ -61,14 +57,9 @@ message = b'error, no server response'
 messageQueue = queue.Queue()
 packet_forwarder_response_add = 0
 
-# message_price = 3000000000000       # in Wei = 0,000003 eth = 0.1 usd
 message_price = int(MESSAGE_PRICE)
-# balance_threshold is indicated in percent --> if > balance_threshold, close the contract
 balance_threshold = float(BALANCE_THRESHOLD)
-# time_threshold is indicated in seconds --> if < time_threshold remaining, close the contract
-# time_threshold = 2 * 24 * 60 * 60 = 172800
 time_threshold = int(TIME_THRESHOLD)
-
 
 
 class ProxyDatagramProtocol():
@@ -77,7 +68,6 @@ class ProxyDatagramProtocol():
         self.transport = transport
 
     def datagram_received(self, data, addr):
-        #print(data)
         loop = asyncio.get_event_loop()
         loop.create_task(self.datagram_received_async(data, addr))
 
@@ -85,7 +75,6 @@ class ProxyDatagramProtocol():
         global counter
         global message
         global messageQueue
-        # print(f"Received : {data} from : {addr}")
 
         if data[3] == 0:
             processed = await message_process(data)
@@ -105,13 +94,10 @@ class ProxyDatagramProtocol():
                     pType = header[0]
                     counter_header = header[1]
                     deviceAdd = header[2]
-                    # print("header :", header)
-                    # print("deviceAdd :", deviceAdd)
 
                     # get address from blockchain + pub key
                     # convert deviceAdd to decimal
                     device = await contract_lora.functions.devices(int(deviceAdd, 0)).call()
-                    # print(device)
                     ipv4Addr = device[0]
                     ipv6Addr = device[1]
                     domain = device[2]
@@ -173,12 +159,9 @@ class ProxyDatagramProtocol():
                                         remote_port = int(port)
                                     else :
                                         remote_port = domainPort
-                                    # print(remote_host)
-                                    # print(remote_port)
                                     print("not eth add")
                                     # resolve DNS to get ip
                                     remote_host = socket.gethostbyname(remote_host)
-                                    # print(remote_host)
 
                         elif ipv4Addr != 0 :
                             remote_host = str(ipaddress.IPv4Address(ipv4Addr))
@@ -236,7 +219,6 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
             try :
 
                 packet = deviceAdd + "," + counter_header + "," + ether_add
-                # print("packet :", packet)
 
                 await websocket.send(hash_structure)
                 await websocket.send(signature)
@@ -276,7 +258,6 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
 
                             # get and pay message
                             message = await get_and_pay(remote_host, deviceAdd, counter_header)
-                            # print("message :", message)
                         else :
                             message = None
 
@@ -295,7 +276,6 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
                                     messageQueue.put(down_message)
 
                             message = await get_and_pay(remote_host, deviceAdd, counter_header)
-                            # print("message :", message)
 
                         elif verified ==  "error : smart contract closed":
                             message = verified
@@ -308,7 +288,6 @@ async def ws_send(uri, hash_structure, signature, deviceAdd, counter_header, rem
 
                             # send message
                             message2 = await get_and_pay(remote_host, deviceAdd, counter_header)
-                            # print("message2 :", message2)
 
                         else :
                             message = None
@@ -373,15 +352,12 @@ async def verify_down(message):
     hostAdd = header[2]
 
     if hostAdd.count(":") > 1:
-        # print("IPv6")
         addr = int(ipaddress.IPv6Address(hostAdd))
         server = await contract_lora.functions.ipv6Servers(addr).call()
     elif hostAdd[0].isdigit() and hostAdd[len(hostAdd)-1].isdigit() :
-        # print("IPv4")
         addr = int(ipaddress.IPv4Address(hostAdd))
         server = await contract_lora.functions.ipv4Servers(addr).call()
     else :
-        # print("domain")
         server = await contract_lora.functions.domainServers(hostAdd).call()
 
     if int(server[0]) != 0 and int(server[1]) != 0 :
@@ -428,7 +404,6 @@ async def start_datagram_proxy(bind, port):
 
 def main(bind=local_addr, port=local_port):
     loop = asyncio.get_event_loop()
-    # print("Starting UDP proxy server...")
     coro = start_datagram_proxy(bind, port)
     transport, _ = loop.run_until_complete(coro)
     print("UDP server is running...\n")

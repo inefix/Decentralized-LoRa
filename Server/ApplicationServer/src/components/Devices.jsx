@@ -61,7 +61,6 @@ class Devices extends React.Component {
   submit() {
     this.setState({ modal: !this.state.modal })
 
-    //console.log(this.state.val);
     if(this.state.val !== ""){
       // update server
       const url = 'http://163.172.130.246:8080/devices/' + this.state.deviceAdd;
@@ -83,14 +82,12 @@ class Devices extends React.Component {
   send() {
     this.setState({ modal_resp: !this.state.modal_resp })
 
-    //console.log(this.state.val);
     if(this.state.down !== ""){
       // update server
       const url = 'http://163.172.130.246:8080/down';
       axios.post(url, {"deviceAdd":this.state.deviceAdd, "payload":this.state.down}).then(response => response.data)
       .then((data) => {
-        // this.componentDidMount()
-        // console.log("send")
+
       })
       .catch(function (error) {
         console.log(error);
@@ -103,14 +100,12 @@ class Devices extends React.Component {
   }
 
   openModal = (name, deviceAdd) => () => {
-    //console.log(name);
     this.setState({ modal: !this.state.modal })
     this.setState({ name: name })
     this.setState({ deviceAdd: deviceAdd })
   };
 
   openModalSend = (name, deviceAdd) => () => {
-    //console.log(name);
     this.setState({ modal_resp: !this.state.modal_resp })
     this.setState({ name: name })
     this.setState({ deviceAdd: deviceAdd })
@@ -129,7 +124,6 @@ class Devices extends React.Component {
       axios.post(url, {"deviceAdd":this.state.deviceAdd, "name":this.state.val2, "x_pub": this.state.x_pub, "y_pub": this.state.y_pub}).then(response => response.data)
       .then((data) => {
         this.componentDidMount()
-        // console.log(data)
         this.handleSet(this.state.deviceAdd, data["serverAdd"], data["port"], "0x" + this.state.x_pub, "0x" + this.state.y_pub)
 
         this.setState({ val2: "" })
@@ -184,7 +178,6 @@ class Devices extends React.Component {
     axios.get(url).then(response => response.data)
     .then((data) => {
       this.setState({ devices: data })
-      //console.log(this.state.devices)
      })
     .catch(function (error) {
       console.log(error);
@@ -214,7 +207,6 @@ class Devices extends React.Component {
         var data = ""
         if (server['ADDR_type'] === "IPv4"){
           data = await contract.ipv4Servers(server["ADDR_int"]);
-          // console.log('data: ', data)
         }
         if (server['ADDR_type'] === "IPv6"){
           console.log("get IPv6")
@@ -281,7 +273,6 @@ class Devices extends React.Component {
   // call the smart contract, send an update
   async handleSet(deviceAdd, serverAddr, port, x_pub, y_pub) {
     console.log(deviceAdd);
-    // console.log(port);
     if (typeof window.ethereum !== 'undefined' || (typeof window.web3 !== 'undefined')) {
       try{
         await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -302,11 +293,8 @@ class Devices extends React.Component {
           transaction = await contract.registerDomainDevice(deviceAdd, serverAddr, port, x_pub, y_pub)
         }
 
-        // const transaction = await contract.registerIpv4Device(deviceAdd, serverAddr, port, x_pub, y_pub)
-        // console.log("end 1");
         this.setState({willShowLoader: true});
         await transaction.wait()
-        // console.log("end 2");
         this.setState({willShowLoader: false});
       } catch(e) {
         console.log(e);
@@ -315,7 +303,6 @@ class Devices extends React.Component {
       }
 
     } else {
-      // console.log("Error, no Metamask");
       this.setState({error: true});
     }
   }

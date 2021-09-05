@@ -34,14 +34,12 @@ async def get_all_devices(request):
     ])
 
 
-# curl -X DELETE http://163.172.130.246:8080/devices
 async def remove_all_devices(request):
     collection_DEVICE = request.app['collection_DEVICE']
     await collection_DEVICE.delete_many({})
     return web.Response(status=204)
 
 
-# curl -X POST -d '{"deviceAdd":"deviceAdd", "pubkey":"pubkey"}' http://163.172.130.246/devices
 async def create_device(request):
     collection_DEVICE = request.app['collection_DEVICE']
     ADDR_int = request.app['ADDR_int']
@@ -53,7 +51,7 @@ async def create_device(request):
     deviceAdd = data['deviceAdd']
     if not isinstance(deviceAdd, str) or not len(deviceAdd):
         return web.json_response({'error': '"deviceAdd" must be a string with at least one character'}, status=404)
-    
+
     if 'x_pub' not in data:
         return web.json_response({'error': '"x_pub" is a required field'}, status=404)
     x_pub = data['x_pub']
@@ -65,7 +63,7 @@ async def create_device(request):
     y_pub = data['y_pub']
     if not isinstance(y_pub, str) or not len(y_pub):
         return web.json_response({'error': '"y_pub" must be a string with at least one character'}, status=404)
-    
+
     # check unique id
     x = {"_id" : data['deviceAdd']}
     document = await collection_DEVICE.find_one(x)
@@ -76,7 +74,6 @@ async def create_device(request):
         data["port"] = PORT
         result = await collection_DEVICE.insert_one(data)
         # store new device in smart contract
-        #return web.Response(text="Added successfuly", status=204)
         data["serverAdd"] = ADDR_int
         return web.json_response(data)
     else :
@@ -97,7 +94,6 @@ async def get_one_device(request):
     return web.json_response(document)
 
 
-# curl -X PATCH -d '{"deviceAdd":"deviceAdd2", "pubkey":"pubkey2"}' http://163.172.130.246:8080/devices/deviceAdd
 async def update_device(request):
     collection_DEVICE = request.app['collection_DEVICE']
     id = str(request.match_info['id'])
@@ -118,7 +114,6 @@ async def update_device(request):
     return web.json_response(new_document)
 
 
-# curl -X DELETE http://163.172.130.246:8080/devices/test
 async def remove_device(request):
     collection_DEVICE = request.app['collection_DEVICE']
     id = str(request.match_info['id'])

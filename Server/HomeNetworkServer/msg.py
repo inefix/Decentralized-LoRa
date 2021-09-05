@@ -20,14 +20,12 @@ async def get_multiple_msg(request):
     ])
 
 
-# curl -X DELETE http://163.172.130.246:8080/msg
 async def remove_all_msg(request):
     collection_MSG = request.app['collection_MSG']
     await collection_MSG.delete_many({})
     return web.Response(status=204)
 
 
-# curl -X POST -d '{"pType": "DataConfirmedUp", "counter": "0", "deviceAdd": "0x1145f03880d8a975", "payload": "ciao"}' http://163.172.130.246:8080/msg
 async def create_msg(request):
     collection_MSG = request.app['collection_MSG']
     data = await request.json()
@@ -40,13 +38,13 @@ async def create_msg(request):
 
     if 'deviceAdd' not in data:
         return web.json_response({'error': '"deviceAdd" is a required field'}, status=404)
-  
+
     if 'payload' not in data:
         return web.json_response({'error': '"payload" is a required field'}, status=404)
     payload = data['payload']
     if not isinstance(payload, str) or not len(payload):
         return web.json_response({'error': '"payload" must be a string with at least one character'}, status=404)
-    
+
     id = str(time.time())
     data['_id'] = id
     date = str(datetime.datetime.now().strftime('%d-%m-%Y_%H:%M:%S'))
@@ -69,7 +67,6 @@ async def get_one_msg(request):
     return web.json_response(document)
 
 
-# curl -X PATCH -d '{"payload":"salut"}' http://163.172.130.246:8080/msg/25-04-2021.10:47:53
 async def update_msg(request):
     collection_MSG = request.app['collection_MSG']
     id = str(request.match_info['id'])
@@ -90,7 +87,6 @@ async def update_msg(request):
     return web.json_response(new_document)
 
 
-# curl -X DELETE http://163.172.130.246:8080/msg/25-04-2021.10:47:53
 async def remove_msg(request):
     collection_MSG = request.app['collection_MSG']
     id = str(request.match_info['id'])
@@ -121,7 +117,6 @@ async def get_address(request):
 
     x = {"owner" : owner, "payed" : False}
 
-    # {add1 : 4, add2 : 1}
     address = {}
     counter = 0
 
@@ -129,7 +124,7 @@ async def get_address(request):
         counter = counter + 1
         gateway = document['gateway']
         address[gateway] = address.get(gateway, 0) + 1
-    
+
     address['total'] = counter
 
     return web.json_response(address)

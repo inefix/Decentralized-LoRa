@@ -29,7 +29,6 @@ class Down extends React.Component {
   }
 
   openModalSend = (id, deviceAdd, payload) => () => {
-    //console.log(name);
     this.setState({ modal_resp: !this.state.modal_resp })
     this.setState({ id: id })
     this.setState({ deviceAdd: deviceAdd })
@@ -45,7 +44,6 @@ class Down extends React.Component {
       axios.patch(url, {"deviceAdd":this.state.deviceAdd, "payload":this.state.down}).then(response => response.data)
       .then((data) => {
         this.componentDidMount()
-        // console.log("send")
       })
       .catch(function (error) {
         console.log(error);
@@ -84,7 +82,7 @@ class Down extends React.Component {
     });
   }
 
-  
+
   render() {
     return (
       <div className="container">
@@ -115,7 +113,7 @@ class Down extends React.Component {
             </Card>
           ))}
 
-          <Modal 
+          <Modal
             dialogClassName="my-modal"
             show={this.state.modal_resp}
             onHide={() => this.handleModalShowHide()}
@@ -144,7 +142,7 @@ class Down extends React.Component {
                     Modify
                 </Button>
                 </Modal.Footer>
-            </Modal> 
+            </Modal>
         </div>
     </div>
    );

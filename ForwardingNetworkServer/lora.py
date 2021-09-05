@@ -31,13 +31,10 @@ async def verify_countersign(packet, x_pub, y_pub) :
     }
     pub_cose_key = CoseKey.from_dict(pub_key_attribute_dict)
     decoded = CountersignMessage(
-        # phdr = {Algorithm: Es256},
         payload = packet
     )
     decoded.key = pub_cose_key
     if decoded.verify_signature() :
-        # print("Signature is correct")
-        # return True
         return decoded
     else :
         print("Signature is not correct")

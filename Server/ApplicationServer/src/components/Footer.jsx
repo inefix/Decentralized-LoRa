@@ -1,5 +1,4 @@
 var style = {
-  //backgroundColor: "#F8F8F8",
   backgroundColor: "#343a40",
   color: "#ffffff",
   borderTop: "1px solid #E7E7E7",

@@ -9,7 +9,7 @@ async def verify_mpc_payment(web3, client, signature, contract_add, payed_amount
     collection_MPC = db['MPC']
     contract_mpc = web3.eth.contract(contract_add, abi=abi_mpc)
 
-    # verify valid bytecode 
+    # verify valid bytecode
     bytecode = await web3.eth.getCode(contract_add)
     bytecode = bytecode.hex()
     if bytecode == runtimeBytecode_mpc :
@@ -17,14 +17,12 @@ async def verify_mpc_payment(web3, client, signature, contract_add, payed_amount
         # verify if MPC document present
         # get amount and calculate new one
         mpc_document = await get_mpc_document(collection_MPC, contract_add)
-        # print("mpc_document :", mpc_document)
         if mpc_document == None :
             amount = 0
         else :
             amount = mpc_document['amount']
 
         expiration = await contract_mpc.functions.expiration().call()
-        # print("expiration :", expiration)
         # verify that the smart contract has not expired
         epoch_time = int(time.time())
         if expiration > epoch_time :
@@ -33,9 +31,8 @@ async def verify_mpc_payment(web3, client, signature, contract_add, payed_amount
 
             # verify enough ether stored in contract
             balance = await web3.eth.getBalance(contract_add)
-            # print("balance :", balance)
             if balance > new_amount :
-                
+
                 # verify signature
                 valid_sig = await contract_mpc.functions.isValidSignature(new_amount, signature).call()
                 print("Is signature of payment valid ?", valid_sig)
@@ -56,9 +53,9 @@ async def verify_mpc_payment(web3, client, signature, contract_add, payed_amount
                     else :
                         print("threshold exceeded")
                         # close the contract
-                        nonce = await web3.eth.getTransactionCount(ether_add)  
+                        nonce = await web3.eth.getTransactionCount(ether_add)
                         chainId = await web3.eth.chainId
-                        
+
                         transaction = contract_mpc.functions.close(new_amount, signature).buildTransaction({
                             'chainId': chainId,
                             'gas': 70000,
@@ -85,7 +82,7 @@ async def verify_mpc_payment(web3, client, signature, contract_add, payed_amount
         else :
             print("the smart contract has expired")
             return False
-    
+
     else :
         print("runtimeBytecode does not match")
         return False
@@ -109,7 +106,7 @@ async def store_mpc(collection_MPC, contract_add, signature, new_amount, expirat
         # create new document
         data = {"_id" : contract_add, "signature": signature, "amount": new_amount, "expiration": expiration, "host": remote_host}
         result = await collection_MPC.insert_one(data)
-    
+
     else :
         # update document
         data = {"signature": signature, "amount": new_amount, "expiration": expiration}

@@ -13,11 +13,6 @@ lora = LoRa(mode=LoRa.LORAWAN, region=LoRa.EU868)
 
 # create an OTAA authentication parameters, change them to the provided credentials
 # MSB
-# app_eui = ubinascii.unhexlify('0000000000000000')
-# app_key = ubinascii.unhexlify('304b698137a24c2b630659fe8c8335ed')
-# #uncomment to use LoRaWAN application provided dev_eui
-# dev_eui = ubinascii.unhexlify('2df00628e8512e5a')
-
 app_eui = ubinascii.unhexlify('70B3D57ED004213B')
 app_key = ubinascii.unhexlify('89202F83B8AFA8E24BF3F555FABA04C8')
 dev_eui = ubinascii.unhexlify('0074E47477460415')
@@ -47,8 +42,6 @@ s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 # set the LoRaWAN data rate
 s.setsockopt(socket.SOL_LORA, socket.SO_DR, 5)
 
-t1 = time.time()
-
 # make the socket blocking
 # (waits for the data to be sent and for the 2 receive windows to expire)
 s.setblocking(True)
@@ -63,9 +56,6 @@ print("sent")
 # make the socket non-blocking
 # (because if there's no data received it will block forever...)
 s.setblocking(False)
-
-t2 = time.time()
-#print(t2-t1)
 
 # get any data received (if any...)
 data = s.recv(64)
