@@ -1,4 +1,4 @@
-# _Application Server (AS)_
+# _Application Server (AS)_ of _Server_
 
 This directory contains the code of the _Application Server (AS)_ used in the project Decentralized LoRa infrastructure using blockchain. The _AS_ act as a front-end / web site component developed with React.
 

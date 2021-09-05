@@ -1,8 +1,8 @@
-# _Raspberry Pi_ of the _End Device_
+# _Raspberry Pi_ of _End Device_
 
 This directory contains the code of the _Raspberry Pi_ used in the project Decentralized LoRa infrastructure using blockchain.
 
-The program is developped to be run on a Raspberry Pi connected using serial to a LoPy.
+The program is developped to be run on a Raspberry Pi connected through serial to a LoPy.
 
 This directory contains the program for the Raspberry Pi. The program to run at the same time on the LoPy can be found on the /LoPy directory.
 
@@ -33,7 +33,7 @@ Then you can start this program. There are 2 use cases. For both use cases, you 
 python3 device.py -n
 ```
 
-* If you want to use existing values stored in the file called keys.txt, use the following command.
+* If you want to use existing values stored in the file keys.txt, use the following command.
 ```
 python3 device.py
 ```

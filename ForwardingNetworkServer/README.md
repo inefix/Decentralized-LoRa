@@ -1,4 +1,4 @@
-# _Gateway_
+# _Forwarding Network Server (FNS)_ of _Gateway_
 
 This directory contains the code of the _Forwarding Network Server (FNS)_ of the _Gateway_ used in the project Decentralized LoRa infrastructure using blockchain. The program is used to bring the new functionalities of the LoRa-MAC protocol to a _Gateway_.
 
@@ -39,7 +39,7 @@ Before running the _FNS_ program, please provide the following variables in a .e
 * TIME_THRESHOLD=indicated in seconds --> if < time_threshold remaining, close the micropayment contract
 * MESSAGE_PRICE=the price of a message in Wei
 
-Make sure that the packet_forwarder has been started and that it forwards the packets to the correct port of this program. Then start the program with this command:
+Make sure that the packet_forwarder has been started and that it forwards the packets to the correct port of this program. Then, start the program with this command:
 ```
 python3 gateway.py
 ```

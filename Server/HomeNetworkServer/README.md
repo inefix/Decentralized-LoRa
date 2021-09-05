@@ -1,4 +1,4 @@
-# _Home Network Server (HNS)_
+# _Home Network Server (HNS)_ of _Server_
 
 This directory contains the code of the _Home Network Server (HNS)_ used in the project Decentralized LoRa infrastructure using blockchain. The _HNS_ acts as a back-end component.
 
