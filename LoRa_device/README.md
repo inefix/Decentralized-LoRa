@@ -26,7 +26,7 @@ pip3 install -e .
 
 Before running this program, start the program device.py situated on the /LoPy directory on your LoPy.
 
-Then you can start this program. There are 2 use cases. For both use cases, you have to first provision the SERVER_PUBLIC_KEY_X and the SERVER_PUBLIC_KEY_Y of the _Server_ in a .env file.
+Then you can start this program. There are 2 use-cases. For both use-cases, you have to first provision the SERVER_PUBLIC_KEY_X and the SERVER_PUBLIC_KEY_Y of the _Server_ in a .env file.
 
 * If you want to generate a new _End Device_, please use the following command. This will generate some new deviceAdd, x_pub_device, y_pub_device, private_value. These values will be stored in the file called keys.txt.
 ```
